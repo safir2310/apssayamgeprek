@@ -1,0 +1,292 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User and Role Management
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  pin       String?  // PIN for supervisor approval
+  roleId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  role              Role           @relation(fields: [roleId], references: [id])
+  transactions      Transaction[]
+  cashierShifts     CashierShift[]
+  approvedVoidLogs  VoidLog[]      @relation("VoidApprover")
+  createdVoidLogs   VoidLog[]      @relation("VoidCreator")
+}
+
+model Role {
+  id        String   @id @default(cuid())
+  name      String   // Admin, Kasir, Owner, User
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users User[]
+}
+
+// Product and Category Management
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  barcode     String?  @unique
+  description String?
+  image       String?
+  price       Float
+  cost        Float?   // Cost price for profit calculation
+  stock       Int      @default(0)
+  categoryId  String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category     Category          @relation(fields: [categoryId], references: [id])
+  orderItems   OrderItem[]
+  transactions TransactionItem[]
+
+  @@index([categoryId])
+  @@index([barcode])
+}
+
+// Order Management (Customer Online Orders)
+model Order {
+  id          String   @id @default(cuid())
+  orderNumber String   @unique
+  customerId  String?
+  customerName String
+  customerPhone String
+  customerAddress String
+  totalAmount Float
+  status      String   // PENDING, PROCESSING, READY, COMPLETED, CANCELLED
+  paymentMethod String // CASH, QRIS, DEBIT, TRANSFER, E_WALLET
+  paymentStatus String // PENDING, PAID, FAILED
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items OrderItem[]
+
+  @@index([orderNumber])
+  @@index([status])
+  @@index([paymentStatus])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+  subtotal  Float
+  createdAt DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// POS Transaction Management
+model CashierShift {
+  id         String   @id @default(cuid())
+  cashierId  String
+  openingBalance Float
+  closingBalance Float?
+  totalSales Float?
+  totalCash   Float?
+  totalNonCash Float?
+  systemBalance Float?
+  physicalBalance Float?
+  difference  Float?
+  isOpen     Boolean  @default(true)
+  openedAt   DateTime @default(now())
+  closedAt   DateTime?
+
+  cashier      User         @relation(fields: [cashierId], references: [id])
+  transactions Transaction[]
+
+  @@index([cashierId])
+  @@index([isOpen])
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  transactionNumber String @unique
+  cashierId   String
+  shiftId     String
+  totalAmount Float
+  discount    Float    @default(0)
+  finalAmount Float
+  paymentMethod String // CASH, QRIS, DEBIT, TRANSFER, E_WALLET, SPLIT
+  paymentStatus String // PENDING, PAID, FAILED, PARTIAL
+  status      String   // COMPLETED, VOID, REFUND
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cashier    User              @relation(fields: [cashierId], references: [id])
+  shift      CashierShift      @relation(fields: [shiftId], references: [id])
+  items      TransactionItem[]
+  payments   Payment[]
+  voidLogs   VoidLog[]
+
+  @@index([transactionNumber])
+  @@index([cashierId])
+  @@index([shiftId])
+  @@index([status])
+}
+
+model TransactionItem {
+  id            String   @id @default(cuid())
+  transactionId String
+  productId     String
+  quantity      Int
+  price         Float
+  discount      Float    @default(0)
+  subtotal      Float
+  createdAt     DateTime @default(now())
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product     Product     @relation(fields: [productId], references: [id])
+
+  @@index([transactionId])
+  @@index([productId])
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  transactionId String
+  amount        Float
+  method        String
+  reference     String?  // QRIS reference, bank reference, etc.
+  status        String
+  createdAt     DateTime @default(now())
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+}
+
+// Void Transaction System
+model VoidLog {
+  id            String   @id @default(cuid())
+  transactionId String?
+  itemId        String?
+  type          String   // TRANSACTION, ITEM
+  reason        String
+  approvedBy    String?  // Supervisor user ID
+  createdBy     String?  // Cashier user ID
+  amount        Float
+  createdAt     DateTime @default(now())
+
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+  approvedByUser User?       @relation("VoidApprover", fields: [approvedBy], references: [id])
+  createdByUser  User?       @relation("VoidCreator", fields: [createdBy], references: [id])
+
+  @@index([transactionId])
+  @@index([approvedBy])
+  @@index([createdBy])
+}
+
+// Member Loyalty System
+model Member {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  name      String
+  email     String?
+  address   String?
+  points    Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pointHistory PointHistory[]
+
+  @@index([phone])
+}
+
+model PointHistory {
+  id          String   @id @default(cuid())
+  memberId    String
+  type        String   // EARN, REDEEM
+  points      Int
+  reference   String?  // Transaction ID or Order ID
+  description String?
+  createdAt   DateTime @default(now())
+
+  member Member @relation(fields: [memberId], references: [id])
+
+  @@index([memberId])
+  @@index([reference])
+}
+
+// Promo Management
+model Promo {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  type        String   // PERCENTAGE, FIXED, BOGO
+  value       Float
+  minPurchase Float?
+  maxDiscount Float?
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([code])
+  @@index([isActive])
+}
+
+// Stock Management
+model StockLog {
+  id          String   @id @default(cuid())
+  productId   String
+  type        String   // IN, OUT, ADJUSTMENT
+  quantity    Int
+  reference   String?  // Transaction ID, Order ID, or Manual Adjustment
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  @@index([productId])
+  @@index([type])
+  @@index([reference])
+}
+
+// Report Management (for storing generated reports)
+model Report {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // DAILY_SALES, WEEKLY_SALES, MONTHLY_SALES, CASHIER_REPORT, PRODUCT_REPORT
+  period      String   // Date or period string
+  data        String   // JSON data
+  createdAt   DateTime @default(now())
+
+  @@index([type])
+  @@index([period])
+}
