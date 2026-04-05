@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { Settings, ArrowLeft, Store, Phone, MapPin, CreditCard, Save, Upload, X } from 'lucide-react'
+import { Settings, ArrowLeft, Store, Phone, MapPin, CreditCard, Save, Upload, X, LogOut } from 'lucide-react'
 import Link from 'next/link'
 
 interface StoreSettings {
@@ -114,6 +114,29 @@ export default function SettingsPage() {
     setPreviewQris(null)
   }
 
+  const handleLogout = async () => {
+    if (!confirm('Apakah Anda yakin ingin keluar?')) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        localStorage.removeItem('admin-user')
+        localStorage.removeItem('admin-session')
+        window.location.href = '/'
+      } else {
+        alert('Gagal logout. Silakan coba lagi.')
+      }
+    } catch (error) {
+      console.error('Error during logout:', error)
+      alert('Terjadi kesalahan saat logout')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center">
@@ -129,17 +152,27 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50 to-white">
       {/* Header */}
       <header className="bg-white border-b border-orange-200 px-6 py-4 sticky top-0 z-40">
-        <div className="flex items-center gap-4">
-          <Link href="/admin">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Kembali
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
-            <p className="text-sm text-gray-500">Pengaturan toko dan sistem</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/admin">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Kembali
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
+              <p className="text-sm text-gray-500">Pengaturan toko dan sistem</p>
+            </div>
           </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
         </div>
       </header>
 

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Users, Plus, Edit, Trash2, Search, ArrowLeft, User, Shield, Lock } from 'lucide-react'
+import { Users, Plus, Edit, Trash2, Search, ArrowLeft, User, Shield, Lock, LogOut } from 'lucide-react'
 import Link from 'next/link'
 
 interface Cashier {
@@ -201,6 +201,29 @@ export default function CashierManagementPage() {
     resetForm()
   }
 
+  const handleLogout = async () => {
+    if (!confirm('Apakah Anda yakin ingin keluar?')) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        localStorage.removeItem('admin-user')
+        localStorage.removeItem('admin-session')
+        window.location.href = '/'
+      } else {
+        alert('Gagal logout. Silakan coba lagi.')
+      }
+    } catch (error) {
+      console.error('Error during logout:', error)
+      alert('Terjadi kesalahan saat logout')
+    }
+  }
+
   const filteredCashiers = cashiers.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -235,13 +258,23 @@ export default function CashierManagementPage() {
               <p className="text-sm text-gray-500">Kelola semua kasir dan user</p>
             </div>
           </div>
-          <Button
-            onClick={handleOpenDialog}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Tambah Kasir
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleOpenDialog}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Tambah Kasir
+            </Button>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 

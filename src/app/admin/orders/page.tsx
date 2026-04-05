@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { FileText, Search, ArrowLeft, Package, Eye, CheckCircle, XCircle, Clock, Truck } from 'lucide-react'
+import { FileText, Search, ArrowLeft, Package, Eye, CheckCircle, XCircle, Clock, Truck, LogOut } from 'lucide-react'
 import Link from 'next/link'
 
 interface OrderItem {
@@ -156,6 +156,29 @@ export default function OrderManagementPage() {
     return matchesSearch && matchesStatus
   })
 
+  const handleLogout = async () => {
+    if (!confirm('Apakah Anda yakin ingin keluar?')) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        localStorage.removeItem('admin-user')
+        localStorage.removeItem('admin-session')
+        window.location.href = '/'
+      } else {
+        alert('Gagal logout. Silakan coba lagi.')
+      }
+    } catch (error) {
+      console.error('Error during logout:', error)
+      alert('Terjadi kesalahan saat logout')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center">
@@ -184,6 +207,14 @@ export default function OrderManagementPage() {
               <p className="text-sm text-gray-500">Kelola semua pesanan online</p>
             </div>
           </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
         </div>
       </header>
 

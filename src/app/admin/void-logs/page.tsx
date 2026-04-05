@@ -79,6 +79,29 @@ export default function VoidLogsPage() {
     return matchesSearch && matchesType
   })
 
+  const handleLogout = async () => {
+    if (!confirm('Apakah Anda yakin ingin keluar?')) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        localStorage.removeItem('admin-user')
+        localStorage.removeItem('admin-session')
+        window.location.href = '/'
+      } else {
+        alert('Gagal logout. Silakan coba lagi.')
+      }
+    } catch (error) {
+      console.error('Error during logout:', error)
+      alert('Terjadi kesalahan saat logout')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center">
@@ -107,6 +130,14 @@ export default function VoidLogsPage() {
               <p className="text-sm text-gray-500">Riwayat transaksi yang dibatalkan</p>
             </div>
           </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
         </div>
       </header>
 

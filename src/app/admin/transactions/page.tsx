@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { BarChart3, Search, ArrowLeft, Eye, DollarSign, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { BarChart3, Search, ArrowLeft, Eye, DollarSign, Calendar, CheckCircle, XCircle, Clock, LogOut } from 'lucide-react'
 import Link from 'next/link'
 
 interface TransactionItem {
@@ -131,6 +131,29 @@ export default function TransactionHistoryPage() {
     return matchesSearch && matchesStatus && matchesPayment
   })
 
+  const handleLogout = async () => {
+    if (!confirm('Apakah Anda yakin ingin keluar?')) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        localStorage.removeItem('admin-user')
+        localStorage.removeItem('admin-session')
+        window.location.href = '/'
+      } else {
+        alert('Gagal logout. Silakan coba lagi.')
+      }
+    } catch (error) {
+      console.error('Error during logout:', error)
+      alert('Terjadi kesalahan saat logout')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center">
@@ -159,6 +182,14 @@ export default function TransactionHistoryPage() {
               <p className="text-sm text-gray-500">Riwayat semua transaksi POS</p>
             </div>
           </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
         </div>
       </header>
 

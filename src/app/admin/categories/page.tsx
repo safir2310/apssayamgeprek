@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { ShoppingBag, Plus, Edit, Trash2, ArrowLeft, Package } from 'lucide-react'
+import { ShoppingBag, Plus, Edit, Trash2, ArrowLeft, Package, LogOut } from 'lucide-react'
 import Link from 'next/link'
 
 interface Category {
@@ -132,6 +132,29 @@ export default function CategoryManagementPage() {
     resetForm()
   }
 
+  const handleLogout = async () => {
+    if (!confirm('Apakah Anda yakin ingin keluar?')) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        localStorage.removeItem('admin-user')
+        localStorage.removeItem('admin-session')
+        window.location.href = '/'
+      } else {
+        alert('Gagal logout. Silakan coba lagi.')
+      }
+    } catch (error) {
+      console.error('Error during logout:', error)
+      alert('Terjadi kesalahan saat logout')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center">
@@ -160,13 +183,23 @@ export default function CategoryManagementPage() {
               <p className="text-sm text-gray-500">Kelola semua kategori produk</p>
             </div>
           </div>
-          <Button
-            onClick={handleOpenDialog}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Tambah Kategori
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleOpenDialog}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Tambah Kategori
+            </Button>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Flame, Plus, Edit, Trash2, Search, Package, ArrowLeft, Upload, X } from 'lucide-react'
+import { Flame, Plus, Edit, Trash2, Search, Package, ArrowLeft, Upload, X, LogOut } from 'lucide-react'
 import Link from 'next/link'
 
 interface Product {
@@ -234,6 +234,29 @@ export default function ProductManagementPage() {
     resetForm()
   }
 
+  const handleLogout = async () => {
+    if (!confirm('Apakah Anda yakin ingin keluar?')) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        localStorage.removeItem('admin-user')
+        localStorage.removeItem('admin-session')
+        window.location.href = '/'
+      } else {
+        alert('Gagal logout. Silakan coba lagi.')
+      }
+    } catch (error) {
+      console.error('Error during logout:', error)
+      alert('Terjadi kesalahan saat logout')
+    }
+  }
+
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.barcode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -268,13 +291,23 @@ export default function ProductManagementPage() {
               <p className="text-sm text-gray-500">Kelola semua produk di sistem</p>
             </div>
           </div>
-          <Button
-            onClick={handleOpenDialog}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Tambah Produk
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleOpenDialog}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Tambah Produk
+            </Button>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
