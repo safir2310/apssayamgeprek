@@ -560,63 +560,53 @@ export default function POSPage() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side - Products Panel */}
         <div className="flex-1 flex flex-col overflow-hidden sticky top-0 h-screen">
-          {/* Member Lookup */}
+          {/* Member Lookup & Search Bar */}
           <div className="bg-white p-4 border-b border-gray-200">
-            {selectedMember ? (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <User className="w-5 h-5 text-green-700" />
-                  <span className="font-semibold text-green-800">Member Aktif</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 ml-auto"
-                    onClick={handleClearMember}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-bold text-green-800">{selectedMember.name}</p>
-                    <p className="text-green-700 text-sm">{selectedMember.phone}</p>
+            <div className="flex gap-3">
+              {/* Member Lookup */}
+              <div className="w-1/3">
+                {selectedMember ? (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <User className="w-5 h-5 text-green-700" />
+                      <span className="font-semibold text-green-800">Member Aktif</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 ml-auto"
+                        onClick={handleClearMember}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-green-800 text-sm">{selectedMember.name}</p>
+                        <p className="text-green-700 text-xs">{selectedMember.phone}</p>
+                      </div>
+                      <Badge className="bg-green-600 text-white text-xs">
+                        {selectedMember.points} poin
+                      </Badge>
+                    </div>
                   </div>
-                  <Badge className="bg-green-600 text-white">
-                    {selectedMember.points} poin
-                  </Badge>
-                </div>
+                ) : (
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      value={memberPhone}
+                      onChange={(e) => setMemberPhone(e.target.value)}
+                      onKeyDown={handleMemberKeyPress}
+                      placeholder="Cari member..."
+                      className="pl-10 border-orange-200 focus:border-orange-500 h-10 text-sm"
+                      disabled={memberLookupLoading}
+                    />
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="flex gap-2">
-                <div className="flex-1 relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    value={memberPhone}
-                    onChange={(e) => setMemberPhone(e.target.value)}
-                    onKeyDown={handleMemberKeyPress}
-                    placeholder="Cari member berdasarkan no. HP"
-                    className="pl-10 border-orange-200 focus:border-orange-500"
-                    disabled={memberLookupLoading}
-                  />
-                </div>
-                <Button
-                  size="sm"
-                  onClick={handleMemberLookup}
-                  disabled={memberLookupLoading}
-                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-                >
-                  {memberLookupLoading ? '...' : <Search className="w-4 h-4" />}
-                </Button>
-              </div>
-            )}
-          </div>
 
-          {/* Search & Filter */}
-          <div className="bg-white p-4 border-b border-gray-200 relative z-50">
-            {/* Barcode Scanner */}
-            <div className="flex gap-4 mb-4">
+              {/* Barcode Scanner */}
               <div className="flex-1 relative">
-                <Scan className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Scan className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   ref={barcodeInputRef}
                   type="text"
@@ -628,17 +618,32 @@ export default function POSPage() {
                   onFocus={() => setShowSearchPopup(barcodeInput.length > 0)}
                   onKeyDown={handleKeyPress}
                   placeholder="Scan barcode..."
-                  className="pl-10 border-orange-200 focus:border-orange-500"
+                  className="pl-10 border-orange-200 focus:border-orange-500 h-10"
                 />
               </div>
+
+              {/* Product Search */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari nama produk..."
+                  className="pl-10 border-orange-200 focus:border-orange-500 h-10"
+                />
+              </div>
+
+              {/* Clear Button */}
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => {
                   setBarcodeInput('')
                   setSearchQuery('')
                   setShowSearchPopup(false)
                 }}
-                className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                className="border-orange-300 text-orange-700 hover:bg-orange-50 h-10 px-3"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -646,7 +651,7 @@ export default function POSPage() {
 
             {/* Search Results Popup */}
             {showSearchPopup && searchQuery && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+              <div className="absolute top-20 left-0 right-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl max-h-96 overflow-y-auto mx-4">
                 {filteredProducts.length > 0 ? (
                   filteredProducts.slice(0, 10).map(product => (
                     <div
@@ -684,30 +689,11 @@ export default function POSPage() {
                 )}
               </div>
             )}
+          </div>
 
-            {/* Product Search */}
-            <div className="flex gap-4 mb-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari nama produk..."
-                  className="pl-10 border-orange-200 focus:border-orange-500"
-                />
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => setSearchQuery('')}
-                className="border-orange-300 text-orange-700 hover:bg-orange-50"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {/* Category Filter */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
+          {/* Category Filter */}
+          <div className="bg-white px-4 py-3 border-b border-gray-200">
+            <div className="flex gap-2 overflow-x-auto">
               <Button
                 size="sm"
                 variant={selectedCategory === 'all' ? 'default' : 'outline'}
@@ -838,45 +824,6 @@ export default function POSPage() {
               </div>
             )}
           </ScrollArea>
-
-          {/* Promo Section */}
-          <div className="p-4 border-t border-gray-200">
-            <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-              <Flame className="w-5 h-5 text-orange-600" />
-              Promo Hari Ini
-            </h2>
-            <div className="space-y-3">
-              {/* Promo Card 1 */}
-              <Card className="bg-gradient-to-r from-red-500 to-orange-500 text-white border-0">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs opacity-80">Paket Hemat</p>
-                      <h3 className="font-bold text-lg">Paket Komplit</h3>
-                      <p className="text-sm opacity-90 mt-1">Ayam Geprek + Es Teh</p>
-                      <p className="text-xl font-bold mt-2">Rp 25.000</p>
-                    </div>
-                    <Badge className="bg-white text-red-600">DISKON 20%</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* Promo Card 2 */}
-              <Card className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white border-0">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs opacity-80">Buy 2 Get 1</p>
-                      <h3 className="font-bold text-lg">Es Teh Manis</h3>
-                      <p className="text-sm opacity-90 mt-1">Beli 2 Gratis 1</p>
-                      <p className="text-xl font-bold mt-2">Rp 5.000/cup</p>
-                    </div>
-                    <Badge className="bg-white text-orange-600">BUY 2 GET 1</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
 
           {/* Terbaru Section */}
           <div className="flex-1 flex flex-col overflow-hidden">
