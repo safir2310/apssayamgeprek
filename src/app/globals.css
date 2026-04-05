@@ -120,3 +120,38 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom Scrollbar Styling */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: oklch(0.97 0 0);
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: oklch(0.708 0 0);
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.556 0 0);
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-track {
+    background: oklch(0.269 0 0);
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: oklch(0.556 0 0);
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.708 0 0);
+  }
+}

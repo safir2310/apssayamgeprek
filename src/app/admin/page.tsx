@@ -378,8 +378,9 @@ export default function AdminDashboard() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-3">
-                        {topProducts.map((product, index) => (
+                      <ScrollArea className="max-h-[400px]">
+                        <div className="space-y-3 pr-4">
+                          {topProducts.map((product, index) => (
                           <div key={product.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
                             <div className="flex items-center gap-3">
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
@@ -405,10 +406,11 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                         ))}
-                        {topProducts.length === 0 && (
-                          <p className="text-center text-gray-500 py-8">Belum ada data penjualan</p>
-                        )}
-                      </div>
+                          {topProducts.length === 0 && (
+                            <p className="text-center text-gray-500 py-8">Belum ada data penjualan</p>
+                          )}
+                        </div>
+                      </ScrollArea>
                     </CardContent>
                   </Card>
                 </div>
@@ -423,8 +425,9 @@ export default function AdminDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
+                  <ScrollArea className="max-h-[500px]">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
                       <thead>
                         <tr className="border-b border-orange-200">
                           <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">No. Pesanan</th>
@@ -482,10 +485,11 @@ export default function AdminDashboard() {
                               Belum ada pesanan
                             </td>
                           </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </ScrollArea>
                 </CardContent>
               </Card>
             </div>
