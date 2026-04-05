@@ -20,12 +20,25 @@ export async function POST(request: NextRequest) {
         where: {
           cashierId,
           isOpen: true
+        },
+        select: {
+          id: true,
+          cashierId: true,
+          openingBalance: true,
+          isOpen: true,
+          openedAt: true
         }
       })
 
       if (existingOpenShift) {
         return NextResponse.json(
-          { error: 'Cashier already has an open shift', shift: existingOpenShift },
+          {
+            error: 'Cashier already has an open shift',
+            shift: {
+              ...existingOpenShift,
+              openedAt: existingOpenShift.openedAt.toISOString()
+            }
+          },
           { status: 400 }
         )
       }
@@ -40,12 +53,22 @@ export async function POST(request: NextRequest) {
           systemBalance: openingBalance || 0,
           isOpen: true,
           openedAt: new Date()
+        },
+        select: {
+          id: true,
+          cashierId: true,
+          openingBalance: true,
+          isOpen: true,
+          openedAt: true
         }
       })
 
       return NextResponse.json({
         success: true,
-        shift
+        shift: {
+          ...shift,
+          openedAt: shift.openedAt.toISOString()
+        }
       })
     }
 
@@ -64,6 +87,10 @@ export async function POST(request: NextRequest) {
           transactions: {
             where: {
               status: 'COMPLETED'
+            },
+            select: {
+              finalAmount: true,
+              paymentMethod: true
             }
           }
         }
@@ -110,12 +137,31 @@ export async function POST(request: NextRequest) {
           difference,
           isOpen: false,
           closedAt: new Date()
+        },
+        select: {
+          id: true,
+          cashierId: true,
+          openingBalance: true,
+          closingBalance: true,
+          totalSales: true,
+          totalCash: true,
+          totalNonCash: true,
+          systemBalance: true,
+          physicalBalance: true,
+          difference: true,
+          isOpen: true,
+          openedAt: true,
+          closedAt: true
         }
       })
 
       return NextResponse.json({
         success: true,
-        shift: updatedShift
+        shift: {
+          ...updatedShift,
+          openedAt: updatedShift.openedAt.toISOString(),
+          closedAt: updatedShift.closedAt ? updatedShift.closedAt.toISOString() : null
+        }
       })
     }
 
@@ -125,8 +171,9 @@ export async function POST(request: NextRequest) {
     )
   } catch (error) {
     console.error('Error managing shift:', error)
+    console.error('Error details:', JSON.stringify(error, null, 2))
     return NextResponse.json(
-      { error: 'Failed to manage shift' },
+      { error: 'Failed to manage shift', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
@@ -150,15 +197,30 @@ export async function GET(request: NextRequest) {
 
     const shifts = await prisma.cashierShift.findMany({
       where,
-      include: {
-        cashier: {
+      select: {
+        id: true,
+        cashierId: true,
+        openingBalance: true,
+        closingBalance: true,
+        totalSales: true,
+        totalCash: true,
+        totalNonCash: true,
+        systemBalance: true,
+        physicalBalance: true,
+        difference: true,
+        isOpen: true,
+        openedAt: true,
+        closedAt: true,
+        transactions: {
           select: {
             id: true,
-            name: true,
-            email: true
-          }
-        },
-        transactions: {
+            transactionNumber: true,
+            totalAmount: true,
+            finalAmount: true,
+            paymentMethod: true,
+            status: true,
+            createdAt: true
+          },
           where: {
             status: 'COMPLETED'
           }
@@ -170,9 +232,20 @@ export async function GET(request: NextRequest) {
       take: 20
     })
 
+    // Convert dates to ISO strings to avoid serialization issues
+    const serializedShifts = shifts.map(shift => ({
+      ...shift,
+      openedAt: shift.openedAt.toISOString(),
+      closedAt: shift.closedAt ? shift.closedAt.toISOString() : null,
+      transactions: shift.transactions.map(trx => ({
+        ...trx,
+        createdAt: trx.createdAt.toISOString()
+      }))
+    }))
+
     return NextResponse.json({
       success: true,
-      shifts
+      shifts: serializedShifts
     })
   } catch (error) {
     console.error('Error fetching shifts:', error)
