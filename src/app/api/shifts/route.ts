@@ -211,6 +211,13 @@ export async function GET(request: NextRequest) {
         isOpen: true,
         openedAt: true,
         closedAt: true,
+        cashier: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
         transactions: {
           select: {
             id: true,

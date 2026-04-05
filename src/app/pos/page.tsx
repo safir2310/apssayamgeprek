@@ -98,6 +98,9 @@ export default function POSPage() {
   // PIN for close shift
   const [closeShiftPin, setCloseShiftPin] = useState('')
 
+  // Current shift details with actual totals
+  const [currentShiftDetails, setCurrentShiftDetails] = useState<any>(null)
+
   // Loading state
   const [loading, setLoading] = useState(false)
 
@@ -132,6 +135,25 @@ export default function POSPage() {
     }
   }
 
+  const fetchCurrentShiftDetails = async () => {
+    if (!currentShift?.id) return
+
+    try {
+      const response = await fetch(`/api/shifts?cashierId=${cashier?.id}&isOpen=true`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.shifts.length > 0) {
+          const shift = data.shifts.find((s: any) => s.id === currentShift.id)
+          if (shift) {
+            setCurrentShiftDetails(shift)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching shift details:', error)
+    }
+  }
+
   // Fetch products and settings on load
   useEffect(() => {
     fetchProducts()
@@ -144,6 +166,13 @@ export default function POSPage() {
       barcodeInputRef.current.focus()
     }
   }, [isLoggedIn, currentShift, cart])
+
+  // Fetch shift details when closing shift dialog opens
+  useEffect(() => {
+    if (showCloseShift && currentShift?.id) {
+      fetchCurrentShiftDetails()
+    }
+  }, [showCloseShift, currentShift?.id])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -236,8 +265,8 @@ export default function POSPage() {
     }
 
     try {
-      const totalSales = getCartTotal()
-      const physicalBalance = (currentShift?.openingBalance || 0) + totalSales
+      // Use the API-calculated system balance as physical balance
+      const systemBalance = currentShiftDetails?.systemBalance || (currentShift?.openingBalance || 0) + (currentShiftDetails?.totalSales || 0)
 
       const response = await fetch('/api/shifts', {
         method: 'POST',
@@ -247,7 +276,7 @@ export default function POSPage() {
         body: JSON.stringify({
           action: 'close',
           shiftId: currentShift?.id,
-          physicalBalance: physicalBalance
+          physicalBalance: systemBalance
         })
       })
 
@@ -260,12 +289,28 @@ export default function POSPage() {
 
       const shift = data.shift
 
-      alert(`Shift ditutup!\n\nTotal Penjualan: Rp${shift.totalSales.toLocaleString('id-ID')}\nModal Awal: Rp${shift.openingBalance.toLocaleString('id-ID')}\nSaldo Akhir: Rp${shift.closingBalance.toLocaleString('id-ID')}`)
+      // Show detailed summary
+      const summary = `
+Ringkasan Shift
+================
+Total Penjualan: Rp${shift.totalSales.toLocaleString('id-ID')}
+  - Tunai: Rp${shift.totalCash.toLocaleString('id-ID')}
+  - Non-Tunai: Rp${shift.totalNonCash.toLocaleString('id-ID')}
+
+Modal Awal: Rp${shift.openingBalance.toLocaleString('id-ID')}
+Saldo Sistem: Rp${shift.systemBalance.toLocaleString('id-ID')}
+Saldo Fisik: Rp${shift.closingBalance.toLocaleString('id-ID')}
+
+Jumlah Transaksi: ${shift.transactions?.length || 0}
+      `.trim()
+
+      alert(summary)
 
       // Reset
       setIsLoggedIn(false)
       setCashier(null)
       setCurrentShift(null)
+      setCurrentShiftDetails(null)
       setShowCloseShift(false)
       setCloseShiftPin('')
       setCart([])
@@ -1287,23 +1332,45 @@ export default function POSPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="bg-orange-50 p-4 rounded-lg">
-              <div className="flex justify-between mb-2">
-                <span className="text-gray-600">Modal Awal</span>
-                <span className="font-semibold">Rp{currentShift?.openingBalance.toLocaleString('id-ID')}</span>
+            {currentShiftDetails ? (
+              <div className="bg-orange-50 p-4 rounded-lg space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Modal Awal</span>
+                  <span className="font-semibold">Rp{currentShiftDetails.openingBalance.toLocaleString('id-ID')}</span>
+                </div>
+                <Separator className="bg-orange-200" />
+                <div className="flex justify-between">
+                  <span className="text-gray-600 font-semibold">Total Penjualan</span>
+                  <span className="font-bold text-orange-600">Rp{(currentShiftDetails.totalSales || 0).toLocaleString('id-ID')}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Tunai</span>
+                    <span className="font-medium">Rp{(currentShiftDetails.totalCash || 0).toLocaleString('id-ID')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Non-Tunai</span>
+                    <span className="font-medium">Rp{(currentShiftDetails.totalNonCash || 0).toLocaleString('id-ID')}</span>
+                  </div>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Jumlah Transaksi</span>
+                  <span className="font-medium">{currentShiftDetails.transactions?.length || 0}</span>
+                </div>
+                <Separator className="bg-orange-200" />
+                <div className="flex justify-between font-bold text-lg">
+                  <span>Saldo Sistem</span>
+                  <span className="text-orange-600">
+                    Rp{(currentShiftDetails.systemBalance || currentShiftDetails.openingBalance + (currentShiftDetails.totalSales || 0)).toLocaleString('id-ID')}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between mb-2">
-                <span className="text-gray-600">Total Penjualan</span>
-                <span className="font-semibold">Rp{getCartTotal().toLocaleString('id-ID')}</span>
+            ) : (
+              <div className="bg-orange-50 p-4 rounded-lg text-center py-8">
+                <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-2"></div>
+                <p className="text-gray-600 text-sm">Memuat data shift...</p>
               </div>
-              <Separator className="my-2" />
-              <div className="flex justify-between font-bold text-lg">
-                <span>Saldo Sistem</span>
-                <span className="text-orange-600">
-                  Rp{(currentShift?.openingBalance || 0 + getCartTotal()).toLocaleString('id-ID')}
-                </span>
-              </div>
-            </div>
+            )}
 
             <div>
               <Label>PIN Otorisasi</Label>
@@ -1329,6 +1396,7 @@ export default function POSPage() {
               onClick={() => {
                 setShowCloseShift(false)
                 setCloseShiftPin('')
+                setCurrentShiftDetails(null)
               }}
               className="w-full"
             >
