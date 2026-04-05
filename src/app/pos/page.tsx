@@ -149,17 +149,37 @@ export default function POSPage() {
     e.preventDefault()
     setLoading(true)
 
-    // Simulate login (in real app, call API)
-    if (loginForm.email === 'admin@ayamgeprek.com' && loginForm.password === 'admin123') {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: loginForm.email,
+          password: loginForm.password
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.error || 'Email atau password salah!')
+        setLoading(false)
+        return
+      }
+
       setCashier({
-        id: '1',
-        name: 'Admin',
-        email: loginForm.email
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        pin: data.user.pin
       })
       setIsLoggedIn(true)
       setShowOpenShift(true)
-    } else {
-      alert('Email atau password salah!')
+    } catch (error) {
+      console.error('Error during login:', error)
+      alert('Terjadi kesalahan saat login!')
     }
 
     setLoading(false)
@@ -176,7 +196,7 @@ export default function POSPage() {
         },
         body: JSON.stringify({
           action: 'open',
-          cashierId: cashier?.id || '1',
+          cashierId: cashier?.id,
           openingBalance: parseFloat(shiftForm.openingBalance) || 0
         })
       })
