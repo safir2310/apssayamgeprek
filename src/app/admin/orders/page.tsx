@@ -82,6 +82,7 @@ export default function OrderManagementPage() {
 
     setSubmitting(true)
     try {
+      console.log('Updating order:', updateDialog.id, 'to status:', newStatus)
       const response = await fetch(`/api/admin/orders/${updateDialog.id}`, {
         method: 'PUT',
         headers: {
@@ -90,14 +91,23 @@ export default function OrderManagementPage() {
         body: JSON.stringify({ status: newStatus })
       })
 
+      console.log('Response status:', response.status, response.statusText)
+
       if (!response.ok) {
-        const errorData = await response.json()
-        console.error('Update failed:', errorData)
-        alert(`Gagal mengupdate status pesanan! ${errorData.details || errorData.error || ''}`)
+        let errorData
+        try {
+          errorData = await response.json()
+          console.error('Update failed:', errorData)
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` }
+        }
+        alert(`Gagal mengupdate status pesanan! ${errorData.details || errorData.error || 'Unknown error'}`)
         return
       }
 
       const result = await response.json()
+      console.log('Update result:', result)
       alert('Status pesanan berhasil diupdate!')
       setUpdateDialog(null)
       setNewStatus('')
@@ -111,24 +121,54 @@ export default function OrderManagementPage() {
   }
 
   const handleQuickStatusUpdate = async (orderId: string, status: string) => {
+    console.log('=== Quick Status Update ===')
+    console.log('Order ID:', orderId)
+    console.log('Order ID type:', typeof orderId)
+    console.log('Status:', status)
+    
+    if (!orderId) {
+      alert('Order ID tidak valid!')
+      return
+    }
+    
     if (!confirm(`Ubah status pesanan menjadi ${status}?`)) return
 
     try {
-      const response = await fetch(`/api/admin/orders/${orderId}`, {
+      const url = `/api/admin/orders/${orderId}`
+      console.log('Request URL:', url)
+      
+      const requestBody = JSON.stringify({ status })
+      console.log('Request body:', requestBody)
+      
+      const response = await fetch(url, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ status })
+        body: requestBody
       })
 
+      console.log('Response status:', response.status, response.statusText)
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+      
+      // Try to get response text first
+      const responseText = await response.text()
+      console.log('Response text:', responseText)
+      
       if (!response.ok) {
-        const errorData = await response.json()
+        let errorData
+        try {
+          errorData = JSON.parse(responseText)
+        } catch (parseError) {
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}`, rawResponse: responseText }
+        }
         console.error('Update failed:', errorData)
-        alert(`Gagal mengupdate status pesanan! ${errorData.details || errorData.error || ''}`)
+        alert(`Gagal mengupdate status pesanan! ${errorData.details || errorData.error || 'Unknown error'}`)
         return
       }
 
+      const result = JSON.parse(responseText)
+      console.log('Update result:', result)
       alert('Status pesanan berhasil diupdate!')
       fetchOrders()
     } catch (error) {
@@ -218,6 +258,27 @@ export default function OrderManagementPage() {
     }
   }
 
+  // Test function for debugging
+  const handleTestAPI = async () => {
+    try {
+      console.log('Testing PUT API...')
+      const response = await fetch('/api/test', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ test: 'data' })
+      })
+
+      const result = await response.json()
+      console.log('Test API result:', result)
+      alert(`Test API: ${JSON.stringify(result)}`)
+    } catch (error) {
+      console.error('Test API error:', error)
+      alert(`Test API Error: ${String(error)}`)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center">
@@ -246,14 +307,24 @@ export default function OrderManagementPage() {
               <p className="text-sm text-gray-500">Kelola semua pesanan online</p>
             </div>
           </div>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleTestAPI}
+              variant="outline"
+              className="text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-gray-700"
+              size="sm"
+            >
+              Test API
+            </Button>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 

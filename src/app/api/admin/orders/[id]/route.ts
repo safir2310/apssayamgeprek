@@ -51,13 +51,18 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('PUT /api/admin/orders/[id] - params:', params.id)
+    
     const body = await request.json()
+    console.log('Request body:', body)
+    
     const { status, paymentStatus, paymentMethod } = body
 
     if (!status && !paymentStatus && !paymentMethod) {
+      console.error('No valid field to update')
       return NextResponse.json(
         { error: 'At least status, paymentStatus, or paymentMethod is required' },
-        { status: 400 }
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       )
     }
 
@@ -67,9 +72,10 @@ export async function PUT(
     })
 
     if (!existingOrder) {
+      console.error('Order not found:', params.id)
       return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
+        { error: 'Order not found', orderId: params.id },
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
       )
     }
 
@@ -77,6 +83,8 @@ export async function PUT(
     if (status) updateData.status = status
     if (paymentStatus) updateData.paymentStatus = paymentStatus
     if (paymentMethod) updateData.paymentMethod = paymentMethod
+
+    console.log('Updating order with data:', updateData)
 
     const order = await prisma.order.update({
       where: { id: params.id },
@@ -96,19 +104,22 @@ export async function PUT(
       }
     })
 
+    console.log('Order updated successfully:', order.orderNumber)
+
     return NextResponse.json({
       success: true,
       data: order,
       message: 'Order updated successfully'
-    })
+    }, { headers: { 'Content-Type': 'application/json' } })
   } catch (error: any) {
     console.error('Error updating order:', error)
     return NextResponse.json(
       { 
         error: 'Failed to update order',
-        details: error.message || 'Unknown error'
+        details: error.message || 'Unknown error',
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       },
-      { status: 500 }
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
 }
