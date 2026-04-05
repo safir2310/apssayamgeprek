@@ -52,25 +52,45 @@ export async function PUT(
 ) {
   try {
     const body = await request.json()
-    const { status, paymentStatus } = body
+    const { status, paymentStatus, paymentMethod } = body
 
-    if (!status && !paymentStatus) {
+    if (!status && !paymentStatus && !paymentMethod) {
       return NextResponse.json(
-        { error: 'At least status or paymentStatus is required' },
+        { error: 'At least status, paymentStatus, or paymentMethod is required' },
         { status: 400 }
       )
     }
 
+    // Check if order exists first
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: params.id }
+    })
+
+    if (!existingOrder) {
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      )
+    }
+
+    const updateData: any = {}
+    if (status) updateData.status = status
+    if (paymentStatus) updateData.paymentStatus = paymentStatus
+    if (paymentMethod) updateData.paymentMethod = paymentMethod
+
     const order = await prisma.order.update({
       where: { id: params.id },
-      data: {
-        ...(status && { status }),
-        ...(paymentStatus && { paymentStatus })
-      },
+      data: updateData,
       include: {
         items: {
           include: {
-            product: true
+            product: {
+              select: {
+                id: true,
+                name: true,
+                price: true
+              }
+            }
           }
         }
       }
@@ -78,12 +98,16 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      data: order
+      data: order,
+      message: 'Order updated successfully'
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating order:', error)
     return NextResponse.json(
-      { error: 'Failed to update order' },
+      { 
+        error: 'Failed to update order',
+        details: error.message || 'Unknown error'
+      },
       { status: 500 }
     )
   }

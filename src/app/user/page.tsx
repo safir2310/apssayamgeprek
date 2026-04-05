@@ -36,7 +36,19 @@ interface Order {
   paymentMethod: string
   paymentStatus: string
   createdAt: string
-  items: any[]
+  items: {
+    id: string
+    productId: string
+    productName?: string
+    quantity: number
+    price: number
+    subtotal: number
+    product?: {
+      id: string
+      name: string
+      price: number
+    }
+  }[]
 }
 
 export default function UserDashboard() {
@@ -319,7 +331,7 @@ export default function UserDashboard() {
                 <tbody>
                   {selectedOrderForPrint.items.map((item: any, index: number) => (
                     <tr key={index}>
-                      <td className="py-1">{item.productName}</td>
+                      <td className="py-1">{item.product?.name || item.productName || 'Unknown Product'}</td>
                       <td className="py-1 text-center">x{item.quantity}</td>
                       <td className="py-1 text-right">Rp{item.subtotal.toLocaleString('id-ID')}</td>
                     </tr>
@@ -507,7 +519,7 @@ export default function UserDashboard() {
                             <div className="space-y-2 mb-3">
                               {order.items.map((item: any, index: number) => (
                                 <div key={index} className="flex justify-between text-sm">
-                                  <span className="text-gray-600">{item.productName} x{item.quantity}</span>
+                                  <span className="text-gray-600">{item.product?.name || item.productName || 'Unknown Product'} x{item.quantity}</span>
                                   <span className="font-medium">Rp{item.subtotal.toLocaleString('id-ID')}</span>
                                 </div>
                               ))}

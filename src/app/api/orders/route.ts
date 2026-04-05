@@ -17,7 +17,13 @@ export async function GET(request: NextRequest) {
       include: {
         items: {
           include: {
-            product: true
+            product: {
+              select: {
+                id: true,
+                name: true,
+                price: true
+              }
+            }
           }
         }
       },

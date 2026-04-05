@@ -17,10 +17,14 @@ import Link from 'next/link'
 interface OrderItem {
   id: string
   productId: string
-  productName: string
   quantity: number
   price: number
   subtotal: number
+  product?: {
+    id: string
+    name: string
+    price: number
+  }
 }
 
 interface Order {
@@ -61,6 +65,10 @@ export default function OrderManagementPage() {
       if (response.ok) {
         const result = await response.json()
         setOrders(result.data || [])
+      } else {
+        console.error('Failed to fetch orders:', response.status)
+        const error = await response.json()
+        console.error('Error details:', error)
       }
     } catch (error) {
       console.error('Error fetching orders:', error)
@@ -83,10 +91,13 @@ export default function OrderManagementPage() {
       })
 
       if (!response.ok) {
-        alert('Gagal mengupdate status pesanan!')
+        const errorData = await response.json()
+        console.error('Update failed:', errorData)
+        alert(`Gagal mengupdate status pesanan! ${errorData.details || errorData.error || ''}`)
         return
       }
 
+      const result = await response.json()
       alert('Status pesanan berhasil diupdate!')
       setUpdateDialog(null)
       setNewStatus('')
@@ -112,10 +123,13 @@ export default function OrderManagementPage() {
       })
 
       if (!response.ok) {
-        alert('Gagal mengupdate status pesanan!')
+        const errorData = await response.json()
+        console.error('Update failed:', errorData)
+        alert(`Gagal mengupdate status pesanan! ${errorData.details || errorData.error || ''}`)
         return
       }
 
+      alert('Status pesanan berhasil diupdate!')
       fetchOrders()
     } catch (error) {
       console.error('Error updating order status:', error)
@@ -461,7 +475,7 @@ export default function OrderManagementPage() {
                     <tbody>
                       {viewDialog.items.map((item) => (
                         <tr key={item.id} className="border-t">
-                          <td className="p-3">{item.productName}</td>
+                          <td className="p-3">{item.product?.name || 'Unknown Product'}</td>
                           <td className="p-3 text-right">{item.quantity}</td>
                           <td className="p-3 text-right">Rp{item.price.toLocaleString('id-ID')}</td>
                           <td className="p-3 text-right font-semibold">Rp{item.subtotal.toLocaleString('id-ID')}</td>
