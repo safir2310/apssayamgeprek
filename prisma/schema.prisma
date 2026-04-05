@@ -302,3 +302,16 @@ model Settings {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// Payment Method Management
+model PaymentMethod {
+  id          String   @id @default(cuid())
+  code        String   @unique // CASH, QRIS, DEBIT, TRANSFER, E_WALLET
+  name        String   // Tunai, QRIS, Kartu Debit, Transfer, E-Wallet
+  description String?
+  icon        String?  // Icon name for UI
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

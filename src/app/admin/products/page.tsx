@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Flame, Plus, Edit, Trash2, Search, Package, ArrowLeft } from 'lucide-react'
+import { Flame, Plus, Edit, Trash2, Search, Package, ArrowLeft, Upload, X } from 'lucide-react'
 import Link from 'next/link'
 
 interface Product {
@@ -55,6 +55,7 @@ export default function ProductManagementPage() {
     isActive: true
   })
   const [submitting, setSubmitting] = useState(false)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   useEffect(() => {
     fetchProducts()
@@ -150,7 +151,38 @@ export default function ProductManagementPage() {
       categoryId: product.categoryId,
       isActive: product.isActive
     })
+    setImagePreview(product.image || null)
     setShowDialog(true)
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      alert('Mohon upload file gambar saja!')
+      return
+    }
+
+    // Check file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Ukuran file terlalu besar! Maksimal 2MB.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string
+      setFormData({ ...formData, image: base64 })
+      setImagePreview(base64)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleClearImage = () => {
+    setFormData({ ...formData, image: '' })
+    setImagePreview(null)
   }
 
   const handleDelete = async () => {
@@ -187,6 +219,7 @@ export default function ProductManagementPage() {
       categoryId: '',
       isActive: true
     })
+    setImagePreview(null)
   }
 
   const handleOpenDialog = () => {
@@ -452,14 +485,65 @@ export default function ProductManagementPage() {
                 />
               </div>
               <div className="col-span-2">
-                <Label htmlFor="image">URL Gambar</Label>
-                <Input
-                  id="image"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="https://example.com/image.jpg (opsional)"
-                  className="border-orange-200 focus:border-orange-500"
-                />
+                <Label htmlFor="image">Foto Produk</Label>
+                <div className="mt-2 space-y-3">
+                  {imagePreview ? (
+                    <div className="relative inline-block">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="max-w-xs h-48 object-contain border-2 border-gray-200 rounded-lg"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleClearImage}
+                        className="absolute -top-2 -right-2 h-8 w-8 p-0 rounded-full"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                      <Package className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">Belum ada foto produk</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Label htmlFor="file-upload" className="cursor-pointer">
+                        <div className="flex items-center justify-center gap-2 w-full px-4 py-2 border-2 border-dashed border-orange-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-colors">
+                          <Upload className="w-4 h-4 text-orange-600" />
+                          <span className="text-sm text-gray-700">Upload dari Perangkat</span>
+                        </div>
+                      </Label>
+                      <input
+                        id="file-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Input
+                        id="image"
+                        value={formData.image}
+                        onChange={(e) => {
+                          setFormData({ ...formData, image: e.target.value })
+                          setImagePreview(e.target.value)
+                        }}
+                        placeholder="Atau masukkan URL gambar..."
+                        className="border-orange-200 focus:border-orange-500"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Upload gambar (PNG, JPG, JPEG). Maksimal ukuran 2MB.
+                  </p>
+                </div>
               </div>
               <div className="col-span-2">
                 <Label htmlFor="description">Deskripsi</Label>

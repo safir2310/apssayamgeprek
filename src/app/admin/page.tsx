@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Link from 'next/link'
-import { Flame, TrendingUp, ShoppingBag, Package, Users, BarChart3, LayoutDashboard, Settings, Menu, X, DollarSign, Calendar, Clock, ArrowUpRight, ArrowDownRight, Store, Printer, FileText, LogOut, Home } from 'lucide-react'
+import { Flame, TrendingUp, ShoppingBag, Package, Users, BarChart3, LayoutDashboard, Settings, Menu, X, DollarSign, Calendar, Clock, ArrowUpRight, ArrowDownRight, Store, Printer, FileText, LogOut, Home, CreditCard } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 // Store Information
@@ -192,6 +192,7 @@ export default function AdminDashboard() {
     { id: 'orders', label: 'Order Management', icon: FileText, href: '/admin/orders' },
     { id: 'members', label: 'Member Management', icon: Users, href: '/admin/members' },
     { id: 'transactions', label: 'Transaction History', icon: BarChart3, href: '/admin/transactions' },
+    { id: 'payment-methods', label: 'Payment Methods', icon: CreditCard, href: '/admin/payment-methods' },
     { id: 'void-logs', label: 'Void Logs', icon: LogOut, href: '/admin/void-logs' },
     { id: 'cashiers', label: 'Cashier Management', icon: Users, href: '/admin/cashiers' },
     { id: 'shifts', label: 'Shift Reports', icon: Calendar, href: '/admin/shifts' },
