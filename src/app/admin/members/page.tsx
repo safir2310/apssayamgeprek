@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Users, Plus, Edit, Trash2, Search, ArrowLeft, User, Star, LogOut } from 'lucide-react'
+import { Users, Plus, Edit, Trash2, Search, ArrowLeft, User, Star, LogOut, Scan } from 'lucide-react'
 import Link from 'next/link'
 
 interface Member {
@@ -32,6 +32,7 @@ export default function MemberManagementPage() {
   const [showDialog, setShowDialog] = useState(false)
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [deleteDialog, setDeleteDialog] = useState<Member | null>(null)
+  const [barcodeDialog, setBarcodeDialog] = useState<Member | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -165,6 +166,21 @@ export default function MemberManagementPage() {
     m.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
     m.email?.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // Generate simple barcode pattern based on phone number
+  const generateBarcodePattern = (phone: string) => {
+    const width = 200
+    const bars = phone.split('').map((char, index) => {
+      const charCode = char.charCodeAt(0)
+      const barWidth = (charCode % 5) + 2
+      const isBlack = index % 2 === 0
+      return {
+        width: barWidth,
+        color: isBlack ? '#000' : '#fff'
+      }
+    })
+    return bars
+  }
 
   const handleLogout = async () => {
     if (!confirm('Apakah Anda yakin ingin keluar?')) {
@@ -311,6 +327,15 @@ export default function MemberManagementPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            onClick={() => setBarcodeDialog(member)}
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                            title="Lihat Barcode"
+                          >
+                            <Scan className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => handleEdit(member)}
                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                           >
@@ -443,6 +468,81 @@ export default function MemberManagementPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Barcode Dialog */}
+      <Dialog open={!!barcodeDialog} onOpenChange={() => setBarcodeDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Scan className="w-5 h-5 text-purple-600" />
+              Barcode Member
+            </DialogTitle>
+          </DialogHeader>
+          {barcodeDialog && (
+            <div className="space-y-6">
+              {/* Member Info */}
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center">
+                    <User className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800">{barcodeDialog.name}</h3>
+                    <p className="text-sm text-gray-600">{barcodeDialog.phone}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Poin saat ini:</span>
+                  <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white">
+                    <Star className="w-3 h-3 mr-1" />
+                    {barcodeDialog.points} poin
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Barcode */}
+              <div className="bg-white p-6 rounded-lg border-2 border-gray-200">
+                <div className="text-center mb-4">
+                  <p className="text-xs text-gray-500 mb-1">SCAN BARCODE INI</p>
+                  <div className="flex justify-center">
+                    {(() => {
+                      const pattern = generateBarcodePattern(barcodeDialog.phone)
+                      const totalWidth = pattern.reduce((sum, bar) => sum + bar.width, 0)
+                      return (
+                        <svg width={totalWidth} height={60} className="border border-gray-300">
+                          {pattern.map((bar, index) => (
+                            <rect
+                              key={index}
+                              x={pattern.slice(0, index).reduce((sum, b) => sum + b.width, 0)}
+                              y={0}
+                              width={bar.width}
+                              height={60}
+                              fill={bar.color}
+                            />
+                          ))}
+                        </svg>
+                      )
+                    })()}
+                  </div>
+                </div>
+                <div className="text-center mt-4">
+                  <p className="text-sm font-mono font-bold text-gray-800 bg-gray-100 py-2 px-4 rounded">
+                    {barcodeDialog.phone}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">Gunakan nomor telepon untuk scan</p>
+                </div>
+              </div>
+
+              {/* Instructions */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Panduan:</strong> Scan barcode ini untuk mengidentifikasi member dengan cepat saat melakukan transaksi.
+                </p>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

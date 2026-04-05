@@ -121,6 +121,56 @@ export async function PUT(
 
     console.log('Step 4 COMPLETE - Order updated successfully:', order.orderNumber)
 
+    // Award points if order is completed
+    if (status === 'COMPLETED' && existingOrder.status !== 'COMPLETED') {
+      console.log('Step 4.5: Awarding points for completed order...')
+      try {
+        // Find member by phone number
+        const member = await prisma.member.findUnique({
+          where: { phone: order.customerPhone }
+        })
+
+        if (member) {
+          console.log('Member found:', member.name)
+
+          // Calculate points: 1 point per 1000 Rupiah
+          const pointsToAward = Math.floor(order.totalAmount / 1000)
+
+          if (pointsToAward > 0) {
+            console.log('Awarding', pointsToAward, 'points to member')
+
+            // Update member points
+            await prisma.member.update({
+              where: { id: member.id },
+              data: {
+                points: {
+                  increment: pointsToAward
+                }
+              }
+            })
+
+            // Create point history record
+            await prisma.pointHistory.create({
+              data: {
+                memberId: member.id,
+                type: 'EARN',
+                points: pointsToAward,
+                reference: order.orderNumber,
+                description: `Poin dari pesanan #${order.orderNumber}`
+              }
+            })
+
+            console.log('Points awarded successfully!')
+          }
+        } else {
+          console.log('No member found with phone:', order.customerPhone)
+        }
+      } catch (pointError: any) {
+        console.error('Error awarding points:', pointError)
+        // Don't fail the order update if point awarding fails
+      }
+    }
+
     const response = {
       success: true,
       data: order,
