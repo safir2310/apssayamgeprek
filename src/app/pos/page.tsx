@@ -168,19 +168,42 @@ export default function POSPage() {
   const handleOpenShift = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const shift = {
-      id: `SHIFT-${Date.now()}`,
-      openingBalance: parseFloat(shiftForm.openingBalance) || 0,
-      isOpen: true,
-      openedAt: new Date()
-    }
+    try {
+      const response = await fetch('/api/shifts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'open',
+          cashierId: cashier?.id || '1',
+          openingBalance: parseFloat(shiftForm.openingBalance) || 0
+        })
+      })
 
-    setCurrentShift(shift)
-    setShowOpenShift(false)
-    setShiftForm({ ...shiftForm, openingBalance: '' })
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.error || 'Gagal membuka shift!')
+        return
+      }
+
+      const shift = data.shift
+      setCurrentShift({
+        id: shift.id,
+        openingBalance: shift.openingBalance,
+        isOpen: shift.isOpen,
+        openedAt: new Date(shift.openedAt)
+      })
+      setShowOpenShift(false)
+      setShiftForm({ ...shiftForm, openingBalance: '' })
+    } catch (error) {
+      console.error('Error opening shift:', error)
+      alert('Gagal membuka shift! Terjadi kesalahan.')
+    }
   }
 
-  const handleCloseShift = () => {
+  const handleCloseShift = async () => {
     // Validate PIN
     if (!closeShiftPin) {
       alert('Masukkan PIN otorisasi!')
@@ -192,24 +215,44 @@ export default function POSPage() {
       return
     }
 
-    const totalSales = getCartTotal()
-    const closingBalance = (currentShift?.openingBalance || 0) + totalSales
+    try {
+      const totalSales = getCartTotal()
+      const physicalBalance = (currentShift?.openingBalance || 0) + totalSales
 
-    setCurrentShift({
-      ...currentShift!,
-      isOpen: false,
-      closingBalance
-    })
+      const response = await fetch('/api/shifts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'close',
+          shiftId: currentShift?.id,
+          physicalBalance: physicalBalance
+        })
+      })
 
-    alert(`Shift ditutup!\n\nTotal Penjualan: Rp${totalSales.toLocaleString('id-ID')}\nSaldo Awal: Rp${currentShift?.openingBalance.toLocaleString('id-ID')}\nSaldo Akhir: Rp${closingBalance.toLocaleString('id-ID')}`)
+      const data = await response.json()
 
-    // Reset
-    setIsLoggedIn(false)
-    setCashier(null)
-    setCurrentShift(null)
-    setShowCloseShift(false)
-    setCloseShiftPin('')
-    setCart([])
+      if (!response.ok) {
+        alert(data.error || 'Gagal menutup shift!')
+        return
+      }
+
+      const shift = data.shift
+
+      alert(`Shift ditutup!\n\nTotal Penjualan: Rp${shift.totalSales.toLocaleString('id-ID')}\nModal Awal: Rp${shift.openingBalance.toLocaleString('id-ID')}\nSaldo Akhir: Rp${shift.closingBalance.toLocaleString('id-ID')}`)
+
+      // Reset
+      setIsLoggedIn(false)
+      setCashier(null)
+      setCurrentShift(null)
+      setShowCloseShift(false)
+      setCloseShiftPin('')
+      setCart([])
+    } catch (error) {
+      console.error('Error closing shift:', error)
+      alert('Gagal menutup shift! Terjadi kesalahan.')
+    }
   }
 
   const addToCart = (product: Product) => {
@@ -390,23 +433,61 @@ export default function POSPage() {
       return
     }
 
-    // Create transaction
-    const transaction = {
-      id: `TRX-${Date.now()}`,
-      items: cart,
-      total: total,
-      paid: amount,
-      change: amount - total,
-      paymentMethod,
-      cashier: cashier?.name,
-      date: new Date()
-    }
+    try {
+      // Prepare transaction items
+      const items = cart.map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity,
+        price: item.product.price,
+        subtotal: item.product.price * item.quantity
+      }))
 
-    setSelectedTransaction(transaction)
-    setShowReceipt(true)
-    setCart([])
-    setPaymentAmount('')
-    setShowPaymentDialog(false)
+      // Send transaction to API
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          items,
+          totalAmount: total,
+          paymentMethod,
+          paidAmount: amount || total,
+          cashierId: cashier?.id || '1',
+          shiftId: currentShift?.id,
+          memberId: selectedMember?.id || null,
+          discount: 0
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.error || 'Gagal memproses pembayaran!')
+        return
+      }
+
+      // Create transaction for receipt
+      const transaction = {
+        id: data.transaction.transactionNumber,
+        items: cart,
+        total: total,
+        paid: amount,
+        change: (amount || total) - total,
+        paymentMethod,
+        cashier: cashier?.name,
+        date: new Date()
+      }
+
+      setSelectedTransaction(transaction)
+      setShowReceipt(true)
+      setCart([])
+      setPaymentAmount('')
+      setShowPaymentDialog(false)
+    } catch (error) {
+      console.error('Error processing payment:', error)
+      alert('Gagal memproses pembayaran! Terjadi kesalahan.')
+    }
   }
 
   const printReceipt = () => {
@@ -674,6 +755,20 @@ export default function POSPage() {
                 />
               </div>
 
+              {/* Show All Products Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('')
+                  setShowSearchPopup(true)
+                  barcodeInputRef.current?.focus()
+                }}
+                className="border-orange-300 text-orange-700 hover:bg-orange-50 h-10 px-3"
+              >
+                <Package className="w-4 h-4" />
+              </Button>
+
               {/* Clear Button */}
               {searchQuery && (
                 <Button
@@ -691,7 +786,7 @@ export default function POSPage() {
             </div>
 
             {/* Search Results Popup */}
-            {showSearchPopup && searchQuery && (
+            {showSearchPopup && (
               <div className="absolute top-20 left-0 right-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl max-h-96 overflow-y-auto mx-4">
                 {filteredProducts.length > 0 ? (
                   filteredProducts.slice(0, 10).map(product => (

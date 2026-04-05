@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { prisma } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
     // Get the first settings record (should be only one)
-    let settings = await db.settings.findFirst()
+    let settings = await prisma.settings.findFirst()
 
     // If no settings exist, create default settings
     if (!settings) {
-      settings = await db.settings.create({
+      settings = await prisma.settings.create({
         data: {
           storeName: 'AYAM GEPREK SAMBAL IJO',
           storeAddress: 'Jl. Medan – Banda Aceh, Simpang Camat, Gampong Tijue, 24151',
@@ -40,11 +40,11 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
 
     // Get or create settings
-    let settings = await db.settings.findFirst()
+    let settings = await prisma.settings.findFirst()
 
     if (settings) {
       // Update existing settings
-      settings = await db.settings.update({
+      settings = await prisma.settings.update({
         where: { id: settings.id },
         data: {
           storeName: body.storeName || settings.storeName,
@@ -56,7 +56,7 @@ export async function PUT(request: NextRequest) {
       })
     } else {
       // Create new settings
-      settings = await db.settings.create({
+      settings = await prisma.settings.create({
         data: {
           storeName: body.storeName || 'AYAM GEPREK SAMBAL IJO',
           storeAddress: body.storeAddress,
