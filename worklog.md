@@ -58,3 +58,20 @@ Stage Summary:
 - Cart is now on the left panel for better workflow
 - Products are on the right panel with tabs for different input methods
 - All existing POS functionality preserved and working correctly
+
+---
+Task ID: 15
+Agent: Z.ai Code
+Task: Update empty cart and scan tab messages
+
+Work Log:
+- Removed "Scan atau pilih produk" message from empty cart state (left panel)
+- Changed Scan Barcode tab message from "Scan Barcode" and "Arahkan scanner barcode ke produk" to "Scan atau pilih produk" (right panel)
+- Empty cart now only shows "Keranjang kosong" with shopping cart icon
+- Scan tab now shows "Scan atau pilih produk" as the main instruction
+
+Stage Summary:
+- Successfully updated UI text messages for better clarity
+- Instruction to scan/select products is now in the product selection area (right panel)
+- Empty cart message is simpler and more direct
+- No functionality changes, only UI text updates

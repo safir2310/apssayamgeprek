@@ -594,7 +594,6 @@ export default function POSPage() {
               <div className="text-center py-8 text-gray-500">
                 <ShoppingCart className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                 <p>Keranjang kosong</p>
-                <p className="text-sm">Scan atau pilih produk</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -799,8 +798,7 @@ export default function POSPage() {
               <ScrollArea className="flex-1 p-4">
                 <div className="text-center py-8 text-gray-500">
                   <Scan className="w-16 h-16 mx-auto mb-2 text-gray-300" />
-                  <p className="text-lg font-semibold">Scan Barcode</p>
-                  <p className="text-sm">Arahkan scanner barcode ke produk</p>
+                  <p className="text-lg font-semibold">Scan atau pilih produk</p>
                 </div>
               </ScrollArea>
             </TabsContent>
