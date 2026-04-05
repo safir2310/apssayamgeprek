@@ -42,6 +42,15 @@ interface CashierShift {
   openedAt: Date
 }
 
+interface Member {
+  id: string
+  name: string
+  phone: string
+  email: string | null
+  address: string | null
+  points: number
+}
+
 export default function POSPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [cashier, setCashier] = useState<any>(null)
@@ -266,6 +275,24 @@ export default function POSPage() {
     setMemberLookupLoading(true)
     try {
       const response = await fetch(`/api/members/lookup?phone=${encodeURIComponent(memberPhone)}`)
+
+      // Check if response is OK
+      if (!response.ok) {
+        console.error('API response not OK:', response.status, response.statusText)
+        alert('Terjadi kesalahan saat mencari member!')
+        setSelectedMember(null)
+        return
+      }
+
+      // Check content type
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Invalid content type:', contentType)
+        alert('Terjadi kesalahan pada server!')
+        setSelectedMember(null)
+        return
+      }
+
       const data = await response.json()
 
       if (data.found) {
@@ -277,6 +304,7 @@ export default function POSPage() {
     } catch (error) {
       console.error('Error looking up member:', error)
       alert('Terjadi kesalahan saat mencari member!')
+      setSelectedMember(null)
     } finally {
       setMemberLookupLoading(false)
     }
