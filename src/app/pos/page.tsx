@@ -761,9 +761,9 @@ export default function POSPage() {
         </div>
 
         {/* Right Side - Cart Panel */}
-        <div className="w-96 flex flex-col bg-white border-l border-gray-200 sticky top-0 h-screen overflow-hidden">
+        <div className="w-96 flex flex-col bg-white border-l border-gray-200 sticky top-0 h-screen">
           {/* Cart Header - Floating Cart */}
-          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white">
+          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
               <h2 className="font-bold text-lg">Keranjang</h2>
               <Badge variant="secondary" className="bg-white/20 text-white">
@@ -776,7 +776,7 @@ export default function POSPage() {
           </div>
 
           {/* Cart Items - Scrollable with limited height */}
-          <ScrollArea className={`p-4 ${cart.length > 3 ? 'bg-white/50' : ''}`} style={{ maxHeight: 'calc(100vh - 260px)' }}>
+          <ScrollArea className={`flex-1 p-4 ${cart.length > 3 ? 'bg-white/50' : ''}`}>
             {cart.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
                 <ShoppingCart className="w-8 h-8 mx-auto mb-1 text-gray-300" />
@@ -814,8 +814,8 @@ export default function POSPage() {
             )}
           </ScrollArea>
 
-          {/* Payment Button - Sticky at Bottom */}
-          <div className="p-4 border-t border-gray-200 bg-white sticky bottom-0">
+          {/* Payment Button - Always at Bottom */}
+          <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
             <Button
               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-4 font-bold text-lg"
               onClick={() => setShowPaymentDialog(true)}
