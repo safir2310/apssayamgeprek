@@ -28,3 +28,33 @@ Stage Summary:
 - All data is fetched directly from the SQLite database using Prisma ORM
 - The dashboard uses the same orange color scheme and design language as the main POS application
 - Navigation structure is prepared for future management pages (products, categories, orders, members, etc.)
+
+---
+Task ID: 14
+Agent: Z.ai Code
+Task: Reorganize POS layout - swap panels and add product tabs
+
+Work Log:
+- Swapped left and right panels in POS page
+  - Moved cart panel from right side to left side
+  - Moved products panel from left side to right side
+- Implemented tab system for product selection using shadcn/ui Tabs component
+  - Added "Scan Barcode" tab with barcode input field and scanner icon
+  - Added "Cari Produk" (Search Products) tab with search input and category filters
+- Moved member lookup section to top of right panel (products panel)
+- Added state management for active product tab (activeProductTab)
+- Updated barcode input focus logic to only focus when scan tab is active
+- Maintained all existing functionality:
+  - Cart with quantity adjustment and void buttons
+  - Member lookup by phone number
+  - Payment dialog with multiple payment methods
+  - Void dialog for items
+  - Receipt generation
+- Updated imports to include Tabs components from shadcn/ui
+
+Stage Summary:
+- Successfully reorganized POS layout with swapped panels
+- Implemented intuitive tab system for product selection (scan vs search)
+- Cart is now on the left panel for better workflow
+- Products are on the right panel with tabs for different input methods
+- All existing POS functionality preserved and working correctly
