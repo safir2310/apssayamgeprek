@@ -74,9 +74,18 @@ export default function POSPage() {
   const [paymentAmount, setPaymentAmount] = useState<string>('')
   const [showPaymentDialog, setShowPaymentDialog] = useState(false)
 
+  // Member
+  const [memberPhone, setMemberPhone] = useState<string>('')
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null)
+  const [memberLookupLoading, setMemberLookupLoading] = useState(false)
+
+  // Search Popup
+  const [showSearchPopup, setShowSearchPopup] = useState(false)
+
   // PIN for void
   const [pinInput, setPinInput] = useState('')
   const [voidReason, setVoidReason] = useState('')
+  const [voidingItemId, setVoidingItemId] = useState<string | null>(null)
 
   // Loading state
   const [loading, setLoading] = useState(false)
@@ -239,9 +248,87 @@ export default function POSPage() {
           addToCart(product)
           setSearchQuery('')
           setBarcodeInput('')
+          setShowSearchPopup(false)
         }
       }
     }
+    if (e.key === 'Escape') {
+      setShowSearchPopup(false)
+    }
+  }
+
+  const handleMemberLookup = async () => {
+    if (!memberPhone.trim()) {
+      alert('Masukkan nomor telepon member!')
+      return
+    }
+
+    setMemberLookupLoading(true)
+    try {
+      const response = await fetch(`/api/members/lookup?phone=${encodeURIComponent(memberPhone)}`)
+      const data = await response.json()
+
+      if (data.found) {
+        setSelectedMember(data.member)
+      } else {
+        alert('Member tidak ditemukan!')
+        setSelectedMember(null)
+      }
+    } catch (error) {
+      console.error('Error looking up member:', error)
+      alert('Terjadi kesalahan saat mencari member!')
+    } finally {
+      setMemberLookupLoading(false)
+    }
+  }
+
+  const handleMemberKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleMemberLookup()
+    }
+  }
+
+  const handleClearMember = () => {
+    setMemberPhone('')
+    setSelectedMember(null)
+  }
+
+  const handleVoidTransaction = async () => {
+    if (!pinInput) {
+      alert('Masukkan PIN supervisor!')
+      return
+    }
+
+    if (pinInput !== '1234') {
+      alert('PIN salah!')
+      return
+    }
+
+    if (!voidReason) {
+      alert('Masukkan alasan void!')
+      return
+    }
+
+    // Check if voiding a specific item or the whole transaction
+    if (voidingItemId) {
+      // Void specific item
+      setCart(prevCart => prevCart.filter(item => item.product.id !== voidingItemId))
+      alert('Item berhasil di-void!')
+    } else {
+      // Void entire transaction
+      alert('Transaksi berhasil di-void!')
+      setCart([])
+    }
+
+    setShowVoidDialog(false)
+    setPinInput('')
+    setVoidReason('')
+    setVoidingItemId(null)
+  }
+
+  const handleVoidItem = (productId: string) => {
+    setVoidingItemId(productId)
+    setShowVoidDialog(true)
   }
 
   const filteredProducts = selectedCategory === 'all'
@@ -279,30 +366,6 @@ export default function POSPage() {
     setCart([])
     setPaymentAmount('')
     setShowPaymentDialog(false)
-  }
-
-  const handleVoidTransaction = async () => {
-    if (!pinInput) {
-      alert('Masukkan PIN supervisor!')
-      return
-    }
-
-    if (pinInput !== '1234') {
-      alert('PIN salah!')
-      return
-    }
-
-    if (!voidReason) {
-      alert('Masukkan alasan void!')
-      return
-    }
-
-    // Void transaction logic
-    alert('Transaksi berhasil di-void!')
-    setShowVoidDialog(false)
-    setPinInput('')
-    setVoidReason('')
-    setCart([])
   }
 
   const printReceipt = () => {
@@ -496,9 +559,9 @@ export default function POSPage() {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side - Products */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden sticky top-0 h-screen">
           {/* Barcode Scanner & Search */}
-          <div className="bg-white p-4 border-b border-gray-200">
+          <div className="bg-white p-4 border-b border-gray-200 relative z-50">
             <div className="flex gap-4">
               <div className="flex-1 relative">
                 <Scan className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -506,7 +569,11 @@ export default function POSPage() {
                   ref={barcodeInputRef}
                   type="text"
                   value={barcodeInput}
-                  onChange={(e) => handleBarcodeInput(e.target.value)}
+                  onChange={(e) => {
+                    handleBarcodeInput(e.target.value)
+                    setShowSearchPopup(e.target.value.length > 0)
+                  }}
+                  onFocus={() => setShowSearchPopup(barcodeInput.length > 0)}
                   onKeyDown={handleKeyPress}
                   placeholder="Scan barcode atau cari produk..."
                   className="pl-10 border-orange-200 focus:border-orange-500"
@@ -514,11 +581,107 @@ export default function POSPage() {
               </div>
               <Button
                 variant="outline"
-                onClick={() => setBarcodeInput('')}
+                onClick={() => {
+                  setBarcodeInput('')
+                  setSearchQuery('')
+                  setShowSearchPopup(false)
+                }}
                 className="border-orange-300 text-orange-700 hover:bg-orange-50"
               >
                 <X className="w-4 h-4" />
               </Button>
+            </div>
+
+            {/* Search Results Popup */}
+            {showSearchPopup && searchQuery && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.slice(0, 10).map(product => (
+                    <div
+                      key={product.id}
+                      className="flex items-center gap-3 p-3 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-0"
+                      onClick={() => {
+                        addToCart(product)
+                        setBarcodeInput('')
+                        setSearchQuery('')
+                        setShowSearchPopup(false)
+                      }}
+                    >
+                      <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                        {product.image ? (
+                          <img src={product.image} alt={product.name} className="w-full h-full object-cover rounded-lg" />
+                        ) : (
+                          <Package className="w-6 h-6 text-orange-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm text-gray-800 truncate">{product.name}</h4>
+                        <p className="text-orange-600 font-bold text-sm">Rp{product.price.toLocaleString('id-ID')}</p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <Badge className={product.stock > 0 ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}>
+                          Stok: {product.stock}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-gray-500">
+                    <p>Tidak ada produk ditemukan</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Member Lookup */}
+            <div className="mt-4">
+              {selectedMember ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <User className="w-5 h-5 text-green-700" />
+                    <span className="font-semibold text-green-800">Member Aktif</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 ml-auto"
+                      onClick={handleClearMember}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-green-800">{selectedMember.name}</p>
+                      <p className="text-green-700 text-sm">{selectedMember.phone}</p>
+                    </div>
+                    <Badge className="bg-green-600 text-white">
+                      {selectedMember.points} poin
+                    </Badge>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      value={memberPhone}
+                      onChange={(e) => setMemberPhone(e.target.value)}
+                      onKeyDown={handleMemberKeyPress}
+                      placeholder="Cari member berdasarkan no. HP"
+                      className="pl-10 border-orange-200 focus:border-orange-500"
+                      disabled={memberLookupLoading}
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleMemberLookup}
+                    disabled={memberLookupLoading}
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                  >
+                    {memberLookupLoading ? '...' : <Search className="w-4 h-4" />}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Category Filter */}
@@ -590,7 +753,7 @@ export default function POSPage() {
         </div>
 
         {/* Right Side - Cart & Payment Panel */}
-        <div className="w-96 flex flex-col bg-white border-l border-gray-200">
+        <div className="w-96 flex flex-col bg-white border-l border-gray-200 sticky top-0 h-screen">
           {/* Cart Header */}
           <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white">
             <div className="flex items-center justify-between mb-2">
@@ -602,6 +765,17 @@ export default function POSPage() {
             <div className="text-3xl font-bold">
               Rp{getCartTotal().toLocaleString('id-ID')}
             </div>
+          </div>
+
+          {/* Payment Button */}
+          <div className="p-4 border-b border-gray-200">
+            <Button
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-4 font-bold text-lg"
+              onClick={() => setShowPaymentDialog(true)}
+              disabled={cart.length === 0}
+            >
+              Bayar - Rp{getCartTotal().toLocaleString('id-ID')}
+            </Button>
           </div>
 
           {/* Cart Items */}
@@ -648,7 +822,8 @@ export default function POSPage() {
                               size="sm"
                               variant="outline"
                               className="h-7 w-7 p-0 border-red-300 text-red-600 hover:bg-red-50 ml-auto"
-                              onClick={() => removeFromCart(item.product.id)}
+                              onClick={() => handleVoidItem(item.product.id)}
+                              title="Void Item"
                             >
                               <X className="h-3 w-3" />
                             </Button>
@@ -666,65 +841,16 @@ export default function POSPage() {
               </div>
             )}
           </ScrollArea>
-
-          {/* Payment Actions */}
-          <div className="p-4 border-t border-gray-200 space-y-3">
-            <div className="grid grid-cols-3 gap-2">
-              <Button
-                variant="outline"
-                className={`flex flex-col items-center gap-1 py-3 ${
-                  paymentMethod === 'CASH' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-gray-300'
-                }`}
-                onClick={() => { setPaymentMethod('CASH'); setShowPaymentDialog(true) }}
-              >
-                <DollarSign className="w-5 h-5" />
-                <span className="text-xs">Tunai</span>
-              </Button>
-              <Button
-                variant="outline"
-                className={`flex flex-col items-center gap-1 py-3 ${
-                  paymentMethod === 'QRIS' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-gray-300'
-                }`}
-                onClick={() => { setPaymentMethod('QRIS'); setShowPaymentDialog(true) }}
-              >
-                <Smartphone className="w-5 h-5" />
-                <span className="text-xs">QRIS</span>
-              </Button>
-              <Button
-                variant="outline"
-                className={`flex flex-col items-center gap-1 py-3 ${
-                  paymentMethod === 'DEBIT' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-gray-300'
-                }`}
-                onClick={() => { setPaymentMethod('DEBIT'); setShowPaymentDialog(true) }}
-              >
-                <CreditCard className="w-5 h-5" />
-                <span className="text-xs">Debit</span>
-              </Button>
-            </div>
-
-            <Button
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-4 font-bold text-lg"
-              onClick={() => setShowPaymentDialog(true)}
-              disabled={cart.length === 0}
-            >
-              Bayar - Rp{getCartTotal().toLocaleString('id-ID')}
-            </Button>
-
-            <Button
-              variant="outline"
-              className="w-full border-red-300 text-red-600 hover:bg-red-50"
-              onClick={() => setShowVoidDialog(true)}
-              disabled={cart.length === 0}
-            >
-              <X className="w-4 h-4 mr-2" />
-              Void Transaksi
-            </Button>
-          </div>
         </div>
       </div>
 
       {/* Payment Dialog */}
-      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+      <Dialog open={showPaymentDialog} onOpenChange={(open) => {
+        setShowPaymentDialog(open)
+        if (!open) {
+          setPaymentAmount('')
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Pembayaran</DialogTitle>
@@ -738,26 +864,71 @@ export default function POSPage() {
             </div>
             <Separator />
             <div>
-              <Label htmlFor="paymentAmount">Jumlah Uang</Label>
-              <Input
-                id="paymentAmount"
-                type="number"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                placeholder="Masukkan jumlah"
-                className="text-lg"
-              />
-            </div>
-            {paymentMethod === 'CASH' && paymentAmount && (
-              <div>
-                <Label>Kembalian</Label>
-                <div className="text-2xl font-bold text-green-600 mt-1">
-                  Rp{(parseFloat(paymentAmount) - getCartTotal()).toLocaleString('id-ID')}
-                </div>
+              <Label>Metode Pembayaran</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                <Button
+                  type="button"
+                  variant={paymentMethod === 'CASH' ? 'default' : 'outline'}
+                  className={`flex flex-col items-center gap-1 py-3 ${
+                    paymentMethod === 'CASH' ? 'bg-orange-500 text-white' : ''
+                  }`}
+                  onClick={() => setPaymentMethod('CASH')}
+                >
+                  <DollarSign className="w-5 h-5" />
+                  <span className="text-xs">Tunai</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant={paymentMethod === 'QRIS' ? 'default' : 'outline'}
+                  className={`flex flex-col items-center gap-1 py-3 ${
+                    paymentMethod === 'QRIS' ? 'bg-orange-500 text-white' : ''
+                  }`}
+                  onClick={() => setPaymentMethod('QRIS')}
+                >
+                  <Smartphone className="w-5 h-5" />
+                  <span className="text-xs">QRIS</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant={paymentMethod === 'DEBIT' ? 'default' : 'outline'}
+                  className={`flex flex-col items-center gap-1 py-3 ${
+                    paymentMethod === 'DEBIT' ? 'bg-orange-500 text-white' : ''
+                  }`}
+                  onClick={() => setPaymentMethod('DEBIT')}
+                >
+                  <CreditCard className="w-5 h-5" />
+                  <span className="text-xs">Debit</span>
+                </Button>
               </div>
+            </div>
+            {paymentMethod === 'CASH' && (
+              <>
+                <Separator />
+                <div>
+                  <Label htmlFor="paymentAmount">Jumlah Uang</Label>
+                  <Input
+                    id="paymentAmount"
+                    type="number"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    placeholder="Masukkan jumlah"
+                    className="text-lg mt-1"
+                  />
+                </div>
+                {paymentAmount && parseFloat(paymentAmount) >= getCartTotal() && (
+                  <div>
+                    <Label>Kembalian</Label>
+                    <div className="text-2xl font-bold text-green-600 mt-1">
+                      Rp{(parseFloat(paymentAmount) - getCartTotal()).toLocaleString('id-ID')}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
+            <Separator />
             <Button
               onClick={handlePayment}
+              disabled={paymentMethod === 'CASH' && (!paymentAmount || parseFloat(paymentAmount) < getCartTotal())}
               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
             >
               Proses Pembayaran
@@ -770,9 +941,18 @@ export default function POSPage() {
       <Dialog open={showVoidDialog} onOpenChange={setShowVoidDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-red-600">Void Transaksi</DialogTitle>
+            <DialogTitle className="text-red-600">
+              {voidingItemId ? 'Void Item' : 'Void Transaksi'}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {voidingItemId && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <p className="text-sm text-orange-800">
+                  {cart.find(item => item.product.id === voidingItemId)?.product.name}
+                </p>
+              </div>
+            )}
             <div>
               <Label>PIN Supervisor</Label>
               <Input
@@ -793,39 +973,16 @@ export default function POSPage() {
               />
             </div>
             <Button
-              onClick={() => setShowPinDialog(true)}
+              onClick={handleVoidTransaction}
               className="w-full bg-red-600 hover:bg-red-700"
             >
-              Void Transaksi
+              {voidingItemId ? 'Void Item' : 'Void Transaksi'}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* PIN Confirmation Dialog */}
-      <Dialog open={showPinDialog} onOpenChange={setShowPinDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Konfirmasi Void</DialogTitle>
-          </DialogHeader>
-          <p className="text-gray-600 mb-4">Apakah Anda yakin ingin void transaksi ini?</p>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowPinDialog(false)}
-              className="flex-1"
-            >
-              Batal
-            </Button>
-            <Button
-              onClick={handleVoidTransaction}
-              className="flex-1 bg-red-600 hover:bg-red-700"
-            >
-              Ya, Void
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* PIN Confirmation Dialog - Removed since not needed anymore */}
 
       {/* Receipt Dialog */}
       <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
