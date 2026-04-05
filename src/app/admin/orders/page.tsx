@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { FileText, Search, ArrowLeft, Package, Eye, CheckCircle, XCircle, Clock, Truck, LogOut } from 'lucide-react'
+import { FileText, Search, ArrowLeft, Package, Eye, CheckCircle, XCircle, Clock, Truck, LogOut, Printer } from 'lucide-react'
 import Link from 'next/link'
 
 interface OrderItem {
@@ -49,6 +49,7 @@ export default function OrderManagementPage() {
   const [updateDialog, setUpdateDialog] = useState<Order | null>(null)
   const [newStatus, setNewStatus] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [viewOrderDialog, setViewOrderDialog] = useState<Order | null>(null)
 
   useEffect(() => {
     fetchOrders()
@@ -95,6 +96,30 @@ export default function OrderManagementPage() {
       alert('Terjadi kesalahan saat mengupdate status!')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleQuickStatusUpdate = async (orderId: string, status: string) => {
+    if (!confirm(`Ubah status pesanan menjadi ${status}?`)) return
+
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status })
+      })
+
+      if (!response.ok) {
+        alert('Gagal mengupdate status pesanan!')
+        return
+      }
+
+      fetchOrders()
+    } catch (error) {
+      console.error('Error updating order status:', error)
+      alert('Terjadi kesalahan saat mengupdate status!')
     }
   }
 
@@ -306,12 +331,13 @@ export default function OrderManagementPage() {
                         })}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1">
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => setViewDialog(order)}
                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            title="Lihat Detail"
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
@@ -322,10 +348,55 @@ export default function OrderManagementPage() {
                               setUpdateDialog(order)
                               setNewStatus(order.status)
                             }}
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                            title="Update Status"
                           >
                             <CheckCircle className="w-4 h-4" />
                           </Button>
+                          {order.status === 'PENDING' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleQuickStatusUpdate(order.id, 'PROCESSING')}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              title="Proses"
+                            >
+                              <Package className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {order.status === 'PROCESSING' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleQuickStatusUpdate(order.id, 'READY')}
+                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                              title="Siap"
+                            >
+                              <Truck className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {(order.status === 'READY' || order.status === 'PROCESSING') && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleQuickStatusUpdate(order.id, 'COMPLETED')}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              title="Selesai"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {(order.status === 'PENDING' || order.status === 'PROCESSING') && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleQuickStatusUpdate(order.id, 'CANCELLED')}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              title="Batal"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

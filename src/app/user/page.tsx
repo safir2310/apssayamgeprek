@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ShoppingCart, Package, Search, Plus, Minus, X, Clock, CheckCircle, Flame, User, Phone, MapPin } from 'lucide-react'
+import { ShoppingCart, Package, Search, Plus, Minus, X, Clock, CheckCircle, Flame, User, Phone, MapPin, Printer } from 'lucide-react'
 
 interface Product {
   id: string
@@ -48,6 +49,7 @@ export default function UserDashboard() {
   const [showOrderDialog, setShowOrderDialog] = useState(false)
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<Order | null>(null)
 
   // Order Form
   const [orderForm, setOrderForm] = useState({
@@ -230,6 +232,14 @@ export default function UserDashboard() {
     }
   }
 
+  const handlePrintReceipt = (order: Order) => {
+    setSelectedOrderForPrint(order)
+    setTimeout(() => {
+      window.print()
+      setSelectedOrderForPrint(null)
+    }, 100)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center">
@@ -243,6 +253,97 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50 to-white">
+      {/* Print Styles */}
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #print-receipt, #print-receipt * {
+            visibility: visible;
+          }
+          #print-receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 20px;
+            background: white;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      {/* Hidden Print Receipt */}
+      {selectedOrderForPrint && (
+        <div id="print-receipt" className="hidden print:block">
+          <div className="max-w-sm mx-auto bg-white p-6 text-center">
+            <div className="mb-4">
+              <div className="text-2xl font-bold text-orange-600">AYAM GEPREK</div>
+              <div className="text-lg font-bold">SAMBAL IJO</div>
+              <div className="text-xs text-gray-500 mt-1">Receipt</div>
+            </div>
+            <div className="border-t-2 border-b-2 border-dashed border-gray-300 py-3 my-3">
+              <div className="text-left text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">No. Pesanan:</span>
+                  <span className="font-semibold">{selectedOrderForPrint.orderNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Tanggal:</span>
+                  <span className="font-semibold">
+                    {new Date(selectedOrderForPrint.createdAt).toLocaleString('id-ID')}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Metode Bayar:</span>
+                  <span className="font-semibold">{selectedOrderForPrint.paymentMethod}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Status:</span>
+                  <span className="font-semibold">{selectedOrderForPrint.status}</span>
+                </div>
+              </div>
+            </div>
+            <div className="border-b border-dashed border-gray-300 pb-3 mb-3">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="text-gray-600">
+                    <th className="pb-2">Item</th>
+                    <th className="pb-2 text-center">Qty</th>
+                    <th className="pb-2 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedOrderForPrint.items.map((item: any, index: number) => (
+                    <tr key={index}>
+                      <td className="py-1">{item.productName}</td>
+                      <td className="py-1 text-center">x{item.quantity}</td>
+                      <td className="py-1 text-right">Rp{item.subtotal.toLocaleString('id-ID')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="border-t-2 border-dashed border-gray-300 pt-3">
+              <div className="flex justify-between items-center text-xl font-bold">
+                <span>TOTAL</span>
+                <span className="text-orange-600">
+                  Rp{selectedOrderForPrint.totalAmount.toLocaleString('id-ID')}
+                </span>
+              </div>
+            </div>
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="text-xs text-gray-500">
+                <p>Terima kasih atas pesanan Anda!</p>
+                <p className="mt-1">Simpan struk ini sebagai bukti pembayaran.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <header className="bg-white border-b border-orange-200 px-4 py-3 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -417,6 +518,17 @@ export default function UserDashboard() {
                               <span className="font-bold text-orange-600">
                                 Rp{order.totalAmount.toLocaleString('id-ID')}
                               </span>
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <Button
+                                onClick={() => handlePrintReceipt(order)}
+                                variant="outline"
+                                size="sm"
+                                className="w-full text-orange-600 border-orange-300 hover:bg-orange-50 hover:text-orange-700"
+                              >
+                                <Printer className="w-4 h-4 mr-2" />
+                                Cetak Struk
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
