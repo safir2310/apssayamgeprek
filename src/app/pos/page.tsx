@@ -760,7 +760,7 @@ export default function POSPage() {
           </ScrollArea>
         </div>
 
-        {/* Right Side - Promo & Terbaru Panel */}
+        {/* Right Side - Cart Panel */}
         <div className="w-96 flex flex-col bg-white border-l border-gray-200 sticky top-0 h-screen overflow-hidden">
           {/* Cart Header - Floating Cart */}
           <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white">
@@ -775,19 +775,8 @@ export default function POSPage() {
             </div>
           </div>
 
-          {/* Payment Button */}
-          <div className="p-4 border-b border-gray-200">
-            <Button
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-4 font-bold text-lg"
-              onClick={() => setShowPaymentDialog(true)}
-              disabled={cart.length === 0}
-            >
-              Bayar - Rp{getCartTotal().toLocaleString('id-ID')}
-            </Button>
-          </div>
-
           {/* Cart Items - Scrollable */}
-          <ScrollArea className="flex-1 p-4 max-h-48">
+          <ScrollArea className={`flex-1 p-4 ${cart.length > 3 ? 'bg-white/50' : ''}`}>
             {cart.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
                 <ShoppingCart className="w-8 h-8 mx-auto mb-1 text-gray-300" />
@@ -825,49 +814,15 @@ export default function POSPage() {
             )}
           </ScrollArea>
 
-          {/* Terbaru Section */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="p-4 border-t border-gray-200">
-              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <Package className="w-5 h-5 text-orange-600" />
-                Terbaru
-              </h2>
-            </div>
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-3">
-                {products.slice(0, 5).map(product => (
-                  <Card
-                    key={product.id}
-                    className="cursor-pointer hover:shadow-lg transition-all border-orange-200"
-                    onClick={() => addToCart(product)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="flex gap-3">
-                        <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                          {product.image ? (
-                            <img src={product.image} alt={product.name} className="w-full h-full object-cover rounded-lg" />
-                          ) : (
-                            <Package className="w-8 h-8 text-orange-400" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm text-gray-800 mb-1 line-clamp-2">{product.name}</h4>
-                          <p className="text-orange-600 font-bold">Rp{product.price.toLocaleString('id-ID')}</p>
-                          <Badge
-                            variant={product.stock > 0 ? 'default' : 'secondary'}
-                            className={`mt-2 text-xs ${
-                              product.stock > 0 ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-                            }`}
-                          >
-                            Stok: {product.stock}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
+          {/* Payment Button - Sticky at Bottom */}
+          <div className="p-4 border-t border-gray-200 bg-white sticky bottom-0">
+            <Button
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-4 font-bold text-lg"
+              onClick={() => setShowPaymentDialog(true)}
+              disabled={cart.length === 0}
+            >
+              Bayar - Rp{getCartTotal().toLocaleString('id-ID')}
+            </Button>
           </div>
         </div>
       </div>
