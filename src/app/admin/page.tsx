@@ -239,7 +239,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50 to-white flex">
       {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 h-full bg-white border-r border-orange-200 z-50 transition-all duration-300 flex flex-col ${sidebarOpen ? 'w-64' : 'w-20'}`}>
+      <aside className={`fixed left-0 top-0 h-screen bg-white border-r border-orange-200 z-50 transition-all duration-300 flex flex-col ${sidebarOpen ? 'w-64' : 'w-20'}`}>
         <div className="p-4 border-b border-orange-200 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -254,7 +254,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 overflow-y-auto">
           <nav className="p-4 space-y-1">
             {navigationItems.map((item) => {
               const Icon = item.icon
@@ -292,21 +292,23 @@ export default function AdminDashboard() {
           </nav>
         </ScrollArea>
 
-        <div className="p-4 border-t border-orange-200 flex-shrink-0 space-y-2">
-          <a
-            href="/pos"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-orange-50 transition-colors"
-          >
-            <Home className="w-5 h-5 flex-shrink-0" />
-            {sidebarOpen && <span className="text-sm font-medium">Kembali ke POS</span>}
-          </a>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-          >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
-          </button>
+        <div className="p-4 border-t border-orange-200 flex-shrink-0 bg-white">
+          <div className="space-y-2">
+            <a
+              href="/pos"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-orange-50 transition-colors"
+            >
+              <Home className="w-5 h-5 flex-shrink-0" />
+              {sidebarOpen && <span className="text-sm font-medium">Kembali ke POS</span>}
+            </a>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <LogOut className="w-5 h-5 flex-shrink-0" />
+              {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
+            </button>
+          </div>
         </div>
       </aside>
 
