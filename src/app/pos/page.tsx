@@ -558,94 +558,7 @@ export default function POSPage() {
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Side - Promo & Terbaru Panel */}
-        <div className="w-96 flex flex-col bg-white border-r border-gray-200 sticky top-0 h-screen overflow-hidden">
-          {/* Promo Section */}
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-              <Flame className="w-5 h-5 text-orange-600" />
-              Promo Hari Ini
-            </h2>
-            <div className="space-y-3">
-              {/* Promo Card 1 */}
-              <Card className="bg-gradient-to-r from-red-500 to-orange-500 text-white border-0">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs opacity-80">Paket Hemat</p>
-                      <h3 className="font-bold text-lg">Paket Komplit</h3>
-                      <p className="text-sm opacity-90 mt-1">Ayam Geprek + Es Teh</p>
-                      <p className="text-xl font-bold mt-2">Rp 25.000</p>
-                    </div>
-                    <Badge className="bg-white text-red-600">DISKON 20%</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* Promo Card 2 */}
-              <Card className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white border-0">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs opacity-80">Buy 2 Get 1</p>
-                      <h3 className="font-bold text-lg">Es Teh Manis</h3>
-                      <p className="text-sm opacity-90 mt-1">Beli 2 Gratis 1</p>
-                      <p className="text-xl font-bold mt-2">Rp 5.000/cup</p>
-                    </div>
-                    <Badge className="bg-white text-orange-600">BUY 2 GET 1</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Terbaru Section */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <Package className="w-5 h-5 text-orange-600" />
-                Terbaru
-              </h2>
-            </div>
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-3">
-                {products.slice(0, 5).map(product => (
-                  <Card
-                    key={product.id}
-                    className="cursor-pointer hover:shadow-lg transition-all border-orange-200"
-                    onClick={() => addToCart(product)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="flex gap-3">
-                        <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                          {product.image ? (
-                            <img src={product.image} alt={product.name} className="w-full h-full object-cover rounded-lg" />
-                          ) : (
-                            <Package className="w-8 h-8 text-orange-400" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm text-gray-800 mb-1 line-clamp-2">{product.name}</h4>
-                          <p className="text-orange-600 font-bold">Rp{product.price.toLocaleString('id-ID')}</p>
-                          <Badge
-                            variant={product.stock > 0 ? 'default' : 'secondary'}
-                            className={`mt-2 text-xs ${
-                              product.stock > 0 ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-                            }`}
-                          >
-                            Stok: {product.stock}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-        </div>
-
-        {/* Right Side - Products & Cart Panel */}
+        {/* Left Side - Products Panel */}
         <div className="flex-1 flex flex-col overflow-hidden sticky top-0 h-screen">
           {/* Member Lookup */}
           <div className="bg-white p-4 border-b border-gray-200">
@@ -825,134 +738,189 @@ export default function POSPage() {
             </div>
           </div>
 
-          {/* Content Split: Products and Cart */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* Product Grid */}
-            <div className="flex-1 overflow-hidden">
-              <ScrollArea className="h-full p-4">
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {filteredProducts.map(product => (
-                    <Card
-                      key={product.id}
-                      className="cursor-pointer hover:shadow-lg transition-shadow border-orange-200 overflow-hidden"
-                      onClick={() => addToCart(product)}
-                    >
-                      <div className="aspect-square bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-                        {product.image ? (
-                          <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <Package className="w-12 h-12 text-orange-400" />
-                        )}
-                      </div>
-                      <CardContent className="p-3">
-                        <h3 className="font-semibold text-sm text-gray-800 mb-1 line-clamp-1">{product.name}</h3>
-                        <p className="text-orange-600 font-bold text-sm">
-                          Rp{product.price.toLocaleString('id-ID')}
-                        </p>
-                        <Badge
-                          variant={product.stock > 0 ? 'default' : 'secondary'}
-                          className={`mt-2 text-xs ${
-                            product.stock > 0 ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-                          }`}
-                        >
-                          Stok: {product.stock}
-                        </Badge>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-
-            {/* Cart Panel - Right Side */}
-            <div className="w-96 flex flex-col bg-gray-50 border-l border-gray-200">
-              {/* Cart Header */}
-              <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="font-bold text-lg">Keranjang</h2>
-                  <Badge variant="secondary" className="bg-white/20 text-white">
-                    {getCartCount()} item
-                  </Badge>
-                </div>
-                <div className="text-3xl font-bold">
-                  Rp{getCartTotal().toLocaleString('id-ID')}
-                </div>
-              </div>
-
-              {/* Payment Button */}
-              <div className="p-4 border-b border-gray-200">
-                <Button
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-4 font-bold text-lg"
-                  onClick={() => setShowPaymentDialog(true)}
-                  disabled={cart.length === 0}
+          {/* Product Grid */}
+          <ScrollArea className="flex-1 p-4">
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {filteredProducts.map(product => (
+                <Card
+                  key={product.id}
+                  className="cursor-pointer hover:shadow-lg transition-shadow border-orange-200 overflow-hidden"
+                  onClick={() => addToCart(product)}
                 >
-                  Bayar - Rp{getCartTotal().toLocaleString('id-ID')}
-                </Button>
-              </div>
-
-              {/* Cart Items */}
-              <ScrollArea className="flex-1 p-4">
-                {cart.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <ShoppingCart className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                    <p>Keranjang kosong</p>
+                  <div className="aspect-square bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                    {product.image ? (
+                      <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Package className="w-12 h-12 text-orange-400" />
+                    )}
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {cart.map(item => (
-                      <Card key={item.product.id} className="border-orange-200">
-                        <CardContent className="p-3">
-                          <div className="flex items-start gap-3">
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-sm text-gray-800 mb-1 line-clamp-1">
-                                {item.product.name}
-                              </h4>
-                              <p className="text-orange-600 font-bold text-sm">
-                                Rp{item.product.price.toLocaleString('id-ID')}
-                              </p>
-                              <div className="flex items-center gap-2 mt-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 w-7 p-0 border-orange-300 hover:bg-orange-50"
-                                  onClick={() => updateQuantity(item.product.id, -1)}
-                                >
-                                  <Minus className="h-3 w-3" />
-                                </Button>
-                                <span className="w-8 text-center text-sm font-semibold">{item.quantity}</span>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 w-7 p-0 border-orange-300 hover:bg-orange-50"
-                                  onClick={() => updateQuantity(item.product.id, 1)}
-                                  disabled={item.quantity >= item.product.stock}
-                                >
-                                  <Plus className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 w-7 p-0 border-red-300 text-red-600 hover:bg-red-50 ml-auto"
-                                  onClick={() => handleVoidItem(item.product.id)}
-                                  title="Void Item"
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-bold text-orange-600">
-                                Rp{(item.product.price * item.quantity).toLocaleString('id-ID')}
-                              </p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
+                  <CardContent className="p-3">
+                    <h3 className="font-semibold text-sm text-gray-800 mb-1 line-clamp-1">{product.name}</h3>
+                    <p className="text-orange-600 font-bold text-sm">
+                      Rp{product.price.toLocaleString('id-ID')}
+                    </p>
+                    <Badge
+                      variant={product.stock > 0 ? 'default' : 'secondary'}
+                      className={`mt-2 text-xs ${
+                        product.stock > 0 ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                      }`}
+                    >
+                      Stok: {product.stock}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
+          </ScrollArea>
+        </div>
+
+        {/* Right Side - Promo & Terbaru Panel */}
+        <div className="w-96 flex flex-col bg-white border-l border-gray-200 sticky top-0 h-screen overflow-hidden">
+          {/* Cart Header - Floating Cart */}
+          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-bold text-lg">Keranjang</h2>
+              <Badge variant="secondary" className="bg-white/20 text-white">
+                {getCartCount()} item
+              </Badge>
+            </div>
+            <div className="text-3xl font-bold">
+              Rp{getCartTotal().toLocaleString('id-ID')}
+            </div>
+          </div>
+
+          {/* Payment Button */}
+          <div className="p-4 border-b border-gray-200">
+            <Button
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-4 font-bold text-lg"
+              onClick={() => setShowPaymentDialog(true)}
+              disabled={cart.length === 0}
+            >
+              Bayar - Rp{getCartTotal().toLocaleString('id-ID')}
+            </Button>
+          </div>
+
+          {/* Cart Items - Scrollable */}
+          <ScrollArea className="flex-1 p-4 max-h-48">
+            {cart.length === 0 ? (
+              <div className="text-center py-4 text-gray-500">
+                <ShoppingCart className="w-8 h-8 mx-auto mb-1 text-gray-300" />
+                <p className="text-sm">Keranjang kosong</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {cart.map(item => (
+                  <Card key={item.product.id} className="border-orange-200">
+                    <CardContent className="p-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-xs text-gray-800 truncate">
+                            {item.product.name}
+                          </h4>
+                          <p className="text-orange-600 font-bold text-xs">
+                            {item.quantity} x Rp{item.product.price.toLocaleString('id-ID')}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 ml-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 text-red-600 hover:bg-red-50"
+                            onClick={() => handleVoidItem(item.product.id)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+
+          {/* Promo Section */}
+          <div className="p-4 border-t border-gray-200">
+            <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+              <Flame className="w-5 h-5 text-orange-600" />
+              Promo Hari Ini
+            </h2>
+            <div className="space-y-3">
+              {/* Promo Card 1 */}
+              <Card className="bg-gradient-to-r from-red-500 to-orange-500 text-white border-0">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs opacity-80">Paket Hemat</p>
+                      <h3 className="font-bold text-lg">Paket Komplit</h3>
+                      <p className="text-sm opacity-90 mt-1">Ayam Geprek + Es Teh</p>
+                      <p className="text-xl font-bold mt-2">Rp 25.000</p>
+                    </div>
+                    <Badge className="bg-white text-red-600">DISKON 20%</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Promo Card 2 */}
+              <Card className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white border-0">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs opacity-80">Buy 2 Get 1</p>
+                      <h3 className="font-bold text-lg">Es Teh Manis</h3>
+                      <p className="text-sm opacity-90 mt-1">Beli 2 Gratis 1</p>
+                      <p className="text-xl font-bold mt-2">Rp 5.000/cup</p>
+                    </div>
+                    <Badge className="bg-white text-orange-600">BUY 2 GET 1</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Terbaru Section */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="p-4 border-t border-gray-200">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Package className="w-5 h-5 text-orange-600" />
+                Terbaru
+              </h2>
+            </div>
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-3">
+                {products.slice(0, 5).map(product => (
+                  <Card
+                    key={product.id}
+                    className="cursor-pointer hover:shadow-lg transition-all border-orange-200"
+                    onClick={() => addToCart(product)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex gap-3">
+                        <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                          {product.image ? (
+                            <img src={product.image} alt={product.name} className="w-full h-full object-cover rounded-lg" />
+                          ) : (
+                            <Package className="w-8 h-8 text-orange-400" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm text-gray-800 mb-1 line-clamp-2">{product.name}</h4>
+                          <p className="text-orange-600 font-bold">Rp{product.price.toLocaleString('id-ID')}</p>
+                          <Badge
+                            variant={product.stock > 0 ? 'default' : 'secondary'}
+                            className={`mt-2 text-xs ${
+                              product.stock > 0 ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                            }`}
+                          >
+                            Stok: {product.stock}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         </div>
       </div>
