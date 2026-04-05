@@ -121,25 +121,31 @@ export default function OrderManagementPage() {
   }
 
   const handleQuickStatusUpdate = async (orderId: string, status: string) => {
-    console.log('=== Quick Status Update ===')
+    console.log('=== Quick Status Update Started ===')
     console.log('Order ID:', orderId)
     console.log('Order ID type:', typeof orderId)
+    console.log('Order ID length:', orderId?.length)
     console.log('Status:', status)
     
-    if (!orderId) {
+    if (!orderId || typeof orderId !== 'string' || orderId.length === 0) {
+      console.error('❌ Invalid Order ID')
       alert('Order ID tidak valid!')
       return
     }
     
-    if (!confirm(`Ubah status pesanan menjadi ${status}?`)) return
+    if (!confirm(`Ubah status pesanan menjadi ${status}?`)) {
+      console.log('User cancelled the operation')
+      return
+    }
 
     try {
       const url = `/api/admin/orders/${orderId}`
-      console.log('Request URL:', url)
+      console.log('✓ Request URL:', url)
       
       const requestBody = JSON.stringify({ status })
-      console.log('Request body:', requestBody)
+      console.log('✓ Request body:', requestBody)
       
+      console.log('📡 Sending request...')
       const response = await fetch(url, {
         method: 'PUT',
         headers: {
@@ -148,32 +154,73 @@ export default function OrderManagementPage() {
         body: requestBody
       })
 
-      console.log('Response status:', response.status, response.statusText)
+      console.log('✓ Response received')
+      console.log('Response status:', response.status)
+      console.log('Response statusText:', response.statusText)
+      console.log('Response type:', response.type)
       console.log('Response headers:', Object.fromEntries(response.headers.entries()))
       
-      // Try to get response text first
+      // Get response text
+      console.log('📖 Reading response text...')
       const responseText = await response.text()
-      console.log('Response text:', responseText)
+      console.log('✓ Response text (length):', responseText.length)
+      console.log('✓ Response text (first 200 chars):', responseText.substring(0, 200))
       
       if (!response.ok) {
+        console.error('❌ Response NOT OK')
         let errorData
         try {
-          errorData = JSON.parse(responseText)
+          if (responseText.trim().length > 0) {
+            errorData = JSON.parse(responseText)
+            console.error('✓ Parsed error data:', errorData)
+          } else {
+            errorData = { error: 'Empty response body' }
+            console.error('⚠️ Empty response body')
+          }
         } catch (parseError) {
-          errorData = { error: `HTTP ${response.status}: ${response.statusText}`, rawResponse: responseText }
+          console.error('❌ JSON parse error:', parseError)
+          errorData = { 
+            error: `HTTP ${response.status}: ${response.statusText}`, 
+            rawResponse: responseText,
+            parseError: String(parseError)
+          }
         }
-        console.error('Update failed:', errorData)
-        alert(`Gagal mengupdate status pesanan! ${errorData.details || errorData.error || 'Unknown error'}`)
+        console.error('=== ERROR SUMMARY ===')
+        console.error('Error data:', errorData)
+        alert(`Gagal mengupdate status pesanan! \n\nError: ${errorData.details || errorData.error || 'Unknown error'}\n\nStatus: ${response.status}\nResponse: ${responseText.substring(0, 100)}`)
         return
       }
 
-      const result = JSON.parse(responseText)
+      // Parse successful response
+      console.log('✓ Response OK, parsing result...')
+      let result
+      try {
+        if (responseText.trim().length > 0) {
+          result = JSON.parse(responseText)
+          console.log('✓ Parsed result:', result)
+        } else {
+          console.error('⚠️ Empty response body on success!')
+          alert('Update berhasil tapi response kosong!')
+          fetchOrders()
+          return
+        }
+      } catch (parseError) {
+        console.error('❌ Failed to parse success response:', parseError)
+        alert('Response sukses tapi gagal di-parse!')
+        return
+      }
+
+      console.log('=== SUCCESS ===')
       console.log('Update result:', result)
       alert('Status pesanan berhasil diupdate!')
       fetchOrders()
     } catch (error) {
-      console.error('Error updating order status:', error)
-      alert('Terjadi kesalahan saat mengupdate status!')
+      console.error('=== CATCH BLOCK ERROR ===')
+      console.error('Error:', error)
+      console.error('Error name:', error?.name)
+      console.error('Error message:', error?.message)
+      console.error('Error stack:', error?.stack)
+      alert(`Terjadi kesalahan saat mengupdate status!\n\nError: ${error?.message || String(error)}`)
     }
   }
 
