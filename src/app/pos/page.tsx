@@ -761,50 +761,101 @@ export default function POSPage() {
         </div>
 
         {/* Right Side - Cart Panel */}
-        <div className="w-96 flex flex-col bg-white border-l border-gray-200 sticky top-0 h-screen">
-          {/* Cart Header - Floating Cart */}
-          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white flex-shrink-0">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="font-bold text-lg">Keranjang</h2>
-              <Badge variant="secondary" className="bg-white/20 text-white">
-                {getCartCount()} item
-              </Badge>
+        <div className="w-96 flex flex-col bg-white border-l border-gray-200 sticky top-0 h-screen shadow-xl">
+          {/* Cart Header */}
+          <div className="p-5 bg-gradient-to-br from-orange-600 via-orange-500 to-red-500 text-white flex-shrink-0">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <ShoppingCart className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <h2 className="font-bold text-xl">Keranjang</h2>
+                <p className="text-white/80 text-sm">{getCartCount()} item terpilih</p>
+              </div>
             </div>
-            <div className="text-3xl font-bold">
-              Rp{getCartTotal().toLocaleString('id-ID')}
+            <div className="flex items-center justify-between bg-white/10 rounded-lg px-4 py-3 backdrop-blur-sm">
+              <span className="text-white/90 text-sm">Total Belanja</span>
+              <span className="text-2xl font-bold">Rp{getCartTotal().toLocaleString('id-ID')}</span>
             </div>
           </div>
 
-          {/* Cart Items - Scrollable with limited height */}
-          <ScrollArea className={`flex-1 p-4 ${cart.length > 3 ? 'bg-white/50' : ''}`} style={{ maxHeight: 'calc(100vh - 320px)' }}>
+          {/* Cart Items - Scrollable */}
+          <ScrollArea className={`flex-1 ${cart.length > 3 ? 'bg-gray-50/80' : ''}`} style={{ maxHeight: 'calc(100vh - 340px)' }}>
             {cart.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
-                <ShoppingCart className="w-8 h-8 mx-auto mb-1 text-gray-300" />
-                <p className="text-sm">Keranjang kosong</p>
+              <div className="flex flex-col items-center justify-center py-16 px-6">
+                <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+                  <ShoppingCart className="w-10 h-10 text-orange-400" />
+                </div>
+                <h3 className="font-semibold text-gray-700 mb-2">Keranjang Kosong</h3>
+                <p className="text-gray-500 text-sm text-center">Pilih produk untuk memulai transaksi</p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="p-4 space-y-3">
                 {cart.map(item => (
-                  <Card key={item.product.id} className="border-orange-200">
-                    <CardContent className="p-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-xs text-gray-800 truncate">
-                            {item.product.name}
-                          </h4>
-                          <p className="text-orange-600 font-bold text-xs">
-                            {item.quantity} x Rp{item.product.price.toLocaleString('id-ID')}
-                          </p>
+                  <Card key={item.product.id} className="border border-gray-200 hover:shadow-md transition-shadow overflow-hidden">
+                    <CardContent className="p-3">
+                      <div className="flex gap-3">
+                        {/* Product Image */}
+                        <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                          {item.product.image ? (
+                            <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover rounded-lg" />
+                          ) : (
+                            <Package className="w-8 h-8 text-orange-400" />
+                          )}
                         </div>
-                        <div className="flex items-center gap-1 ml-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0 text-red-600 hover:bg-red-50"
-                            onClick={() => handleVoidItem(item.product.id)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
+
+                        {/* Product Info & Controls */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                          <div>
+                            <h4 className="font-semibold text-sm text-gray-800 line-clamp-1 mb-1">
+                              {item.product.name}
+                            </h4>
+                            <p className="text-orange-600 font-bold text-sm">
+                              Rp{item.product.price.toLocaleString('id-ID')}
+                            </p>
+                          </div>
+
+                          {/* Quantity Controls */}
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 hover:bg-orange-100 text-orange-600"
+                                onClick={() => updateQuantity(item.product.id, -1)}
+                                disabled={item.quantity <= 1}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="font-semibold text-sm w-6 text-center text-gray-700">
+                                {item.quantity}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 hover:bg-orange-100 text-orange-600"
+                                onClick={() => updateQuantity(item.product.id, 1)}
+                                disabled={item.quantity >= item.product.stock}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+
+                            <div className="text-right">
+                              <p className="font-bold text-sm text-gray-800">
+                                Rp{(item.quantity * item.product.price).toLocaleString('id-ID')}
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-red-500 hover:text-red-600 hover:bg-red-50 text-xs"
+                                onClick={() => handleVoidItem(item.product.id)}
+                              >
+                                <X className="h-3 w-3 mr-1" />
+                                Hapus
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -815,13 +866,17 @@ export default function POSPage() {
           </ScrollArea>
 
           {/* Payment Button - Always at Bottom */}
-          <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
+          <div className="p-5 border-t border-gray-200 bg-gradient-to-b from-white to-gray-50 flex-shrink-0">
             <Button
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-4 font-bold text-lg"
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-5 font-bold text-lg shadow-lg hover:shadow-xl transition-all"
               onClick={() => setShowPaymentDialog(true)}
               disabled={cart.length === 0}
             >
-              Bayar - Rp{getCartTotal().toLocaleString('id-ID')}
+              <ShoppingCart className="w-5 h-5 mr-2" />
+              Bayar Sekarang
+              <span className="ml-2 text-white/80 text-base font-normal">
+                - Rp{getCartTotal().toLocaleString('id-ID')}
+              </span>
             </Button>
           </div>
         </div>
