@@ -724,8 +724,8 @@ export default function POSPage() {
             </div>
           </div>
 
-          {/* Product Grid */}
-          <ScrollArea className="flex-1 p-4">
+          {/* Product Grid - Scrollable */}
+          <ScrollArea className="flex-1 p-4" style={{ height: 'calc(100vh - 280px)' }}>
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {filteredProducts.map(product => (
                 <Card
@@ -775,8 +775,8 @@ export default function POSPage() {
             </div>
           </div>
 
-          {/* Cart Items - Scrollable */}
-          <ScrollArea className={`flex-1 p-4 ${cart.length > 3 ? 'bg-white/50' : ''}`}>
+          {/* Cart Items - Scrollable with limited height */}
+          <ScrollArea className={`p-4 ${cart.length > 3 ? 'bg-white/50' : ''}`} style={{ maxHeight: 'calc(100vh - 380px)' }}>
             {cart.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
                 <ShoppingCart className="w-8 h-8 mx-auto mb-1 text-gray-300" />
