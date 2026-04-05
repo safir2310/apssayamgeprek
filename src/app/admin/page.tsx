@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import Link from 'next/link'
 import { Flame, TrendingUp, ShoppingBag, Package, Users, BarChart3, LayoutDashboard, Settings, Menu, X, DollarSign, Calendar, Clock, ArrowUpRight, ArrowDownRight, Store, Printer, FileText, LogOut, Home } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
@@ -185,16 +186,16 @@ export default function AdminDashboard() {
   )
 
   const navigationItems = [
-    { id: 'overview', label: 'Dashboard Overview', icon: LayoutDashboard },
-    { id: 'products', label: 'Product Management', icon: Package },
-    { id: 'categories', label: 'Category Management', icon: ShoppingBag },
-    { id: 'orders', label: 'Order Management', icon: FileText },
-    { id: 'members', label: 'Member Management', icon: Users },
-    { id: 'transactions', label: 'Transaction History', icon: BarChart3 },
-    { id: 'void-logs', label: 'Void Logs', icon: LogOut },
-    { id: 'cashiers', label: 'Cashier Management', icon: Users },
-    { id: 'shifts', label: 'Shift Reports', icon: Calendar },
-    { id: 'settings', label: 'Settings', icon: Settings }
+    { id: 'overview', label: 'Dashboard Overview', icon: LayoutDashboard, href: '/admin' },
+    { id: 'products', label: 'Product Management', icon: Package, href: '/admin/products' },
+    { id: 'categories', label: 'Category Management', icon: ShoppingBag, href: '/admin/categories' },
+    { id: 'orders', label: 'Order Management', icon: FileText, href: '/admin/orders' },
+    { id: 'members', label: 'Member Management', icon: Users, href: '/admin/members' },
+    { id: 'transactions', label: 'Transaction History', icon: BarChart3, href: '/admin/transactions' },
+    { id: 'void-logs', label: 'Void Logs', icon: LogOut, href: '/admin/void-logs' },
+    { id: 'cashiers', label: 'Cashier Management', icon: Users, href: '/admin/cashiers' },
+    { id: 'shifts', label: 'Shift Reports', icon: Calendar, href: '/admin/shifts' },
+    { id: 'settings', label: 'Settings', icon: Settings, href: '/admin/settings' }
   ]
 
   if (loading) {
@@ -230,6 +231,22 @@ export default function AdminDashboard() {
           <nav className="space-y-1">
             {navigationItems.map((item) => {
               const Icon = item.icon
+              if (item.href && item.href !== '/admin') {
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                      activeTab === item.id
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                        : 'text-gray-700 hover:bg-orange-50'
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 flex-shrink-0 ${sidebarOpen ? '' : 'mx-auto'}`} />
+                    {sidebarOpen && <span className="text-sm font-medium">{item.label}</span>}
+                  </Link>
+                )
+              }
               return (
                 <button
                   key={item.id}
