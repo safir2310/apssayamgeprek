@@ -776,7 +776,7 @@ export default function POSPage() {
           </div>
 
           {/* Cart Items - Scrollable with limited height */}
-          <ScrollArea className={`p-4 ${cart.length > 3 ? 'bg-white/50' : ''}`} style={{ maxHeight: 'calc(100vh - 200px)' }}>
+          <ScrollArea className={`p-4 ${cart.length > 3 ? 'bg-white/50' : ''}`} style={{ maxHeight: 'calc(100vh - 350px)' }}>
             {cart.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
                 <ShoppingCart className="w-8 h-8 mx-auto mb-1 text-gray-300" />
