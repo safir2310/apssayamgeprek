@@ -70,7 +70,6 @@ export default function POSPage() {
 
   // Cart
   const [cart, setCart] = useState<CartItem[]>([])
-  const [barcodeInput, setBarcodeInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
 
   // Products
@@ -96,8 +95,14 @@ export default function POSPage() {
   const [voidReason, setVoidReason] = useState('')
   const [voidingItemId, setVoidingItemId] = useState<string | null>(null)
 
+  // PIN for close shift
+  const [closeShiftPin, setCloseShiftPin] = useState('')
+
   // Loading state
   const [loading, setLoading] = useState(false)
+
+  // Store settings
+  const [storeSettings, setStoreSettings] = useState<any>(null)
 
   const barcodeInputRef = useRef<HTMLInputElement>(null)
 
@@ -115,9 +120,22 @@ export default function POSPage() {
     }
   }
 
-  // Fetch products on load
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch('/api/settings')
+      if (response.ok) {
+        const data = await response.json()
+        setStoreSettings(data)
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error)
+    }
+  }
+
+  // Fetch products and settings on load
   useEffect(() => {
     fetchProducts()
+    fetchSettings()
   }, [])
 
   // Focus barcode input
@@ -163,8 +181,19 @@ export default function POSPage() {
   }
 
   const handleCloseShift = () => {
+    // Validate PIN
+    if (!closeShiftPin) {
+      alert('Masukkan PIN otorisasi!')
+      return
+    }
+
+    if (closeShiftPin !== '1234') {
+      alert('PIN salah! Anda tidak diizinkan menutup shift.')
+      return
+    }
+
     const totalSales = getCartTotal()
-    const closingBalance = shiftForm.openingBalance + totalSales
+    const closingBalance = (currentShift?.openingBalance || 0) + totalSales
 
     setCurrentShift({
       ...currentShift!,
@@ -179,6 +208,7 @@ export default function POSPage() {
     setCashier(null)
     setCurrentShift(null)
     setShowCloseShift(false)
+    setCloseShiftPin('')
     setCart([])
   }
 
@@ -230,22 +260,6 @@ export default function POSPage() {
     return cart.reduce((count, item) => count + item.quantity, 0)
   }
 
-  const handleBarcodeInput = (value: string) => {
-    setBarcodeInput(value)
-
-    // Check if it's a barcode (numeric)
-    if (/^\d+$/.test(value)) {
-      const product = products.find(p => p.barcode === value)
-      if (product) {
-        addToCart(product)
-        setBarcodeInput('')
-      }
-    } else {
-      // Search by name
-      setSearchQuery(value)
-    }
-  }
-
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       if (searchQuery) {
@@ -256,7 +270,6 @@ export default function POSPage() {
         if (product) {
           addToCart(product)
           setSearchQuery('')
-          setBarcodeInput('')
           setShowSearchPopup(false)
         }
       }
@@ -632,49 +645,49 @@ export default function POSPage() {
                 )}
               </div>
 
-              {/* Barcode Scanner */}
-              <div className="flex-1 relative">
-                <Scan className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  ref={barcodeInputRef}
-                  type="text"
-                  value={barcodeInput}
-                  onChange={(e) => {
-                    handleBarcodeInput(e.target.value)
-                    setShowSearchPopup(e.target.value.length > 0)
-                  }}
-                  onFocus={() => setShowSearchPopup(barcodeInput.length > 0)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Scan barcode..."
-                  className="pl-10 border-orange-200 focus:border-orange-500 h-10"
-                />
-              </div>
-
-              {/* Product Search */}
+              {/* Product Search & Barcode Scanner - Combined */}
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
+                  ref={barcodeInputRef}
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari nama produk..."
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setSearchQuery(value)
+                    setShowSearchPopup(value.length > 0)
+
+                    // Check if it's a barcode (numeric only and at least 3 digits)
+                    if (/^\d{3,}$/.test(value)) {
+                      const product = products.find(p => p.barcode === value)
+                      if (product) {
+                        addToCart(product)
+                        setSearchQuery('')
+                        setShowSearchPopup(false)
+                      }
+                    }
+                  }}
+                  onFocus={() => setShowSearchPopup(searchQuery.length > 0)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Scan barcode atau cari nama produk..."
                   className="pl-10 border-orange-200 focus:border-orange-500 h-10"
                 />
               </div>
 
               {/* Clear Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setBarcodeInput('')
-                  setSearchQuery('')
-                  setShowSearchPopup(false)
-                }}
-                className="border-orange-300 text-orange-700 hover:bg-orange-50 h-10 px-3"
-              >
-                <X className="w-4 h-4" />
-              </Button>
+              {searchQuery && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setShowSearchPopup(false)
+                  }}
+                  className="border-orange-300 text-orange-700 hover:bg-orange-50 h-10 px-3"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
             </div>
 
             {/* Search Results Popup */}
@@ -991,6 +1004,47 @@ export default function POSPage() {
                 )}
               </>
             )}
+
+            {paymentMethod === 'QRIS' && storeSettings?.qrisImage && storeSettings?.qrisEnabled && (
+              <>
+                <Separator />
+                <div className="flex flex-col items-center">
+                  <Label className="mb-3">Scan QRIS</Label>
+                  <div className="border-4 border-gray-200 rounded-lg p-4 bg-white">
+                    <img
+                      src={storeSettings.qrisImage}
+                      alt="QRIS Code"
+                      className="w-64 h-64 object-contain"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2 text-center">
+                    Scan QRIS ini untuk membayar Rp{getCartTotal().toLocaleString('id-ID')}
+                  </p>
+                </div>
+              </>
+            )}
+
+            {paymentMethod === 'QRIS' && (!storeSettings?.qrisImage || !storeSettings?.qrisEnabled) && (
+              <>
+                <Separator />
+                <div className="text-center py-6">
+                  <Smartphone className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-500">QRIS belum dikonfigurasi</p>
+                  <p className="text-sm text-gray-400">Hubungi admin untuk mengatur QRIS</p>
+                </div>
+              </>
+            )}
+
+            {paymentMethod === 'DEBIT' && (
+              <>
+                <Separator />
+                <div className="text-center py-6">
+                  <CreditCard className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-500">Silakan gunakan mesin EDC</p>
+                  <p className="text-sm text-gray-400">Kartu Debit: Rp{getCartTotal().toLocaleString('id-ID')}</p>
+                </div>
+              </>
+            )}
             <Separator />
             <Button
               onClick={handlePayment}
@@ -1112,7 +1166,10 @@ export default function POSPage() {
       <Dialog open={showCloseShift} onOpenChange={setShowCloseShift}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Tutup Shift</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-orange-600" />
+              Tutup Shift
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="bg-orange-50 p-4 rounded-lg">
@@ -1132,6 +1189,20 @@ export default function POSPage() {
                 </span>
               </div>
             </div>
+
+            <div>
+              <Label>PIN Otorisasi</Label>
+              <Input
+                type="password"
+                value={closeShiftPin}
+                onChange={(e) => setCloseShiftPin(e.target.value)}
+                placeholder="Masukkan PIN supervisor"
+                maxLength={4}
+                className="text-center text-2xl tracking-widest mt-2"
+                autoFocus
+              />
+            </div>
+
             <Button
               onClick={handleCloseShift}
               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
@@ -1140,7 +1211,10 @@ export default function POSPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => setShowCloseShift(false)}
+              onClick={() => {
+                setShowCloseShift(false)
+                setCloseShiftPin('')
+              }}
               className="w-full"
             >
               Batal

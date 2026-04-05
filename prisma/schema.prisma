@@ -290,3 +290,15 @@ model Report {
   @@index([type])
   @@index([period])
 }
+
+// Store Settings
+model Settings {
+  id        String   @id @default(cuid())
+  storeName String
+  storeAddress String?
+  storePhone String?
+  qrisImage String?  // Base64 encoded QRIS image
+  qrisEnabled Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
