@@ -68,8 +68,8 @@ export default function TransactionHistoryPage() {
     try {
       const response = await fetch('/api/admin/transactions')
       if (response.ok) {
-        const data = await response.json()
-        setTransactions(data)
+        const result = await response.json()
+        setTransactions(result.data || [])
       }
     } catch (error) {
       console.error('Error fetching transactions:', error)

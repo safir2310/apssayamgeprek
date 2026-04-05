@@ -39,8 +39,15 @@ export default function VoidLogsPage() {
     try {
       const response = await fetch('/api/admin/void-logs')
       if (response.ok) {
-        const data = await response.json()
-        setVoidLogs(data)
+        const result = await response.json()
+        // Transform the data to match our interface
+        const transformedLogs = (result.data || []).map((log: any) => ({
+          ...log,
+          transactionNumber: log.transaction?.transactionNumber || null,
+          approvedByName: log.approvedByUser?.name || null,
+          createdByName: log.createdByUser?.name || null
+        }))
+        setVoidLogs(transformedLogs)
       }
     } catch (error) {
       console.error('Error fetching void logs:', error)

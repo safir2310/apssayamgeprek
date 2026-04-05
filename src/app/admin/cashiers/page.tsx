@@ -60,8 +60,15 @@ export default function CashierManagementPage() {
     try {
       const response = await fetch('/api/admin/cashiers')
       if (response.ok) {
-        const data = await response.json()
-        setCashiers(data)
+        const result = await response.json()
+        // Transform the data to match our interface
+        const transformedCashiers = (result.data || []).map((c: any) => ({
+          ...c,
+          roleName: c.role?.name,
+          transactionCount: c._count?.transactions || 0,
+          shiftCount: c._count?.cashierShifts || 0
+        }))
+        setCashiers(transformedCashiers)
       }
     } catch (error) {
       console.error('Error fetching cashiers:', error)

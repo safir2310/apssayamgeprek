@@ -49,8 +49,8 @@ export default function MemberManagementPage() {
     try {
       const response = await fetch('/api/admin/members')
       if (response.ok) {
-        const data = await response.json()
-        setMembers(data)
+        const result = await response.json()
+        setMembers(result.data || [])
       }
     } catch (error) {
       console.error('Error fetching members:', error)
