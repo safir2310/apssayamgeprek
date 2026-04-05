@@ -664,6 +664,7 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
                 type="submit"
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                suppressHydrationWarning
               >
                 {loading ? 'Memproses...' : 'Login'}
               </Button>
