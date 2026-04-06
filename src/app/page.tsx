@@ -777,21 +777,17 @@ export default function Home() {
               <div className="w-24 h-24 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <User className="w-12 h-12 text-white" />
               </div>
-              {currentMember ? (
-                <>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-1">{currentMember.name}</h2>
-                  <p className="text-gray-500 mb-2">{currentMember.phone}</p>
-                  <div className="flex items-center justify-center gap-2">
-                    <Badge className="bg-orange-500 text-white">
-                      <Award className="w-3 h-3 mr-1" />
-                      {memberPoints} Point
-                    </Badge>
-                    <Badge className="bg-green-500 text-white">
-                      Active Member
-                    </Badge>
-                  </div>
-                </>
-              )}
+              <h2 className="text-2xl font-bold text-gray-800 mb-1">{currentMember.name}</h2>
+              <p className="text-gray-500 mb-2">{currentMember.phone}</p>
+              <div className="flex items-center justify-center gap-2">
+                <Badge className="bg-orange-500 text-white">
+                  <Award className="w-3 h-3 mr-1" />
+                  {memberPoints} Point
+                </Badge>
+                <Badge className="bg-green-500 text-white">
+                  Active Member
+                </Badge>
+              </div>
             </CardContent>
           </Card>
 
