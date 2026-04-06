@@ -146,40 +146,40 @@ export default function CheckoutPage() {
     loadProductsAndCart()
   }, [])
 
-  // Save form data to localStorage only when user leaves a field (using onBlur)
-  const saveFormDataToStorage = useCallback(() => {
-    console.log('Saving form data to storage:', checkoutForm)
-    localStorage.setItem(FORM_DATA_KEY, JSON.stringify(checkoutForm))
-  }, [checkoutForm])
-
   // Handle input changes without causing form submission
   const handleInputChange = useCallback((field: string, value: string) => {
-    console.log('Input change:', { field, value, current: checkoutForm })
-    setCheckoutForm(prev => {
-      const newForm = { ...prev }
-      switch (field) {
-        case 'name':
-          newForm.name = value
-          break
-        case 'phone':
-          newForm.phone = value
-          break
-        case 'address':
-          newForm.address = value
-          break
-        case 'notes':
-          newForm.notes = value
-          break
-      }
-      console.log('New form state:', newForm)
-      return newForm
-    })
+    console.log('Input change:', { field, value })
+    setCheckoutForm(prev => ({
+      ...prev,
+      [field]: value
+    }))
   }, [])
 
   // Save payment method to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem(PAYMENT_METHOD_KEY, selectedPaymentMethod)
   }, [selectedPaymentMethod])
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('Auto-saving form data to storage:', checkoutForm)
+      localStorage.setItem(FORM_DATA_KEY, JSON.stringify(checkoutForm))
+    }, 500) // 500ms debounce
+
+    return () => clearTimeout(timer)
+  }, [checkoutForm])
+
+  // Save form data before page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      console.log('Saving form data before unload:', checkoutForm)
+      localStorage.setItem(FORM_DATA_KEY, JSON.stringify(checkoutForm))
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [checkoutForm])
 
   const saveCartToLocalStorage = (newCart: CartItem[]) => {
     const cartData = newCart.map(item => ({
@@ -545,7 +545,6 @@ export default function CheckoutPage() {
                     required
                     value={checkoutForm.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    onBlur={saveFormDataToStorage}
                     placeholder="Masukkan nama lengkap"
                     className="border-orange-200 focus:border-orange-500"
                     autoComplete="name"
@@ -560,7 +559,6 @@ export default function CheckoutPage() {
                     required
                     value={checkoutForm.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
-                    onBlur={saveFormDataToStorage}
                     placeholder="08xxxxxxxxxx"
                     className="border-orange-200 focus:border-orange-500"
                     autoComplete="tel"
@@ -574,7 +572,6 @@ export default function CheckoutPage() {
                     required
                     value={checkoutForm.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
-                    onBlur={saveFormDataToStorage}
                     placeholder="Masukkan alamat lengkap"
                     rows={3}
                     className="border-orange-200 focus:border-orange-500"
@@ -587,7 +584,6 @@ export default function CheckoutPage() {
                     id="notes"
                     value={checkoutForm.notes}
                     onChange={(e) => handleInputChange('notes', e.target.value)}
-                    onBlur={saveFormDataToStorage}
                     placeholder="Catatan tambahan untuk pesanan"
                     rows={2}
                     className="border-orange-200 focus:border-orange-500"
