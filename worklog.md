@@ -290,3 +290,26 @@ Stage Summary:
 - Modal now handles content overflow gracefully
 - Improves user experience on smaller screens
 - Maintains consistent design with Point History modal
+
+---
+Task ID: 21
+Agent: Z.ai Code
+Task: Remove Demo Accounts section from login page
+
+Work Log:
+- Located demo accounts display in /home/z/my-project/src/app/login/page.tsx (lines 271-293)
+- Removed entire Card component showing demo account credentials including:
+  - Admin account (admin@geprek.com / admin123)
+  - Kasir account (kasir@geprek.com / kasir123)
+  - Member account (member@geprek.com / member123)
+  - System role detection note
+- Login page now displays only the login form and register link
+- Code compiled successfully in 120ms
+- Lint check passed with no errors
+
+Stage Summary:
+- Successfully removed demo accounts section from login page
+- Login page is now cleaner and more professional
+- Users will only see the login form and register option
+- Database seed file retains demo accounts for development purposes
+- All functionality preserved

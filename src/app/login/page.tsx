@@ -268,30 +268,6 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            {/* Demo Accounts Info */}
-            <Card className="mt-6 border-orange-200 bg-orange-50">
-              <CardContent className="p-4">
-                <h3 className="font-bold text-sm text-orange-800 mb-3">📋 Akun Demo:</h3>
-                <div className="space-y-2 text-xs">
-                  <div className="bg-white p-2 rounded border border-orange-200">
-                    <p className="font-semibold text-orange-600">Admin (Staff):</p>
-                    <p className="text-gray-600">admin@geprek.com / admin123</p>
-                  </div>
-                  <div className="bg-white p-2 rounded border border-orange-200">
-                    <p className="font-semibold text-blue-600">Kasir (Staff):</p>
-                    <p className="text-gray-600">kasir@geprek.com / kasir123</p>
-                  </div>
-                  <div className="bg-white p-2 rounded border border-orange-200">
-                    <p className="font-semibold text-green-600">Member (User):</p>
-                    <p className="text-gray-600">member@geprek.com / member123</p>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 mt-2 italic">
-                  * Sistem otomatis mendeteksi role Anda
-                </p>
-              </CardContent>
-            </Card>
-
             {/* Register Link */}
             <div className="text-center mt-6">
               <button
