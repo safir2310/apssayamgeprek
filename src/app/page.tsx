@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator'
 import {
   ShoppingCart, Minus, Plus, X, Phone, MapPin, Clock, Award, Flame,
   Home as HomeIcon, QrCode, History, Gift, User, Store, LayoutDashboard,
-  Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut
+  Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut, Share2
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -110,6 +110,11 @@ export default function Home() {
     notificationPromo: true,
     notificationPoints: true
   })
+  const [privacySettings, setPrivacySettings] = useState({
+    publicProfile: true,
+    shareData: true,
+    orderHistory: true
+  })
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null)
   const [showPhotoUpload, setShowPhotoUpload] = useState(false)
 
@@ -157,6 +162,11 @@ export default function Home() {
           notificationOrders: member.notificationOrders ?? true,
           notificationPromo: member.notificationPromo ?? true,
           notificationPoints: member.notificationPoints ?? true
+        })
+        setPrivacySettings({
+          publicProfile: member.publicProfile ?? true,
+          shareData: member.shareData ?? true,
+          orderHistory: member.orderHistory ?? true
         })
       } catch (error) {
         console.error('Error parsing member data:', error)
@@ -452,6 +462,33 @@ export default function Home() {
       alert('Terjadi kesalahan. Silakan coba lagi.')
     }
   }, [currentMember?.id, notificationSettings, currentMember])
+
+  // Handle privacy settings update
+  const handlePrivacyUpdate = useCallback(async () => {
+    try {
+      const response = await fetch('/api/members/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: currentMember.email,
+          ...privacySettings
+        })
+      })
+
+      if (response.ok) {
+        const updatedMember = { ...currentMember, ...privacySettings }
+        setCurrentMember(updatedMember)
+        localStorage.setItem('member', JSON.stringify(updatedMember))
+        setShowPrivacySettings(false)
+        alert('Pengaturan privasi berhasil diperbarui!')
+      } else {
+        alert('Gagal memperbarui pengaturan privasi')
+      }
+    } catch (error) {
+      console.error('Error updating privacy settings:', error)
+      alert('Terjadi kesalahan. Silakan coba lagi.')
+    }
+  }, [currentMember?.email, privacySettings, currentMember])
 
   // Handle navigation tab click
   const handleTabClick = (tabId: string) => {
@@ -1517,55 +1554,102 @@ export default function Home() {
 
       {/* Privacy Settings Modal */}
       <Dialog open={showPrivacySettings} onOpenChange={setShowPrivacySettings}>
-        <DialogContent className="max-w-md" key="privacy-modal">
+        <DialogContent className="max-w-md max-h-[85vh]" key="privacy-modal">
           <DialogHeader>
-            <DialogTitle>Pengaturan Privasi</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600 mb-4">
+            <DialogTitle className="text-xl font-bold">Pengaturan Privasi</DialogTitle>
+            <p className="text-sm text-gray-600 mt-2">
               Kelola privasi data Anda. Semua perubahan akan disinkronisasi dengan sistem admin.
             </p>
-            <div className="space-y-3">
-              <Card className="border-orange-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm">Profil Publik</p>
-                      <p className="text-xs text-gray-500">Tampilkan profil Anda</p>
+          </DialogHeader>
+          <ScrollArea className="max-h-[55vh] pr-4">
+            <div className="space-y-4 pt-2">
+              {/* Public Profile Card */}
+              <Card className="border-orange-200 hover:shadow-md transition-shadow duration-200">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <User className="w-5 h-5 text-orange-600" />
+                        <p className="font-semibold text-base text-gray-800">Profil Publik</p>
+                      </div>
+                      <p className="text-sm text-gray-500 leading-relaxed">
+                        Tampilkan profil Anda kepada pengguna lain
+                      </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch
+                      checked={privacySettings.publicProfile}
+                      onCheckedChange={(checked) =>
+                        setPrivacySettings({ ...privacySettings, publicProfile: checked })
+                      }
+                    />
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-orange-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm">Bagikan Data</p>
-                      <p className="text-xs text-gray-500">Izinkan analisis data</p>
+
+              {/* Share Data Card */}
+              <Card className="border-orange-200 hover:shadow-md transition-shadow duration-200">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Share2 className="w-5 h-5 text-orange-600" />
+                        <p className="font-semibold text-base text-gray-800">Bagikan Data</p>
+                      </div>
+                      <p className="text-sm text-gray-500 leading-relaxed">
+                        Izinkan analisis data untuk meningkatkan layanan
+                      </p>
                     </div>
-                    <Switch defaultChecked={false} />
+                    <Switch
+                      checked={privacySettings.shareData}
+                      onCheckedChange={(checked) =>
+                        setPrivacySettings({ ...privacySettings, shareData: checked })
+                      }
+                    />
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-orange-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm">Riwayat Pesanan</p>
-                      <p className="text-xs text-gray-500">Simpan riwayat pesanan</p>
+
+              {/* Order History Card */}
+              <Card className="border-orange-200 hover:shadow-md transition-shadow duration-200">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <History className="w-5 h-5 text-orange-600" />
+                        <p className="font-semibold text-base text-gray-800">Riwayat Pesanan</p>
+                      </div>
+                      <p className="text-sm text-gray-500 leading-relaxed">
+                        Simpan dan tampilkan riwayat pesanan Anda
+                      </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch
+                      checked={privacySettings.orderHistory}
+                      onCheckedChange={(checked) =>
+                        setPrivacySettings({ ...privacySettings, orderHistory: checked })
+                      }
+                    />
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Info Section */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                <div className="flex items-start gap-3">
+                  <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-blue-900 mb-1">Privasi Terlindungi</p>
+                    <p className="text-xs text-blue-700 leading-relaxed">
+                      Data Anda dilindungi dengan standar keamanan terbaik. Anda dapat mengubah pengaturan ini kapan saja.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
+          </ScrollArea>
+          <div className="pt-4 border-t border-gray-200 mt-4">
             <Button
-              onClick={() => {
-                setShowPrivacySettings(false)
-                alert('Pengaturan privasi berhasil diperbarui!')
-              }}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+              onClick={handlePrivacyUpdate}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white hover:from-orange-600 hover:to-orange-500 transition-all duration-200"
             >
               <Save className="w-4 h-4 mr-2" />
               Simpan Perubahan
