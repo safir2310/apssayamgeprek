@@ -791,26 +791,6 @@ export default function Home() {
                     </Badge>
                   </div>
                 </>
-              ) : (
-                <>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-1">Guest User</h2>
-                  <p className="text-gray-500 mb-4">Belum login</p>
-                  <Link href="/login" className="block">
-                    <Button
-                      className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white mb-3"
-                    >
-                      Login Member
-                    </Button>
-                  </Link>
-                  <Link href="/login" className="block">
-                    <Button
-                      variant="outline"
-                      className="w-full border-orange-300 text-orange-600 hover:bg-orange-50"
-                    >
-                      Daftar Akun Baru
-                    </Button>
-                  </Link>
-                </>
               )}
             </CardContent>
           </Card>
