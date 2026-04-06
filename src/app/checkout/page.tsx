@@ -141,13 +141,10 @@ export default function CheckoutPage() {
     loadProductsAndCart()
   }, [])
 
-  // Save form data to localStorage whenever it changes (debounced to avoid excessive writes)
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      localStorage.setItem(FORM_DATA_KEY, JSON.stringify(checkoutForm))
-    }, 500)
-    return () => clearTimeout(timeoutId)
-  }, [checkoutForm])
+  // Save form data to localStorage only when user leaves a field (using onBlur)
+  const saveFormDataToStorage = () => {
+    localStorage.setItem(FORM_DATA_KEY, JSON.stringify(checkoutForm))
+  }
 
   // Save payment method to localStorage whenever it changes
   useEffect(() => {
@@ -269,6 +266,14 @@ export default function CheckoutPage() {
     localStorage.removeItem(PAYMENT_METHOD_KEY)
   }
 
+  // Handle input changes without causing form submission
+  const handleInputChange = (field: string, value: string) => {
+    setCheckoutForm(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -375,6 +380,7 @@ export default function CheckoutPage() {
 
         // Redirect to home with history tab
         router.push('/?tab=riwayat')
+        return
       } else {
         console.error('Order creation error:', result)
         const errorMessage = result?.error || `Gagal membuat pesanan (Status: ${response.status})`
@@ -504,16 +510,23 @@ export default function CheckoutPage() {
           <Card className="border-orange-200">
             <CardContent className="p-6">
               <h2 className="text-lg font-bold mb-4 text-gray-800">Informasi Pengiriman</h2>
-              <form onSubmit={handleCheckout} className="space-y-4">
+              <form onSubmit={handleCheckout} className="space-y-4" onKeyDown={(e) => {
+                // Prevent form submission on Enter key in input fields
+                if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+                  e.preventDefault()
+                }
+              }}>
                 <div>
                   <Label htmlFor="name">Nama Lengkap *</Label>
                   <Input
                     id="name"
                     required
                     value={checkoutForm.name}
-                    onChange={(e) => setCheckoutForm({ ...checkoutForm, name: e.target.value })}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    onBlur={saveFormDataToStorage}
                     placeholder="Masukkan nama lengkap"
                     className="border-orange-200 focus:border-orange-500"
+                    autoComplete="name"
                   />
                 </div>
 
@@ -524,9 +537,11 @@ export default function CheckoutPage() {
                     type="tel"
                     required
                     value={checkoutForm.phone}
-                    onChange={(e) => setCheckoutForm({ ...checkoutForm, phone: e.target.value })}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    onBlur={saveFormDataToStorage}
                     placeholder="08xxxxxxxxxx"
                     className="border-orange-200 focus:border-orange-500"
+                    autoComplete="tel"
                   />
                 </div>
 
@@ -536,7 +551,8 @@ export default function CheckoutPage() {
                     id="address"
                     required
                     value={checkoutForm.address}
-                    onChange={(e) => setCheckoutForm({ ...checkoutForm, address: e.target.value })}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    onBlur={saveFormDataToStorage}
                     placeholder="Masukkan alamat lengkap"
                     rows={3}
                     className="border-orange-200 focus:border-orange-500"
@@ -548,7 +564,8 @@ export default function CheckoutPage() {
                   <Textarea
                     id="notes"
                     value={checkoutForm.notes}
-                    onChange={(e) => setCheckoutForm({ ...checkoutForm, notes: e.target.value })}
+                    onChange={(e) => handleInputChange('notes', e.target.value)}
+                    onBlur={saveFormDataToStorage}
                     placeholder="Catatan tambahan untuk pesanan"
                     rows={2}
                     className="border-orange-200 focus:border-orange-500"
