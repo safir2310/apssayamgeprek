@@ -957,7 +957,6 @@ export default function Home() {
   // Beranda Section Component
   const BerandaSection = () => (
     <div className="pb-20">
-      <style>{styles}</style>
       {/* Hero Section with Dark Orange Gradient */}
       <section className="relative bg-gradient-to-br from-orange-700 via-orange-600 to-orange-500 text-white py-16 px-4 md:py-24 md:px-8">
         <div className="max-w-7xl mx-auto text-center">
@@ -2318,6 +2317,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-orange-50">
+      {/* Print Styles - Always Available */}
+      <style>{styles}</style>
+
       {/* Hidden Print Receipt */}
       {selectedOrderForPrint && (
         <div id="print-receipt" className="hidden print:block">
