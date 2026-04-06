@@ -226,3 +226,43 @@ Stage Summary:
 - Dialog now has proper ARIA labels for screen readers
 - Visual design remains unchanged
 - All functionality working correctly
+
+---
+Task ID: 20
+Agent: Z.ai Code
+Task: Activate Contact Us, Show Promo Notification, and Popup in Profile
+
+Work Log:
+- Added state for contact modal (showContactModal) and point history modal (showPointHistoryModal)
+- Activated "Hubungi Kami" (Contact Us) feature with modal containing:
+  - Store name and tagline display
+  - WhatsApp button with pre-filled message that opens WhatsApp
+  - Phone call button that initiates direct phone call
+  - Store address with MapPin icon
+  - Business hours (10:00 - 22:00 WIB) with Clock icon
+  - Gradient orange styling matching app theme
+- Activated "Riwayat Point" (Point History) feature with modal containing:
+  - Current points summary in gradient orange card
+  - List of last 5 transactions showing:
+    - Order number
+    - Date and time
+    - Points earned (1 point per Rp1.000)
+    - Order amount
+  - Empty state when no history exists
+  - Point information box explaining:
+    - How to earn points
+    - How to redeem points
+    - Point conversion rate
+- Verified "Tampilkan Notifikasi Promo" works correctly (shows notification hero)
+- Verified "Tampilkan Welcome Popup" works correctly (shows welcome popup)
+- Added Clock icon to imports for business hours display
+- All modals use shadcn/ui Dialog component with proper accessibility
+- Code compiled successfully with no lint errors
+
+Stage Summary:
+- Successfully activated all three profile features: Contact Us, Point History, and notifications
+- Contact modal provides multiple communication channels (WhatsApp and Phone)
+- Point history modal shows detailed transaction history with points earned
+- All features styled consistently with orange gradient theme
+- All modals properly accessible with DialogTitle
+- All features working correctly and ready for use
