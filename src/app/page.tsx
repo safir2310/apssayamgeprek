@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   ShoppingCart, Minus, Plus, X, Phone, MapPin, Award, Flame,
   Home as HomeIcon, QrCode, History, Gift, User, Store,
-  Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut, Share2, Copy, Scan, Percent, Star, Megaphone, AlertCircle, Clock, Printer
+  Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut, Share2, Copy, Scan, Percent, Star, Megaphone, AlertCircle, Clock, Printer, Search
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -119,6 +119,10 @@ export default function Home() {
 
   // Loading state
   const [loading, setLoading] = useState(true)
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchFilter, setSearchFilter] = useState<'all' | 'available' | 'out-of-stock'>('all')
 
   // Orders state
   const [orders, setOrders] = useState<Order[]>([])
@@ -550,9 +554,29 @@ export default function Home() {
     }
   }
 
-  const filteredProducts = selectedCategory === 'all'
-    ? products.filter(p => p.isActive)
-    : products.filter(p => p.isActive && p.category === selectedCategory)
+  const filteredProducts = useMemo(() => {
+    let result = selectedCategory === 'all'
+      ? products.filter(p => p.isActive)
+      : products.filter(p => p.isActive && p.category === selectedCategory)
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(p =>
+        p.name.toLowerCase().includes(query) ||
+        (p.description && p.description.toLowerCase().includes(query))
+      )
+    }
+
+    // Filter by search filter (stock status)
+    if (searchFilter === 'available') {
+      result = result.filter(p => p.stock > 0)
+    } else if (searchFilter === 'out-of-stock') {
+      result = result.filter(p => p.stock === 0)
+    }
+
+    return result
+  }, [products, selectedCategory, searchQuery, searchFilter])
 
   // Navigation items
   const navItems = [
@@ -1176,8 +1200,76 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Search Bar */}
+      <div className="sticky top-[60px] z-10 bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              type="text"
+              placeholder="Cari menu..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2 w-full border-orange-200 focus:border-orange-500 focus:ring-orange-200"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Search Filter Tabs */}
+      <div className="bg-white border-b border-orange-200/30 sticky top-[120px] z-9 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-2 overflow-x-auto">
+          <div className="flex gap-2 min-w-max">
+            <Button
+              size="sm"
+              variant={searchFilter === 'all' ? 'default' : 'outline'}
+              className={`${
+                searchFilter === 'all'
+                  ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white border-0'
+                  : 'border-orange-300 text-orange-700 hover:bg-orange-50'
+              }`}
+              onClick={() => setSearchFilter('all')}
+            >
+              Semua
+            </Button>
+            <Button
+              size="sm"
+              variant={searchFilter === 'available' ? 'default' : 'outline'}
+              className={`${
+                searchFilter === 'available'
+                  ? 'bg-gradient-to-r from-green-500 to-green-400 text-white border-0'
+                  : 'border-green-300 text-green-700 hover:bg-green-50'
+              }`}
+              onClick={() => setSearchFilter('available')}
+            >
+              Tersedia
+            </Button>
+            <Button
+              size="sm"
+              variant={searchFilter === 'out-of-stock' ? 'default' : 'outline'}
+              className={`${
+                searchFilter === 'out-of-stock'
+                  ? 'bg-gradient-to-r from-red-500 to-red-400 text-white border-0'
+                  : 'border-red-300 text-red-700 hover:bg-red-50'
+              }`}
+              onClick={() => setSearchFilter('out-of-stock')}
+            >
+              Habis
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Category Filter */}
-      <div className="glass border-b-2 border-orange-200/30 sticky top-[60px] z-9 shadow-sm">
+      <div className="glass border-b-2 border-orange-200/30 sticky top-[170px] z-8 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 overflow-x-auto">
           <div className="flex gap-2 min-w-max">
             <Button
@@ -1221,62 +1313,90 @@ export default function Home() {
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-500">Tidak ada produk tersedia</p>
+              <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg mb-2">
+                {searchQuery ? 'Tidak ada hasil pencarian' : 'Tidak ada produk tersedia'}
+              </p>
+              {searchQuery && (
+                <p className="text-gray-400 text-sm">
+                  Coba kata kunci lain atau reset filter pencarian
+                </p>
+              )}
+              {searchQuery && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 border-orange-300 text-orange-600 hover:bg-orange-50"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setSearchFilter('all')
+                  }}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Reset Pencarian
+                </Button>
+              )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {filteredProducts.map(product => (
-                <Card key={product.id} className="card-glass-orange overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:scale-105">
-                  {product.image ? (
-                    <div className="aspect-square bg-orange-100 relative">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="aspect-square bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-                      <Flame className="w-16 h-16 text-orange-400" />
-                    </div>
-                  )}
-                  <CardContent className="p-3">
-                    <h3 className="font-semibold text-xs md:text-sm mb-2 text-gray-800 line-clamp-2 min-h-[2rem]">
-                      {product.name}
-                    </h3>
-                    {product.description && (
-                      <p className="text-xs text-gray-500 mb-2 line-clamp-1">
-                        {product.description}
-                      </p>
+            <>
+              <div className="mb-4 text-sm text-gray-500">
+                Menampilkan {filteredProducts.length} dari {products.filter(p => p.isActive).length} produk
+                {searchQuery && ` untuk "${searchQuery}"`}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                {filteredProducts.map(product => (
+                  <Card key={product.id} className="card-glass-orange overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:scale-105">
+                    {product.image ? (
+                      <div className="aspect-square bg-orange-100 relative">
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="aspect-square bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                        <Flame className="w-16 h-16 text-orange-400" />
+                      </div>
                     )}
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm md:text-base font-bold text-orange-600">
-                        Rp{product.price.toLocaleString('id-ID')}
-                      </span>
-                      <Badge
-                        variant={product.stock > 0 ? 'default' : 'secondary'}
-                        className={`text-xs ${
-                          product.stock > 0
-                            ? 'bg-green-500 text-white'
-                            : 'bg-gray-300 text-gray-600'
-                        }`}
+                    <CardContent className="p-3">
+                      <h3 className="font-semibold text-xs md:text-sm mb-2 text-gray-800 line-clamp-2 min-h-[2rem]">
+                        {product.name}
+                      </h3>
+                      {product.description && (
+                        <p className="text-xs text-gray-500 mb-2 line-clamp-1">
+                          {product.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm md:text-base font-bold text-orange-600">
+                          Rp{product.price.toLocaleString('id-ID')}
+                        </span>
+                        <Badge
+                          variant={product.stock > 0 ? 'default' : 'secondary'}
+                          className={`text-xs ${
+                            product.stock > 0
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-300 text-gray-600'
+                          }`}
+                        >
+                          {product.stock > 0 ? `Stok: ${product.stock}` : 'Habis'}
+                        </Badge>
+                      </div>
+                      <Button
+                        onClick={() => addToCart(product)}
+                        disabled={product.stock === 0}
+                        className="w-full btn-premium-orange text-sm shadow-md hover:shadow-lg"
+                        size="sm"
                       >
-                        {product.stock > 0 ? `Stok: ${product.stock}` : 'Habis'}
-                      </Badge>
-                    </div>
-                    <Button
-                      onClick={() => addToCart(product)}
-                      disabled={product.stock === 0}
-                      className="w-full btn-premium-orange text-sm shadow-md hover:shadow-lg"
-                      size="sm"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Tambah
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Tambah
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </main>
