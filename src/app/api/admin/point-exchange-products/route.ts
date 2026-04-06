@@ -8,14 +8,17 @@ export async function GET() {
   try {
     const products = await prisma.pointExchangeProduct.findMany({
       include: {
-        redeemCodes: {
-          where: {
-            isUsed: false,
-            expiresAt: {
-              gt: new Date()
+        _count: {
+          select: {
+            redeemCodes: {
+              where: {
+                isUsed: false,
+                expiresAt: {
+                  gt: new Date()
+                }
+              }
             }
-          },
-          count: true
+          }
         }
       },
       orderBy: {
@@ -25,7 +28,7 @@ export async function GET() {
 
     return NextResponse.json(products.map(product => ({
       ...product,
-      availableRedeemCodes: product.redeemCodes.length
+      availableRedeemCodes: product._count.redeemCodes
     })))
   } catch (error) {
     console.error('Error fetching point exchange products:', error)
