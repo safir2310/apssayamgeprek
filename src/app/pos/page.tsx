@@ -210,6 +210,26 @@ export default function POSPage() {
         pin: data.user.pin
       })
       setIsLoggedIn(true)
+
+      // Check if cashier has an open shift
+      const shiftsResponse = await fetch(`/api/shifts?cashierId=${data.user.id}&isOpen=true`)
+      if (shiftsResponse.ok) {
+        const shiftsData = await shiftsResponse.json()
+        if (shiftsData.success && shiftsData.shifts.length > 0) {
+          const openShift = shiftsData.shifts[0]
+          setCurrentShift({
+            id: openShift.id,
+            openingBalance: openShift.openingBalance,
+            isOpen: openShift.isOpen,
+            openedAt: new Date(openShift.openedAt)
+          })
+          // Don't show the open shift dialog if shift already exists
+          setLoading(false)
+          return
+        }
+      }
+
+      // Show open shift dialog if no open shift exists
       setShowOpenShift(true)
     } catch (error) {
       console.error('Error during login:', error)
@@ -236,6 +256,22 @@ export default function POSPage() {
       })
 
       const data = await response.json()
+
+      // Check if cashier already has an open shift
+      if (!response.ok && data.error === 'Cashier already has an open shift' && data.shift) {
+        // Load the existing open shift instead of showing error
+        const shift = data.shift
+        setCurrentShift({
+          id: shift.id,
+          openingBalance: shift.openingBalance,
+          isOpen: shift.isOpen,
+          openedAt: new Date(shift.openedAt)
+        })
+        setShowOpenShift(false)
+        setShiftForm({ ...shiftForm, openingBalance: '' })
+        alert('Anda sudah memiliki shift yang terbuka. Shift tersebut telah dimuat otomatis.')
+        return
+      }
 
       if (!response.ok) {
         alert(data.error || 'Gagal membuka shift!')
