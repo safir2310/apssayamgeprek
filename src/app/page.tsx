@@ -113,33 +113,6 @@ export default function Home() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null)
   const [showPhotoUpload, setShowPhotoUpload] = useState(false)
 
-  // Fetch products and categories and load member from localStorage
-  useEffect(() => {
-    fetchProducts()
-    if (activeTab === 'riwayat') {
-      fetchOrders()
-    }
-
-    // Load member from localStorage
-    const savedMember = localStorage.getItem('member')
-    if (savedMember) {
-      try {
-        const member = JSON.parse(savedMember)
-        setCurrentMember(member)
-        setMemberPoints(member.points || 0)
-        setProfilePhoto(member.photo || null)
-        setNotificationSettings({
-          notificationOrders: member.notificationOrders ?? true,
-          notificationPromo: member.notificationPromo ?? true,
-          notificationPoints: member.notificationPoints ?? true
-        })
-      } catch (error) {
-        console.error('Error parsing member data:', error)
-        localStorage.removeItem('member')
-      }
-    }
-  }, [activeTab])
-
   const fetchProducts = async () => {
     try {
       const response = await fetch('/api/products')
@@ -167,6 +140,37 @@ export default function Home() {
       console.error('Error fetching orders:', error)
     }
   }
+
+  // Fetch products and categories and load member from localStorage
+  useEffect(() => {
+    fetchProducts()
+
+    // Load member from localStorage
+    const savedMember = localStorage.getItem('member')
+    if (savedMember) {
+      try {
+        const member = JSON.parse(savedMember)
+        setCurrentMember(member)
+        setMemberPoints(member.points || 0)
+        setProfilePhoto(member.photo || null)
+        setNotificationSettings({
+          notificationOrders: member.notificationOrders ?? true,
+          notificationPromo: member.notificationPromo ?? true,
+          notificationPoints: member.notificationPoints ?? true
+        })
+      } catch (error) {
+        console.error('Error parsing member data:', error)
+        localStorage.removeItem('member')
+      }
+    }
+  }, [])
+
+  // Fetch orders when on riwayat tab
+  useEffect(() => {
+    if (activeTab === 'riwayat') {
+      fetchOrders()
+    }
+  }, [activeTab])
 
   const addToCart = (product: Product) => {
     if (product.stock === 0) return
