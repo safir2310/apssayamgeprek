@@ -247,7 +247,7 @@ export default function LoginPage() {
                     value={loginForm.password}
                     onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                     required
-                    className="border-orange-200 focus:border-orange-500 pr-10"
+                    className="border-orange-200 focus:border-orange-500"
                   />
                   <button
                     type="button"
@@ -256,6 +256,14 @@ export default function LoginPage() {
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
+                </div>
+                <div className="text-right mt-2">
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm text-orange-600 hover:text-orange-700 hover:underline"
+                  >
+                    Lupa Password?
+                  </Link>
                 </div>
               </div>
 
@@ -267,16 +275,6 @@ export default function LoginPage() {
                 {loading ? 'Memproses...' : 'Login'}
               </Button>
             </form>
-
-            {/* Forgot Password Link */}
-            <div className="text-center mt-4">
-              <Link
-                href="/forgot-password"
-                className="text-sm text-orange-600 hover:text-orange-700 hover:underline"
-              >
-                Lupa Password?
-              </Link>
-            </div>
 
             {/* Register Link */}
             <div className="text-center mt-2">
