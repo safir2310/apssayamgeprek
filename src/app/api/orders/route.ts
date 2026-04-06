@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { logToDevServer } from '@/lib/logger'
 
 // GET /api/orders - Get all orders
 export async function GET(request: NextRequest) {
@@ -7,6 +8,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const paymentStatus = searchParams.get('paymentStatus')
+
+    logToDevServer('GET /api/orders - Fetching orders', { status, paymentStatus })
 
     const where: any = {}
     if (status) where.status = status
@@ -32,9 +35,10 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    logToDevServer('GET /api/orders - Success', { count: orders.length })
     return NextResponse.json(orders)
   } catch (error) {
-    console.error('Error fetching orders:', error)
+    logToDevServer('GET /api/orders - Error', error)
     return NextResponse.json(
       { error: 'Failed to fetch orders' },
       { status: 500 }
@@ -44,17 +48,17 @@ export async function GET(request: NextRequest) {
 
 // POST /api/orders - Create a new order
 export async function POST(request: NextRequest) {
-  console.log('=== POST /api/orders START ===')
+  logToDevServer('=== POST /api/orders START ===')
 
   try {
-    console.log('Parsing request body...')
+    logToDevServer('Parsing request body...')
     let body
     try {
       body = await request.json()
     } catch (parseError) {
-      console.error('Error parsing request body:', parseError)
+      logToDevServer('Error parsing request body', parseError)
       const textBody = await request.text()
-      console.error('Request body as text:', textBody)
+      logToDevServer('Request body as text', { length: textBody.length })
       return NextResponse.json(
         { error: 'Invalid request body format' },
         { status: 400 }
@@ -63,18 +67,17 @@ export async function POST(request: NextRequest) {
 
     const { customerName, customerPhone, customerAddress, notes, totalAmount, discount, redeemCode, paymentMethod, items } = body
 
-    console.log('Received order request:', JSON.stringify({
+    logToDevServer('Received order request', {
       customerName,
       customerPhone,
       customerAddress,
       totalAmount,
       discount,
-      itemsCount: items?.length,
-      items: items
-    }, null, 2))
+      itemsCount: items?.length
+    })
 
     if (!customerName || !customerPhone || !customerAddress || !items || items.length === 0) {
-      console.log('Validation failed:', { customerName, customerPhone, customerAddress, itemsLength: items?.length })
+      logToDevServer('Validation failed', { customerName, customerPhone, customerAddress, itemsLength: items?.length })
       return NextResponse.json(
         { error: 'Customer information and items are required' },
         { status: 400 }
@@ -82,14 +85,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate that all products exist
-    console.log('Validating products...', items.map((i: any) => i.productId))
+    logToDevServer('Validating products...', items.map((i: any) => i.productId))
     for (const item of items) {
       const product = await db.product.findUnique({
         where: { id: item.productId }
       })
 
       if (!product) {
-        console.error(`Product not found: ${item.productId}`)
+        logToDevServer('Product not found', { productId: item.productId })
         return NextResponse.json(
           { error: `Produk dengan ID ${item.productId} tidak ditemukan` },
           { status: 400 }
@@ -97,7 +100,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (!product.isActive) {
-        console.error(`Product not active: ${item.productId}`)
+        logToDevServer('Product not active', { productId: item.productId, name: product.name })
         return NextResponse.json(
           { error: `Produk ${product.name} tidak aktif` },
           { status: 400 }
@@ -105,7 +108,12 @@ export async function POST(request: NextRequest) {
       }
 
       if (product.stock < item.quantity) {
-        console.error(`Insufficient stock for product ${item.productId}: needed ${item.quantity}, available ${product.stock}`)
+        logToDevServer('Insufficient stock', {
+          productId: item.productId,
+          name: product.name,
+          needed: item.quantity,
+          available: product.stock
+        })
         return NextResponse.json(
           { error: `Stok tidak cukup untuk ${product.name}. Tersedia: ${product.stock}, Diminta: ${item.quantity}` },
           { status: 400 }
@@ -119,7 +127,7 @@ export async function POST(request: NextRequest) {
     // Calculate total amount if not provided
     const calculatedTotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0)
 
-    console.log('Creating order with items:', items)
+    logToDevServer('Creating order', { orderNumber, itemCount: items.length })
 
     // Create order with items
     const order = await db.order.create({
@@ -153,7 +161,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    console.log('Order created successfully:', JSON.stringify({ id: order.id, orderNumber: order.orderNumber }))
+    logToDevServer('Order created successfully', { id: order.id, orderNumber: order.orderNumber })
 
     // Update product stock
     for (const item of items) {
@@ -178,19 +186,17 @@ export async function POST(request: NextRequest) {
           }
         })
       } catch (error) {
-        console.error(`Error updating stock for product ${item.productId}:`, error)
+        logToDevServer('Error updating stock', { productId: item.productId, error })
         // Continue with other products even if one fails
       }
     }
 
-    console.log('=== POST /api/orders SUCCESS ===')
+    logToDevServer('=== POST /api/orders SUCCESS ===')
     return NextResponse.json(order, { status: 201 })
   } catch (error) {
-    console.error('=== POST /api/orders ERROR ===')
-    console.error('Error creating order:', error)
+    logToDevServer('=== POST /api/orders ERROR ===', error)
     if (error instanceof Error) {
-      console.error('Error message:', error.message)
-      console.error('Error stack:', error.stack)
+      logToDevServer('Error details', { message: error.message })
     }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to create order' },
