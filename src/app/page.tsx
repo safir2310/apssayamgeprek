@@ -122,7 +122,6 @@ export default function Home() {
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchFilter, setSearchFilter] = useState<'all' | 'available' | 'out-of-stock'>('all')
 
   // Orders state
   const [orders, setOrders] = useState<Order[]>([])
@@ -568,15 +567,8 @@ export default function Home() {
       )
     }
 
-    // Filter by search filter (stock status)
-    if (searchFilter === 'available') {
-      result = result.filter(p => p.stock > 0)
-    } else if (searchFilter === 'out-of-stock') {
-      result = result.filter(p => p.stock === 0)
-    }
-
     return result
-  }, [products, selectedCategory, searchQuery, searchFilter])
+  }, [products, selectedCategory, searchQuery])
 
   // Navigation items
   const navItems = [
@@ -1224,52 +1216,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Search Filter Tabs */}
-      <div className="bg-white border-b border-orange-200/30 sticky top-[120px] z-9 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-2 overflow-x-auto">
-          <div className="flex gap-2 min-w-max">
-            <Button
-              size="sm"
-              variant={searchFilter === 'all' ? 'default' : 'outline'}
-              className={`${
-                searchFilter === 'all'
-                  ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white border-0'
-                  : 'border-orange-300 text-orange-700 hover:bg-orange-50'
-              }`}
-              onClick={() => setSearchFilter('all')}
-            >
-              Semua
-            </Button>
-            <Button
-              size="sm"
-              variant={searchFilter === 'available' ? 'default' : 'outline'}
-              className={`${
-                searchFilter === 'available'
-                  ? 'bg-gradient-to-r from-green-500 to-green-400 text-white border-0'
-                  : 'border-green-300 text-green-700 hover:bg-green-50'
-              }`}
-              onClick={() => setSearchFilter('available')}
-            >
-              Tersedia
-            </Button>
-            <Button
-              size="sm"
-              variant={searchFilter === 'out-of-stock' ? 'default' : 'outline'}
-              className={`${
-                searchFilter === 'out-of-stock'
-                  ? 'bg-gradient-to-r from-red-500 to-red-400 text-white border-0'
-                  : 'border-red-300 text-red-700 hover:bg-red-50'
-              }`}
-              onClick={() => setSearchFilter('out-of-stock')}
-            >
-              Habis
-            </Button>
-          </div>
-        </div>
-      </div>
-
       {/* Category Filter */}
-      <div className="glass border-b-2 border-orange-200/30 sticky top-[170px] z-8 shadow-sm">
+      <div className="glass border-b-2 border-orange-200/30 sticky top-[120px] z-9 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 overflow-x-auto">
           <div className="flex gap-2 min-w-max">
             <Button
@@ -1319,7 +1267,7 @@ export default function Home() {
               </p>
               {searchQuery && (
                 <p className="text-gray-400 text-sm">
-                  Coba kata kunci lain atau reset filter pencarian
+                  Coba kata kunci lain atau reset pencarian
                 </p>
               )}
               {searchQuery && (
@@ -1327,10 +1275,7 @@ export default function Home() {
                   variant="outline"
                   size="sm"
                   className="mt-4 border-orange-300 text-orange-600 hover:bg-orange-50"
-                  onClick={() => {
-                    setSearchQuery('')
-                    setSearchFilter('all')
-                  }}
+                  onClick={() => setSearchQuery('')}
                 >
                   <X className="h-4 w-4 mr-2" />
                   Reset Pencarian
