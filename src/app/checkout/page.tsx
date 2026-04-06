@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -48,11 +48,13 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
 
-  // Simple controlled state for form
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [address, setAddress] = useState(DEFAULT_ADDRESS)
-  const [notes, setNotes] = useState('')
+  // Use refs for form inputs - NO RE-RENDERS when typing
+  const nameRef = useRef<HTMLInputElement>(null)
+  const phoneRef = useRef<HTMLInputElement>(null)
+  const addressRef = useRef<HTMLTextAreaElement>(null)
+  const notesRef = useRef<HTMLTextAreaElement>(null)
+
+  // Payment method state
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('CASH')
 
   // Redeem code state
@@ -60,30 +62,16 @@ export default function CheckoutPage() {
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null)
   const [validatingRedeemCode, setValidatingRedeemCode] = useState(false)
 
+  // Initial load flag
+  const isInitialized = useRef(false)
+
   // Fetch products and load cart
   useEffect(() => {
+    if (isInitialized.current) return
+    isInitialized.current = true
+
     const loadProductsAndCart = async () => {
       try {
-        // Load saved form data from localStorage
-        const savedFormData = localStorage.getItem(FORM_DATA_KEY)
-        if (savedFormData) {
-          try {
-            const parsedData = JSON.parse(savedFormData)
-            setName(parsedData.name || '')
-            setPhone(parsedData.phone || '')
-            setAddress(parsedData.address || DEFAULT_ADDRESS)
-            setNotes(parsedData.notes || '')
-          } catch (error) {
-            console.error('Error parsing saved form data:', error)
-          }
-        }
-
-        // Load saved payment method from localStorage
-        const savedPaymentMethod = localStorage.getItem(PAYMENT_METHOD_KEY)
-        if (savedPaymentMethod) {
-          setSelectedPaymentMethod(savedPaymentMethod)
-        }
-
         // Fetch products
         const response = await fetch('/api/products')
         if (response.ok) {
@@ -92,24 +80,20 @@ export default function CheckoutPage() {
 
           // Now load cart from localStorage
           const savedCart = localStorage.getItem('cart')
-          console.log('Saved cart from localStorage:', savedCart)
 
           if (savedCart) {
             try {
               const parsedCart = JSON.parse(savedCart)
-              console.log('Parsed cart:', parsedCart)
 
               // Reconstruct cart with product data
               const reconstructedCart = parsedCart.map((item: any) => {
                 const product = data.find((p: Product) => p.id === item.productId)
-                console.log(`Finding product for ID ${item.productId}:`, product ? 'Found' : 'Not found')
                 return {
                   product: product,
                   quantity: item.quantity
                 }
               }).filter((item: CartItem) => item.product)
 
-              console.log('Reconstructed cart:', reconstructedCart)
               setCart(reconstructedCart)
             } catch (error) {
               console.error('Error parsing cart:', error)
@@ -127,6 +111,29 @@ export default function CheckoutPage() {
         } catch (error) {
           console.error('Error fetching payment methods:', error)
         }
+
+        // Load saved form data and set initial values to refs
+        const savedFormData = localStorage.getItem(FORM_DATA_KEY)
+        if (savedFormData) {
+          try {
+            const parsedData = JSON.parse(savedFormData)
+            // Set initial values after refs are attached
+            setTimeout(() => {
+              if (nameRef.current) nameRef.current.value = parsedData.name || ''
+              if (phoneRef.current) phoneRef.current.value = parsedData.phone || ''
+              if (addressRef.current) addressRef.current.value = parsedData.address || DEFAULT_ADDRESS
+              if (notesRef.current) notesRef.current.value = parsedData.notes || ''
+            }, 0)
+          } catch (error) {
+            console.error('Error parsing saved form data:', error)
+          }
+        }
+
+        // Load saved payment method from localStorage
+        const savedPaymentMethod = localStorage.getItem(PAYMENT_METHOD_KEY)
+        if (savedPaymentMethod) {
+          setSelectedPaymentMethod(savedPaymentMethod)
+        }
       } catch (error) {
         console.error('Error fetching products:', error)
       } finally {
@@ -137,25 +144,19 @@ export default function CheckoutPage() {
     loadProductsAndCart()
   }, [])
 
-  // Save form data to localStorage on blur
-  const saveFormData = useCallback(() => {
+  // Save form data to localStorage
+  const saveFormData = () => {
     try {
-      localStorage.setItem(FORM_DATA_KEY, JSON.stringify({ name, phone, address, notes }))
+      const data = {
+        name: nameRef.current?.value || '',
+        phone: phoneRef.current?.value || '',
+        address: addressRef.current?.value || DEFAULT_ADDRESS,
+        notes: notesRef.current?.value || ''
+      }
+      localStorage.setItem(FORM_DATA_KEY, JSON.stringify(data))
     } catch (error) {
       console.error('Error saving form data:', error)
     }
-  }, [name, phone, address, notes])
-
-  // Handle input changes
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)
-  const handleAddressChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => setAddress(e.target.value)
-  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)
-
-  // Handle payment method change
-  const handlePaymentMethodChange = (value: string) => {
-    setSelectedPaymentMethod(value)
-    localStorage.setItem(PAYMENT_METHOD_KEY, value)
   }
 
   const saveCartToLocalStorage = (newCart: CartItem[]) => {
@@ -276,6 +277,12 @@ export default function CheckoutPage() {
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Get values from refs
+    const name = nameRef.current?.value || ''
+    const phone = phoneRef.current?.value || ''
+    const address = addressRef.current?.value || DEFAULT_ADDRESS
+    const notes = notesRef.current?.value || ''
+
     // Validate cart
     if (cart.length === 0) {
       alert('Keranjang belanja masih kosong!')
@@ -340,7 +347,6 @@ export default function CheckoutPage() {
 
       console.log('Response status:', response.status)
       console.log('Response ok:', response.ok)
-      console.log('Response status text:', response.statusText)
 
       let result
       try {
@@ -391,6 +397,12 @@ export default function CheckoutPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  // Handle payment method change
+  const handlePaymentMethodChange = (value: string) => {
+    setSelectedPaymentMethod(value)
+    localStorage.setItem(PAYMENT_METHOD_KEY, value)
   }
 
   if (loading) {
@@ -519,9 +531,9 @@ export default function CheckoutPage() {
                   <Label htmlFor="name">Nama Lengkap *</Label>
                   <Input
                     id="name"
+                    ref={nameRef}
                     required
-                    value={name}
-                    onChange={handleNameChange}
+                    defaultValue={localStorage.getItem(FORM_DATA_KEY) ? JSON.parse(localStorage.getItem(FORM_DATA_KEY) || '{}')?.name || '' : ''}
                     onBlur={saveFormData}
                     placeholder="Masukkan nama lengkap"
                     className="border-orange-200 focus:border-orange-500"
@@ -534,9 +546,9 @@ export default function CheckoutPage() {
                   <Input
                     id="phone"
                     type="tel"
+                    ref={phoneRef}
                     required
-                    value={phone}
-                    onChange={handlePhoneChange}
+                    defaultValue={localStorage.getItem(FORM_DATA_KEY) ? JSON.parse(localStorage.getItem(FORM_DATA_KEY) || '{}')?.phone || '' : ''}
                     onBlur={saveFormData}
                     placeholder="08xxxxxxxxxx"
                     className="border-orange-200 focus:border-orange-500"
@@ -548,9 +560,9 @@ export default function CheckoutPage() {
                   <Label htmlFor="address">Alamat Pengiriman *</Label>
                   <Textarea
                     id="address"
+                    ref={addressRef}
                     required
-                    value={address}
-                    onChange={handleAddressChange}
+                    defaultValue={localStorage.getItem(FORM_DATA_KEY) ? JSON.parse(localStorage.getItem(FORM_DATA_KEY) || '{}')?.address || DEFAULT_ADDRESS : DEFAULT_ADDRESS}
                     onBlur={saveFormData}
                     placeholder="Masukkan alamat lengkap"
                     rows={3}
@@ -562,8 +574,8 @@ export default function CheckoutPage() {
                   <Label htmlFor="notes">Catatan (Opsional)</Label>
                   <Textarea
                     id="notes"
-                    value={notes}
-                    onChange={handleNotesChange}
+                    ref={notesRef}
+                    defaultValue={localStorage.getItem(FORM_DATA_KEY) ? JSON.parse(localStorage.getItem(FORM_DATA_KEY) || '{}')?.notes || '' : ''}
                     onBlur={saveFormData}
                     placeholder="Catatan tambahan untuk pesanan"
                     rows={2}
