@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
         customerName,
         customerPhone,
         customerAddress,
-        notes,
+        notes: notes || null,
         totalAmount: totalAmount || calculatedTotal,
         discount: discount || 0,
         redeemCode: redeemCode || null,
@@ -95,25 +95,30 @@ export async function POST(request: NextRequest) {
 
     // Update product stock
     for (const item of items) {
-      await db.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            decrement: item.quantity
+      try {
+        await db.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              decrement: item.quantity
+            }
           }
-        }
-      })
+        })
 
-      // Create stock log
-      await db.stockLog.create({
-        data: {
-          productId: item.productId,
-          type: 'OUT',
-          quantity: item.quantity,
-          reference: order.id,
-          notes: `Order #${orderNumber}`
-        }
-      })
+        // Create stock log
+        await db.stockLog.create({
+          data: {
+            productId: item.productId,
+            type: 'OUT',
+            quantity: item.quantity,
+            reference: order.id,
+            notes: `Order #${orderNumber}`
+          }
+        })
+      } catch (error) {
+        console.error(`Error updating stock for product ${item.productId}:`, error)
+        // Continue with other products even if one fails
+      }
     }
 
     return NextResponse.json(order, { status: 201 })

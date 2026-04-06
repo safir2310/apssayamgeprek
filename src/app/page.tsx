@@ -311,15 +311,23 @@ export default function Home() {
           }
         }
 
-        alert(`Pesanan berhasil dibuat! Order #${result.orderNumber}`)
+        // Clear cart and form
         setCart([])
         setCheckoutForm({ name: '', phone: '', address: DEFAULT_ADDRESS, notes: '' })
         setShowCheckout(false)
         setShowCart(false)
         setRedeemCode('')
         setAppliedDiscount(null)
+
+        // Refresh orders and redirect to history
+        await fetchOrders()
+        setActiveTab('riwayat')
+
+        alert(`Pesanan berhasil dibuat! Order #${result.orderNumber}`)
       } else {
-        alert('Gagal membuat pesanan. Silakan coba lagi.')
+        const errorData = await response.json()
+        console.error('Order creation error:', errorData)
+        alert(errorData.error || 'Gagal membuat pesanan. Silakan coba lagi.')
       }
     } catch (error) {
       console.error('Error creating order:', error)
