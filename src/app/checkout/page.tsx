@@ -60,6 +60,7 @@ export default function CheckoutPage() {
   // Redeem code state
   const [redeemCode, setRedeemCode] = useState('')
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null)
+  const [appliedVoucher, setAppliedVoucher] = useState<any>(null)
   const [validatingRedeemCode, setValidatingRedeemCode] = useState(false)
 
   // Initial load flag
@@ -197,17 +198,67 @@ export default function CheckoutPage() {
   // Handle redeem code validation
   const handleValidateRedeemCode = async () => {
     if (!redeemCode.trim()) {
-      alert('Silakan masukkan kode redeem')
+      alert('Silakan masukkan kode redeem/voucher')
       return
     }
 
     setValidatingRedeemCode(true)
     try {
+      // First try to validate as voucher
+      const cartTotal = getCartTotal()
+      const voucherResponse = await fetch(`/api/vouchers?code=${encodeURIComponent(redeemCode.trim())}&cartTotal=${cartTotal}`)
+
+      if (voucherResponse.ok) {
+        const voucherResult = await voucherResponse.json()
+
+        if (voucherResult.valid) {
+          const promo = voucherResult.promo
+
+          // If it's a free product or BOGO, add product to cart
+          if (promo.freeProductId) {
+            const product = products.find(p => p.id === promo.freeProductId)
+            if (product) {
+              // Check if product already in cart
+              const existingItem = cart.find(item => item.product.id === promo.freeProductId)
+              const newCart = existingItem
+                ? cart.map(item =>
+                    item.product.id === promo.freeProductId
+                      ? { ...item, quantity: item.quantity + 1 }
+                      : item
+                  )
+                : [...cart, { product, quantity: 1 }]
+
+              setCart(newCart)
+              saveCartToLocalStorage(newCart)
+            }
+          }
+
+          setAppliedVoucher({
+            code: promo.code,
+            name: promo.name,
+            type: promo.type,
+            value: promo.value,
+            discountAmount: promo.discountAmount,
+            freeProductId: promo.freeProductId,
+            freeProductName: promo.freeProductName
+          })
+
+          alert(
+            promo.type === 'FREE_PRODUCT' || promo.type === 'BOGO'
+              ? `Voucher berhasil! ${promo.freeProductName} telah ditambahkan ke keranjang!`
+              : `Voucher berhasil diterapkan! Diskon: Rp${promo.discountAmount.toLocaleString('id-ID')}`
+          )
+          setRedeemCode('')
+          return
+        }
+      }
+
+      // If voucher validation fails, try as redeem code
       const response = await fetch(`/api/redeem-codes?code=${encodeURIComponent(redeemCode.trim())}`)
 
       if (!response.ok) {
         const error = await response.json()
-        alert(error.error || 'Kode redeem tidak valid')
+        alert(error.error || 'Kode tidak valid')
         return
       }
 
@@ -234,10 +285,11 @@ export default function CheckoutPage() {
         })
 
         alert(`Kode redeem berhasil diterapkan! Diskon: Rp${discountAmount.toLocaleString('id-ID')}`)
+        setRedeemCode('')
       }
     } catch (error) {
-      console.error('Error validating redeem code:', error)
-      alert('Terjadi kesalahan saat memvalidasi kode redeem')
+      console.error('Error validating code:', error)
+      alert('Terjadi kesalahan saat memvalidasi kode')
     } finally {
       setValidatingRedeemCode(false)
     }
@@ -246,14 +298,19 @@ export default function CheckoutPage() {
   const handleRemoveRedeemCode = () => {
     setRedeemCode('')
     setAppliedDiscount(null)
+    setAppliedVoucher(null)
   }
 
   const getCartTotalWithDiscount = () => {
     const total = getCartTotal()
+    let discount = 0
     if (appliedDiscount && appliedDiscount.discountAmount) {
-      return Math.max(0, total - appliedDiscount.discountAmount)
+      discount += appliedDiscount.discountAmount
     }
-    return total
+    if (appliedVoucher && appliedVoucher.discountAmount) {
+      discount += appliedVoucher.discountAmount
+    }
+    return Math.max(0, total - discount)
   }
 
   const getPaymentIcon = (iconName: string) => {
@@ -583,16 +640,16 @@ export default function CheckoutPage() {
                   />
                 </div>
 
-                {/* Redeem Code Section */}
+                {/* Redeem Code / Voucher Section */}
                 <div>
-                  <Label>Kode Redeem (Opsional)</Label>
+                  <Label>Kode Voucher / Redeem (Opsional)</Label>
                   <div className="mt-2 space-y-2">
-                    {!appliedDiscount ? (
+                    {!appliedDiscount && !appliedVoucher ? (
                       <div className="flex gap-2">
                         <Input
                           value={redeemCode}
                           onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
-                          placeholder="Masukkan kode redeem"
+                          placeholder="Masukkan kode voucher atau redeem"
                           className="border-orange-200 focus:border-orange-500 uppercase"
                         />
                         <Button
@@ -606,31 +663,78 @@ export default function CheckoutPage() {
                         </Button>
                       </div>
                     ) : (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Gift className="w-4 h-4 text-green-600" />
-                            <span className="font-semibold text-green-800 text-sm">
-                              {appliedDiscount.productName}
-                            </span>
+                      <>
+                        {appliedVoucher && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <Gift className="w-4 h-4 text-blue-600" />
+                                <span className="font-semibold text-blue-800 text-sm">
+                                  {appliedVoucher.name}
+                                </span>
+                                {appliedVoucher.type === 'FREE_PRODUCT' && (
+                                  <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full">
+                                    Produk Gratis
+                                  </span>
+                                )}
+                                {appliedVoucher.type === 'BOGO' && (
+                                  <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                                    BOGO
+                                  </span>
+                                )}
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleRemoveRedeemCode}
+                                className="h-6 w-6 p-0 text-red-600 hover:bg-red-50"
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-blue-700">
+                                {appliedVoucher.type === 'FREE_PRODUCT'
+                                  ? 'Produk gratis:'
+                                  : 'Diskon diterapkan:'}
+                              </span>
+                              <span className="font-bold text-blue-700">
+                                {appliedVoucher.type === 'FREE_PRODUCT'
+                                  ? appliedVoucher.freeProductName
+                                  : `-Rp${appliedVoucher.discountAmount.toLocaleString('id-ID')}`}
+                              </span>
+                            </div>
                           </div>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={handleRemoveRedeemCode}
-                            className="h-6 w-6 p-0 text-red-600 hover:bg-red-50"
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-green-700">Diskon diterapkan:</span>
-                          <span className="font-bold text-green-700">
-                            -Rp{appliedDiscount.discountAmount.toLocaleString('id-ID')}
-                          </span>
-                        </div>
-                      </div>
+                        )}
+                        {appliedDiscount && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <Gift className="w-4 h-4 text-green-600" />
+                                <span className="font-semibold text-green-800 text-sm">
+                                  {appliedDiscount.productName}
+                                </span>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleRemoveRedeemCode}
+                                className="h-6 w-6 p-0 text-red-600 hover:bg-red-50"
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-green-700">Diskon diterapkan:</span>
+                              <span className="font-bold text-green-700">
+                                -Rp{appliedDiscount.discountAmount.toLocaleString('id-ID')}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -696,8 +800,26 @@ export default function CheckoutPage() {
                   </div>
                   {appliedDiscount && (
                     <div className="flex justify-between text-sm text-green-600">
-                      <span>Diskon ({appliedDiscount.productName})</span>
+                      <span>Diskon Redeem ({appliedDiscount.productName})</span>
                       <span>-Rp{appliedDiscount.discountAmount.toLocaleString('id-ID')}</span>
+                    </div>
+                  )}
+                  {appliedVoucher && appliedVoucher.type !== 'FREE_PRODUCT' && (
+                    <div className="flex justify-between text-sm text-blue-600">
+                      <span>Voucher {appliedVoucher.name}</span>
+                      <span>
+                        {appliedVoucher.type === 'PERCENTAGE'
+                          ? `-${appliedVoucher.value}%`
+                          : appliedVoucher.type === 'BOGO'
+                          ? `-Rp${appliedVoucher.discountAmount.toLocaleString('id-ID')} (BOGO)`
+                          : `-Rp${appliedVoucher.discountAmount.toLocaleString('id-ID')}`}
+                      </span>
+                    </div>
+                  )}
+                  {appliedVoucher && appliedVoucher.type === 'FREE_PRODUCT' && (
+                    <div className="flex justify-between text-sm text-purple-600">
+                      <span>Produk Gratis: {appliedVoucher.freeProductName}</span>
+                      <span>Gratis</span>
                     </div>
                   )}
                   <Separator className="my-2" />

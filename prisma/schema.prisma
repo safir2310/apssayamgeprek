@@ -262,10 +262,11 @@ model Promo {
   code        String   @unique
   name        String
   description String?
-  type        String   // PERCENTAGE, FIXED, BOGO
+  type        String   // PERCENTAGE, FIXED, BOGO, FREE_PRODUCT
   value       Float
   minPurchase Float?
   maxDiscount Float?
+  productId   String?  // Product ID for BOGO or FREE_PRODUCT types
   startDate   DateTime
   endDate     DateTime
   isActive    Boolean  @default(true)
@@ -274,6 +275,7 @@ model Promo {
 
   @@index([code])
   @@index([isActive])
+  @@index([productId])
 }
 
 // Stock Management
