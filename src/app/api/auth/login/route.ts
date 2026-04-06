@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log('Login attempt for email:', email)
+
     // Find user by email with role
     const user = await prisma.user.findUnique({
       where: { email },
@@ -27,21 +29,36 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user) {
+      console.log('User not found for email:', email)
       return NextResponse.json(
         { error: 'Email atau password salah' },
         { status: 401 }
       )
     }
 
+    console.log('User found:', { id: user.id, email: user.email, role: user.role })
+
     // Verify password
     // In a real app, use bcrypt: await bcrypt.compare(password, user.password)
     // For now, using plain text comparison
     if (user.password !== password) {
+      console.log('Password mismatch for user:', email)
       return NextResponse.json(
         { error: 'Email atau password salah' },
         { status: 401 }
       )
     }
+
+    // Check if role exists
+    if (!user.role) {
+      console.log('User has no role:', email)
+      return NextResponse.json(
+        { error: 'User tidak memiliki role. Hubungi administrator.' },
+        { status: 403 }
+      )
+    }
+
+    console.log('Login successful for:', email, 'with role:', user.role.name)
 
     // Return success with user data including role
     return NextResponse.json({

@@ -7,9 +7,9 @@ export async function POST(request: NextRequest) {
     const { username, password, name, phone, email, address } = body
 
     // Validation
-    if (!username || !password || !name || !phone) {
+    if (!username || !password || !name || !phone || !email) {
       return NextResponse.json(
-        { error: 'Username, password, nama, dan nomor telepon diperlukan' },
+        { error: 'Username, password, nama, nomor telepon, dan email diperlukan' },
         { status: 400 }
       )
     }
@@ -59,6 +59,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if email already exists
+    const existingEmail = await prisma.member.findUnique({
+      where: { email }
+    })
+
+    if (existingEmail) {
+      return NextResponse.json(
+        { error: 'Email sudah terdaftar' },
+        { status: 409 }
+      )
+    }
+
     // Create new member
     const member = await prisma.member.create({
       data: {
@@ -66,7 +78,7 @@ export async function POST(request: NextRequest) {
         password,
         name,
         phone,
-        email: email || null,
+        email,
         address: address || null
       }
     })

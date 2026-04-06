@@ -218,7 +218,7 @@ model Member {
   password  String
   phone     String   @unique
   name      String
-  email     String?
+  email     String   @unique
   address   String?
   points    Int      @default(0)
   isActive  Boolean  @default(true)
@@ -229,6 +229,7 @@ model Member {
 
   @@index([username])
   @@index([phone])
+  @@index([email])
 }
 
 model PointHistory {

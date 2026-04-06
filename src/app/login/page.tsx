@@ -1,23 +1,33 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Flame, User, Lock, Mail, Phone, MapPin, ArrowLeft, Eye, EyeOff, KeyRound } from 'lucide-react'
+import { Flame, Mail, Lock, Eye, EyeOff, User, Phone, MapPin, ArrowLeft, KeyRound, Store, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
-  const [activeTab, setActiveTab] = useState('login')
-  const [loginForm, setLoginForm] = useState({
-    username: '',
+  const [loading, setLoading] = useState(false)
+  
+  // Staff Login Form
+  const [staffForm, setStaffForm] = useState({
+    email: '',
     password: ''
   })
+
+  // Member Login Form
+  const [memberLoginForm, setMemberLoginForm] = useState({
+    email: '',
+    password: ''
+  })
+
+  // Register Form
   const [registerForm, setRegisterForm] = useState({
     name: '',
     username: '',
@@ -27,24 +37,73 @@ export default function LoginPage() {
     password: '',
     confirmPassword: ''
   })
+
+  // Forgot Password Form
   const [forgotPasswordForm, setForgotPasswordForm] = useState({
     email: ''
   })
-  const [loading, setLoading] = useState(false)
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleStaffLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
+      console.log('Attempting staff login with email:', staffForm.email)
+
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: staffForm.email,
+          password: staffForm.password
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        // Store user data in localStorage
+        localStorage.setItem('admin-user', JSON.stringify(data.user))
+        localStorage.setItem('admin-session', Date.now().toString())
+
+        // Redirect based on role
+        if (data.user.role === 'admin') {
+          alert(`Selamat datang, ${data.user.name}! Mengalihkan ke Admin Dashboard...`)
+          router.push('/admin')
+        } else if (data.user.role === 'kasir') {
+          alert(`Selamat datang, ${data.user.name}! Mengalihkan ke POS...`)
+          router.push('/pos')
+        } else {
+          alert('Role tidak dikenali. Hubungi administrator.')
+        }
+      } else {
+        alert(data.error || 'Email atau password salah')
+      }
+    } catch (error) {
+      console.error('Staff login error:', error)
+      alert('Terjadi kesalahan koneksi. Silakan coba lagi.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleMemberLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      console.log('Attempting member login with email:', memberLoginForm.email)
+
       const response = await fetch('/api/members/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          username: loginForm.username,
-          password: loginForm.password
+          email: memberLoginForm.email,
+          password: memberLoginForm.password
         })
       })
 
@@ -56,11 +115,10 @@ export default function LoginPage() {
         alert(`Selamat datang kembali, ${data.member.name}!`)
         router.push('/')
       } else {
-        // Show specific error message
-        alert(data.error || 'Username atau password salah')
+        alert(data.error || 'Email atau password salah')
       }
     } catch (error) {
-      console.error('Login error:', error)
+      console.error('Member login error:', error)
       alert('Terjadi kesalahan koneksi. Silakan coba lagi.')
     } finally {
       setLoading(false)
@@ -71,7 +129,7 @@ export default function LoginPage() {
     e.preventDefault()
 
     // Validation
-    if (!registerForm.name || !registerForm.username || !registerForm.phone || !registerForm.password) {
+    if (!registerForm.name || !registerForm.username || !registerForm.phone || !registerForm.email || !registerForm.password) {
       alert('Mohon lengkapi semua field yang wajib diisi!')
       return
     }
@@ -108,7 +166,7 @@ export default function LoginPage() {
           username: registerForm.username,
           name: registerForm.name,
           phone: registerForm.phone,
-          email: registerForm.email || null,
+          email: registerForm.email,
           address: registerForm.address || null,
           password: registerForm.password
         })
@@ -117,11 +175,10 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        // Show success notification and switch to login tab
-        alert('Pendaftaran berhasil! Silakan login dengan username dan password Anda.')
-        setActiveTab('login')
-        setLoginForm({
-          username: registerForm.username,
+        // Show success notification and switch to member login tab
+        alert('Pendaftaran berhasil! Silakan login dengan email Anda.')
+        setMemberLoginForm({
+          email: registerForm.email,
           password: ''
         })
         setRegisterForm({
@@ -157,7 +214,6 @@ export default function LoginPage() {
 
     try {
       // TODO: Implement forgot password logic
-      // For now, just show a message
       alert('Fitur reset password akan dikirim ke email Anda. (Fitur ini akan segera tersedia)')
     } catch (error) {
       console.error('Forgot password error:', error)
@@ -182,7 +238,7 @@ export default function LoginPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-800">AYAM GEPREK SAMBAL IJO</h1>
-              <p className="text-sm text-gray-500">Member Area</p>
+              <p className="text-sm text-gray-500">Login</p>
             </div>
           </div>
         </div>
@@ -191,47 +247,123 @@ export default function LoginPage() {
           <CardHeader>
             <CardTitle className="text-2xl text-center">Selamat Datang!</CardTitle>
             <CardDescription className="text-center">
-              Login atau daftar untuk menikmati promo dan poin
+              Masuk sebagai Staff atau Member
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              {/* Only show login tab in the list */}
-              <TabsList className="grid w-full grid-cols-1 mb-6">
-                <TabsTrigger value="login">Login</TabsTrigger>
+            <Tabs defaultValue="staff" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsTrigger value="staff">Staff</TabsTrigger>
+                <TabsTrigger value="member">Member</TabsTrigger>
+                <TabsTrigger value="register">Daftar</TabsTrigger>
               </TabsList>
 
-              {/* Login Tab */}
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
+              {/* Staff Login Tab */}
+              <TabsContent value="staff">
+                <form onSubmit={handleStaffLogin} className="space-y-4">
                   <div>
-                    <Label htmlFor="login-username" className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-orange-600" />
-                      Username
+                    <Label htmlFor="staff-email" className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-orange-600" />
+                      Email Staff
                     </Label>
                     <Input
-                      id="login-username"
-                      type="text"
-                      placeholder="Masukkan username"
-                      value={loginForm.username}
-                      onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                      id="staff-email"
+                      type="email"
+                      placeholder="admin@geprek.com"
+                      value={staffForm.email}
+                      onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
                       required
                       className="border-orange-200 focus:border-orange-500"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="login-password" className="flex items-center gap-2">
+                    <Label htmlFor="staff-password" className="flex items-center gap-2">
                       <Lock className="w-4 h-4 text-orange-600" />
                       Password
                     </Label>
                     <div className="relative">
                       <Input
-                        id="login-password"
+                        id="staff-password"
                         type={showPassword ? 'text' : 'password'}
                         placeholder="Masukkan password"
-                        value={loginForm.password}
-                        onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                        value={staffForm.password}
+                        onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })}
+                        required
+                        className="border-orange-200 focus:border-orange-500 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
+                  >
+                    {loading ? 'Memproses...' : 'Login sebagai Staff'}
+                  </Button>
+                </form>
+
+                {/* Staff Accounts Info */}
+                <Card className="mt-6 border-orange-200 bg-orange-50">
+                  <CardContent className="p-4">
+                    <h3 className="font-bold text-sm text-orange-800 mb-3">📋 Akun Staff:</h3>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between items-center bg-white p-2 rounded border border-orange-200">
+                        <div>
+                          <span className="font-semibold">Admin:</span> admin@geprek.com / admin123
+                        </div>
+                        <Shield className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <div className="flex justify-between items-center bg-white p-2 rounded border border-orange-200">
+                        <div>
+                          <span className="font-semibold">Kasir:</span> kasir@geprek.com / kasir123
+                        </div>
+                        <Store className="w-4 h-4 text-blue-600" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Member Login Tab */}
+              <TabsContent value="member">
+                <form onSubmit={handleMemberLogin} className="space-y-4">
+                  <div>
+                    <Label htmlFor="member-email" className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-orange-600" />
+                      Email Member
+                    </Label>
+                    <Input
+                      id="member-email"
+                      type="email"
+                      placeholder="member@example.com"
+                      value={memberLoginForm.email}
+                      onChange={(e) => setMemberLoginForm({ ...memberLoginForm, email: e.target.value })}
+                      required
+                      className="border-orange-200 focus:border-orange-500"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="member-password" className="flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-orange-600" />
+                      Password
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="member-password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Masukkan password"
+                        value={memberLoginForm.password}
+                        onChange={(e) => setMemberLoginForm({ ...memberLoginForm, password: e.target.value })}
                         required
                         className="border-orange-200 focus:border-orange-500 pr-10"
                       />
@@ -246,7 +378,7 @@ export default function LoginPage() {
                     {/* Lupa Password Link */}
                     <button
                       type="button"
-                      onClick={() => setActiveTab('forgot-password')}
+                      onClick={() => router.push('/forgot-password')}
                       className="text-sm text-orange-600 hover:text-orange-700 hover:underline mt-2 block text-right"
                     >
                       Lupa Password?
@@ -258,71 +390,19 @@ export default function LoginPage() {
                     disabled={loading}
                     className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
                   >
-                    {loading ? 'Memproses...' : 'Login'}
+                    {loading ? 'Memproses...' : 'Login sebagai Member'}
                   </Button>
                 </form>
 
-                {/* Daftar Link at Bottom */}
-                <div className="mt-6 text-center">
-                  <p className="text-sm text-gray-600">
-                    Belum punya akun?{' '}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('register')}
-                      className="text-orange-600 font-medium hover:underline"
-                    >
-                      Daftar Sekarang
-                    </button>
-                  </p>
-                </div>
-              </TabsContent>
-
-              {/* Forgot Password Tab */}
-              <TabsContent value="forgot-password">
-                <form onSubmit={handleForgotPassword} className="space-y-4">
-                  <div className="text-center mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <KeyRound className="w-8 h-8 text-orange-600" />
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      Masukkan email Anda untuk mereset password
+                {/* Member Account Info */}
+                <Card className="mt-6 border-orange-200 bg-orange-50">
+                  <CardContent className="p-4">
+                    <h3 className="font-bold text-sm text-orange-800 mb-2">👤 Akun Member Demo:</h3>
+                    <p className="text-xs text-gray-600">
+                      Email: member@geprek.com / Password: member123
                     </p>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="forgot-email" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-orange-600" />
-                      Email
-                    </Label>
-                    <Input
-                      id="forgot-email"
-                      type="email"
-                      placeholder="Masukkan email terdaftar"
-                      value={forgotPasswordForm.email}
-                      onChange={(e) => setForgotPasswordForm({ ...forgotPasswordForm, email: e.target.value })}
-                      required
-                      className="border-orange-200 focus:border-orange-500"
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
-                  >
-                    {loading ? 'Memproses...' : 'Kirim Link Reset'}
-                  </Button>
-
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('login')}
-                      className="text-sm text-gray-600 hover:text-orange-600 hover:underline"
-                    >
-                      Kembali ke Login
-                    </button>
-                  </div>
-                </form>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               {/* Register Tab */}
@@ -378,14 +458,15 @@ export default function LoginPage() {
                   <div>
                     <Label htmlFor="reg-email" className="flex items-center gap-2">
                       <Mail className="w-4 h-4 text-orange-600" />
-                      Email
+                      Email *
                     </Label>
                     <Input
                       id="reg-email"
                       type="email"
-                      placeholder="email@example.com (opsional)"
+                      placeholder="email@example.com"
                       value={registerForm.email}
                       onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                      required
                       className="border-orange-200 focus:border-orange-500"
                     />
                   </div>
@@ -451,18 +532,8 @@ export default function LoginPage() {
                     disabled={loading}
                     className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
                   >
-                    {loading ? 'Mendaftar...' : 'Daftar Sekarang'}
+                    {loading ? 'Mendaftar...' : 'Daftar Member Baru'}
                   </Button>
-
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('login')}
-                      className="text-sm text-gray-600 hover:text-orange-600 hover:underline"
-                    >
-                      Sudah punya akun? Login
-                    </button>
-                  </div>
                 </form>
               </TabsContent>
             </Tabs>

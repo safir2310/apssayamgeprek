@@ -79,7 +79,7 @@ async function main() {
   // 3. Create Default Member (User/Member)
   console.log('Creating members...')
 
-  let member = await prisma.member.findUnique({
+  let member = await prisma.member.findFirst({
     where: { username: 'member' }
   })
 
@@ -229,9 +229,10 @@ async function main() {
   console.log('   Password: kasir123')
   console.log('   PIN: 234567')
   console.log('\n👤 Member:')
-  console.log('   Username: member')
+  console.log('   Email: member@geprek.com')
   console.log('   Password: member123')
   console.log('   Phone: 081234567892')
+  console.log('   Username: member')
   console.log('═══════════════════════════════════════════════\n')
 }
 
