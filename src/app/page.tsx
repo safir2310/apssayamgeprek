@@ -341,6 +341,13 @@ export default function Home() {
     { id: 'profile' as const, label: 'Profile', icon: User },
   ]
 
+  // Bottom navigation items with cart inserted after Menu
+  const bottomNavItems = [
+    ...navItems.slice(0, 2), // beranda, menu
+    { id: 'cart' as const, label: 'Keranjang', icon: ShoppingCart, isCart: true },
+    ...navItems.slice(2), // qr-member, riwayat, tukar-point, profile
+  ]
+
 
 
   // Generate QR code pattern
@@ -2142,47 +2149,39 @@ export default function Home() {
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-orange-200 shadow-lg z-50">
         <div className="max-w-7xl mx-auto px-2">
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center justify-around flex-1">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                const isActive = activeTab === item.id
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleTabClick(item.id)}
-                    className={`flex flex-col items-center justify-center py-2 px-3 min-w-[60px] transition-colors relative ${
-                      isActive ? 'text-orange-600' : 'text-gray-500 hover:text-orange-500'
-                    }`}
-                  >
+          <div className="flex items-center justify-around py-2">
+            {bottomNavItems.map((item) => {
+              const Icon = item.icon
+              const isActive = activeTab === item.id
+              const isCart = (item as any).isCart
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={isCart ? () => setShowCart(true) : () => handleTabClick(item.id)}
+                  className={`flex flex-col items-center justify-center py-2 px-3 min-w-[60px] transition-colors relative ${
+                    isActive ? 'text-orange-600' : 'text-gray-500 hover:text-orange-500'
+                  }`}
+                >
+                  <div className="relative">
                     <Icon className={`w-5 h-5 ${isActive ? 'text-orange-600' : 'text-gray-500'}`} />
-                    <span className="text-xs mt-1 font-medium">{item.label}</span>
+                    {/* Show cart count badge */}
+                    {isCart && getCartCount() > 0 && (
+                      <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center">
+                        {getCartCount()}
+                      </Badge>
+                    )}
                     {/* Show points badge on Tukar Point */}
                     {item.id === 'tukar-point' && memberPoints > 0 && (
                       <Badge className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center">
                         {memberPoints}
                       </Badge>
                     )}
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Cart Button */}
-            <button
-              onClick={() => setShowCart(true)}
-              className="flex flex-col items-center justify-center py-2 px-4 min-w-[60px] transition-colors relative ml-2"
-            >
-              <div className="relative">
-                <ShoppingCart className={`w-6 h-6 ${activeTab === 'cart' ? 'text-orange-600' : 'text-gray-500'}`} />
-                {getCartCount() > 0 && (
-                  <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center">
-                    {getCartCount()}
-                  </Badge>
-                )}
-              </div>
-              <span className="text-xs mt-1 font-medium text-gray-600">Keranjang</span>
-            </button>
+                  </div>
+                  <span className="text-xs mt-1 font-medium">{item.label}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       </nav>
