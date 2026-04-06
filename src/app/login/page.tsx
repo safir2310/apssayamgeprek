@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Flame, User, Lock, Mail, Phone, MapPin, ArrowLeft, Eye, EyeOff, CheckCircle, KeyRound } from 'lucide-react'
+import { Flame, User, Lock, Mail, Phone, MapPin, ArrowLeft, Eye, EyeOff, KeyRound } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -31,7 +31,6 @@ export default function LoginPage() {
     email: ''
   })
   const [loading, setLoading] = useState(false)
-  const [registerSuccess, setRegisterSuccess] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,11 +56,12 @@ export default function LoginPage() {
         alert(`Selamat datang kembali, ${data.member.name}!`)
         router.push('/')
       } else {
+        // Show specific error message
         alert(data.error || 'Username atau password salah')
       }
     } catch (error) {
       console.error('Login error:', error)
-      alert('Terjadi kesalahan. Silakan coba lagi.')
+      alert('Terjadi kesalahan koneksi. Silakan coba lagi.')
     } finally {
       setLoading(false)
     }
@@ -114,15 +114,32 @@ export default function LoginPage() {
         })
       })
 
-      if (response.ok) {
-        setRegisterSuccess(true)
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        // Show success notification and switch to login tab
+        alert('Pendaftaran berhasil! Silakan login dengan username dan password Anda.')
+        setActiveTab('login')
+        setLoginForm({
+          username: registerForm.username,
+          password: ''
+        })
+        setRegisterForm({
+          name: '',
+          username: '',
+          phone: '',
+          email: '',
+          address: '',
+          password: '',
+          confirmPassword: ''
+        })
       } else {
-        const error = await response.json()
-        alert(error.error || 'Gagal mendaftar. Silakan coba lagi.')
+        // Show specific error message
+        alert(data.error || 'Terjadi kesalahan saat mendaftar. Silakan coba lagi.')
       }
     } catch (error) {
       console.error('Registration error:', error)
-      alert('Terjadi kesalahan. Silakan coba lagi.')
+      alert('Terjadi kesalahan koneksi. Silakan coba lagi.')
     } finally {
       setLoading(false)
     }
@@ -148,40 +165,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  if (registerSuccess) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-orange-200 shadow-xl">
-          <CardContent className="p-8 text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Pendaftaran Berhasil!</h2>
-            <p className="text-gray-600 mb-6">Akun member Anda telah berhasil dibuat. Silakan login untuk melanjutkan.</p>
-            <Button
-              onClick={() => {
-                setRegisterSuccess(false)
-                setActiveTab('login')
-                setRegisterForm({
-                  name: '',
-                  username: '',
-                  phone: '',
-                  email: '',
-                  address: '',
-                  password: '',
-                  confirmPassword: ''
-                })
-              }}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
-            >
-              Login Sekarang
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
   }
 
   return (
