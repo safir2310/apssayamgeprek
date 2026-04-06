@@ -557,6 +557,12 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
       return
     }
 
+    // Check if shift is open
+    if (!currentShift?.id) {
+      alert('Shift belum dibuka! Silakan buka shift terlebih dahulu.')
+      return
+    }
+
     const total = getCartTotal()
     const amount = parseFloat(paymentAmount)
 
@@ -590,7 +596,7 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
           paymentMethod,
           paidAmount: amount || total,
           cashierId: cashier?.id || '1',
-          shiftId: currentShift?.id,
+          shiftId: currentShift.id,
           memberId: selectedMember?.id || null,
           discount: discount,
           voucherCode: appliedVoucher?.code || null
@@ -622,6 +628,8 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
       setPaymentAmount('')
       setVoucherCode('')
       setAppliedVoucher(null)
+      setSelectedMember(null) // Reset member setelah transaksi selesai
+      setMemberPhone('') // Reset member phone input
       setShowPaymentDialog(false)
     } catch (error) {
       console.error('Error processing payment:', error)
