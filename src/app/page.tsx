@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -127,6 +127,7 @@ export default function Home() {
   const [redeemCode, setRedeemCode] = useState('')
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null)
   const [validatingRedeemCode, setValidatingRedeemCode] = useState(false)
+  const [submittingOrder, setSubmittingOrder] = useState(false)
 
   const fetchProducts = async () => {
     try {
@@ -197,10 +198,17 @@ export default function Home() {
     }
   }, [])
 
-  // Fetch orders when on riwayat tab
+  // Fetch orders when on riwayat tab and auto-refresh
   useEffect(() => {
     if (activeTab === 'riwayat') {
       fetchOrders()
+
+      // Auto-refresh every 10 seconds when on riwayat tab
+      const interval = setInterval(() => {
+        fetchOrders()
+      }, 10000)
+
+      return () => clearInterval(interval)
     }
   }, [activeTab])
 
@@ -307,14 +315,30 @@ export default function Home() {
       return
     }
 
+    // Validate form fields
+    if (!checkoutForm.name.trim()) {
+      alert('Silakan masukkan nama lengkap!')
+      return
+    }
+
+    if (!checkoutForm.phone.trim()) {
+      alert('Silakan masukkan nomor WhatsApp!')
+      return
+    }
+
+    if (!checkoutForm.address.trim()) {
+      alert('Silakan masukkan alamat pengiriman!')
+      return
+    }
+
     const finalTotal = getCartTotalWithDiscount()
     const discount = appliedDiscount ? appliedDiscount.discountAmount : 0
 
     const orderData = {
-      customerName: checkoutForm.name,
-      customerPhone: checkoutForm.phone,
-      customerAddress: checkoutForm.address,
-      notes: checkoutForm.notes,
+      customerName: checkoutForm.name.trim(),
+      customerPhone: checkoutForm.phone.trim(),
+      customerAddress: checkoutForm.address.trim(),
+      notes: checkoutForm.notes.trim(),
       totalAmount: finalTotal,
       discount: discount,
       redeemCode: appliedDiscount ? appliedDiscount.code : null,
@@ -327,6 +351,7 @@ export default function Home() {
       }))
     }
 
+    setSubmittingOrder(true)
     try {
       const response = await fetch('/api/orders', {
         method: 'POST',
@@ -376,6 +401,8 @@ export default function Home() {
     } catch (error) {
       console.error('Error creating order:', error)
       alert('Terjadi kesalahan. Silakan coba lagi.')
+    } finally {
+      setSubmittingOrder(false)
     }
   }
 
@@ -1122,17 +1149,30 @@ export default function Home() {
                         <p className="font-bold text-orange-600">
                           Rp{order.totalAmount.toLocaleString('id-ID')}
                         </p>
-                        <Badge
-                          className={
-                            order.status === 'COMPLETED'
-                              ? 'bg-green-500 text-white'
-                              : order.status === 'PENDING'
-                              ? 'bg-yellow-500 text-white'
-                              : 'bg-gray-500 text-white'
-                          }
-                        >
-                          {order.status}
-                        </Badge>
+                        <div className="flex gap-1 mt-1 justify-end">
+                          <Badge
+                            className={
+                              order.status === 'COMPLETED'
+                                ? 'bg-green-500 text-white'
+                                : order.status === 'PENDING'
+                                ? 'bg-yellow-500 text-white'
+                                : order.status === 'PROCESSING'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-500 text-white'
+                            }
+                          >
+                            {order.status}
+                          </Badge>
+                          <Badge
+                            className={
+                              order.paymentStatus === 'PAID'
+                                ? 'bg-green-600 text-white'
+                                : 'bg-yellow-600 text-white'
+                            }
+                          >
+                            {order.paymentStatus}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                     <div className="border-t border-orange-200 pt-3">
@@ -1630,7 +1670,7 @@ export default function Home() {
                 <span>Rp{getCartTotalWithDiscount().toLocaleString('id-ID')}</span>
               </div>
               <Button
-                onClick={() => router.push('/checkout')}
+                onClick={() => { setShowCheckout(true); setShowCart(false); }}
                 className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
               >
                 Lanjut ke Pembayaran
@@ -1645,81 +1685,121 @@ export default function Home() {
   // Checkout Dialog
   const CheckoutDialog = () => (
     <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Checkout</DialogTitle>
+          <DialogDescription>
+            Lengkapi informasi pengiriman untuk menyelesaikan pesanan
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleCheckout} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nama Lengkap *</Label>
-            <Input
-              id="name"
-              required
-              value={checkoutForm.name}
-              onChange={(e) => setCheckoutForm({ ...checkoutForm, name: e.target.value })}
-              placeholder="Masukkan nama lengkap"
-              className="border-orange-200 focus:border-orange-500"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="phone">No. WhatsApp *</Label>
-            <Input
-              id="phone"
-              type="tel"
-              required
-              value={checkoutForm.phone}
-              onChange={(e) => setCheckoutForm({ ...checkoutForm, phone: e.target.value })}
-              placeholder="08xxxxxxxxxx"
-              className="border-orange-200 focus:border-orange-500"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="address">Alamat Pengiriman *</Label>
-            <Textarea
-              id="address"
-              required
-              value={checkoutForm.address}
-              onChange={(e) => setCheckoutForm({ ...checkoutForm, address: e.target.value })}
-              placeholder="Masukkan alamat lengkap"
-              rows={3}
-              className="border-orange-200 focus:border-orange-500"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="notes">Catatan (Opsional)</Label>
-            <Textarea
-              id="notes"
-              value={checkoutForm.notes}
-              onChange={(e) => setCheckoutForm({ ...checkoutForm, notes: e.target.value })}
-              placeholder="Catatan tambahan untuk pesanan"
-              rows={2}
-              className="border-orange-200 focus:border-orange-500"
-            />
-          </div>
-
-          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200 space-y-2">
-            {appliedDiscount && (
-              <div className="flex justify-between text-sm text-green-600">
-                <span>Diskon ({appliedDiscount.productName})</span>
-                <span>-Rp{appliedDiscount.discountAmount.toLocaleString('id-ID')}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Cart Summary */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-800">Ringkasan Pesanan</h3>
+            <div className="space-y-3 max-h-60 overflow-y-auto">
+              {cart.map(item => (
+                <div key={item.product.id} className="flex items-center gap-3 pb-2 border-b border-orange-100">
+                  {item.product.image ? (
+                    <img
+                      src={item.product.image}
+                      alt={item.product.name}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded flex items-center justify-center">
+                      <Flame className="w-6 h-6 text-orange-400" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-gray-800 line-clamp-1">{item.product.name}</p>
+                    <p className="text-xs text-orange-600">Rp{item.product.price.toLocaleString('id-ID')} x {item.quantity}</p>
+                  </div>
+                  <p className="font-semibold text-orange-600 text-sm">
+                    Rp{(item.product.price * item.quantity).toLocaleString('id-ID')}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="bg-orange-50 p-3 rounded-lg space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Subtotal</span>
+                <span>Rp{getCartTotal().toLocaleString('id-ID')}</span>
               </div>
-            )}
-            <div className="flex justify-between font-bold text-lg">
-              <span>Total Pembayaran:</span>
-              <span className="text-orange-600">Rp{getCartTotalWithDiscount().toLocaleString('id-ID')}</span>
+              {appliedDiscount && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Diskon ({appliedDiscount.productName})</span>
+                  <span>-Rp{appliedDiscount.discountAmount.toLocaleString('id-ID')}</span>
+                </div>
+              )}
+              <Separator className="my-1" />
+              <div className="flex justify-between font-bold">
+                <span>Total</span>
+                <span className="text-orange-600">Rp{getCartTotalWithDiscount().toLocaleString('id-ID')}</span>
+              </div>
             </div>
           </div>
 
-          <Button
-            type="submit"
-            className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
-          >
-            Konfirmasi Pesanan
-          </Button>
-        </form>
+          {/* Checkout Form */}
+          <form onSubmit={handleCheckout} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Nama Lengkap *</Label>
+              <Input
+                id="name"
+                required
+                value={checkoutForm.name}
+                onChange={(e) => setCheckoutForm({ ...checkoutForm, name: e.target.value })}
+                placeholder="Masukkan nama lengkap"
+                className="border-orange-200 focus:border-orange-500"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="phone">No. WhatsApp *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                required
+                value={checkoutForm.phone}
+                onChange={(e) => setCheckoutForm({ ...checkoutForm, phone: e.target.value })}
+                placeholder="08xxxxxxxxxx"
+                className="border-orange-200 focus:border-orange-500"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="address">Alamat Pengiriman *</Label>
+              <Textarea
+                id="address"
+                required
+                value={checkoutForm.address}
+                onChange={(e) => setCheckoutForm({ ...checkoutForm, address: e.target.value })}
+                placeholder="Masukkan alamat lengkap"
+                rows={3}
+                className="border-orange-200 focus:border-orange-500"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="notes">Catatan (Opsional)</Label>
+              <Textarea
+                id="notes"
+                value={checkoutForm.notes}
+                onChange={(e) => setCheckoutForm({ ...checkoutForm, notes: e.target.value })}
+                placeholder="Catatan tambahan untuk pesanan"
+                rows={2}
+                className="border-orange-200 focus:border-orange-500"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              disabled={submittingOrder}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
+            >
+              {submittingOrder ? 'Memproses...' : 'Konfirmasi Pesanan'}
+            </Button>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   )
@@ -2242,6 +2322,7 @@ export default function Home() {
 
       {/* Dialogs */}
       <CartDialog />
+      <CheckoutDialog />
     </div>
   )
 }

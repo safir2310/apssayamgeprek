@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { FileText, Search, ArrowLeft, Package, Eye, CheckCircle, XCircle, Clock, Truck, LogOut, Printer } from 'lucide-react'
+import { FileText, Search, ArrowLeft, Package, Eye, CheckCircle, XCircle, Clock, Truck, LogOut, Printer, DollarSign } from 'lucide-react'
 import Link from 'next/link'
 
 interface OrderItem {
@@ -126,13 +126,13 @@ export default function OrderManagementPage() {
     console.log('Order ID type:', typeof orderId)
     console.log('Order ID length:', orderId?.length)
     console.log('Status:', status)
-    
+
     if (!orderId || typeof orderId !== 'string' || orderId.length === 0) {
       console.error('❌ Invalid Order ID')
       alert('Order ID tidak valid!')
       return
     }
-    
+
     if (!confirm(`Ubah status pesanan menjadi ${status}?`)) {
       console.log('User cancelled the operation')
       return
@@ -141,10 +141,10 @@ export default function OrderManagementPage() {
     try {
       const url = `/api/admin/orders/${orderId}`
       console.log('✓ Request URL:', url)
-      
+
       const requestBody = JSON.stringify({ status })
       console.log('✓ Request body:', requestBody)
-      
+
       console.log('📡 Sending request...')
       const response = await fetch(url, {
         method: 'PUT',
@@ -159,13 +159,13 @@ export default function OrderManagementPage() {
       console.log('Response statusText:', response.statusText)
       console.log('Response type:', response.type)
       console.log('Response headers:', Object.fromEntries(response.headers.entries()))
-      
+
       // Get response text
       console.log('📖 Reading response text...')
       const responseText = await response.text()
       console.log('✓ Response text (length):', responseText.length)
       console.log('✓ Response text (first 200 chars):', responseText.substring(0, 200))
-      
+
       if (!response.ok) {
         console.error('❌ Response NOT OK')
         let errorData
@@ -179,8 +179,8 @@ export default function OrderManagementPage() {
           }
         } catch (parseError) {
           console.error('❌ JSON parse error:', parseError)
-          errorData = { 
-            error: `HTTP ${response.status}: ${response.statusText}`, 
+          errorData = {
+            error: `HTTP ${response.status}: ${response.statusText}`,
             rawResponse: responseText,
             parseError: String(parseError)
           }
@@ -221,6 +221,30 @@ export default function OrderManagementPage() {
       console.error('Error message:', error?.message)
       console.error('Error stack:', error?.stack)
       alert(`Terjadi kesalahan saat mengupdate status!\n\nError: ${error?.message || String(error)}`)
+    }
+  }
+
+  const handleConfirmPayment = async (orderId: string) => {
+    if (!confirm('Konfirmasi pembayaran pesanan ini?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/orders/${orderId}/confirm`, {
+        method: 'PUT'
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        alert(error.error || 'Gagal mengkonfirmasi pembayaran')
+        return
+      }
+
+      alert('Pembayaran berhasil dikonfirmasi!')
+      fetchOrders()
+    } catch (error) {
+      console.error('Error confirming payment:', error)
+      alert('Terjadi kesalahan saat mengkonfirmasi pembayaran')
     }
   }
 
@@ -485,6 +509,17 @@ export default function OrderManagementPage() {
                           >
                             <CheckCircle className="w-4 h-4" />
                           </Button>
+                          {order.paymentStatus === 'PENDING' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleConfirmPayment(order.id)}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              title="Konfirmasi Pembayaran"
+                            >
+                              <DollarSign className="w-4 h-4" />
+                            </Button>
+                          )}
                           {order.status === 'PENDING' && (
                             <Button
                               size="sm"
