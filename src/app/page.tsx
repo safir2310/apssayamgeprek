@@ -535,6 +535,17 @@ export default function Home() {
                 >
                   Login Member
                 </Button>
+                <div className="mt-4 pt-4 border-t border-orange-200">
+                  <p className="text-sm text-gray-600 mb-2">Belum punya akun?</p>
+                  <Link href="/login" className="block">
+                    <Button
+                      variant="outline"
+                      className="w-full border-orange-300 text-orange-600 hover:bg-orange-50"
+                    >
+                      Daftar Member Baru
+                    </Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
           ) : (
@@ -791,10 +802,18 @@ export default function Home() {
                   <p className="text-gray-500 mb-4">Belum login</p>
                   <Button
                     onClick={() => setShowMemberLogin(true)}
-                    className="bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+                    className="bg-gradient-to-r from-orange-500 to-orange-400 text-white mb-3"
                   >
                     Login Member
                   </Button>
+                  <Link href="/login" className="block">
+                    <Button
+                      variant="outline"
+                      className="w-full border-orange-300 text-orange-600 hover:bg-orange-50"
+                    >
+                      Daftar Akun Baru
+                    </Button>
+                  </Link>
                 </>
               )}
             </CardContent>
