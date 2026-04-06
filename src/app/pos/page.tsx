@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
-import { Flame, ShoppingCart, Plus, Minus, X, LogOut, DollarSign, CreditCard, Smartphone, Printer, Scan, Search, Package, User, Lock } from 'lucide-react'
+import { Flame, ShoppingCart, Plus, Minus, X, LogOut, DollarSign, CreditCard, Smartphone, Printer, Scan, Search, Package, User, Lock, Ticket, CheckCircle2 } from 'lucide-react'
 
 // Store Information
 const STORE_INFO = {
@@ -86,6 +86,11 @@ export default function POSPage() {
   const [memberPhone, setMemberPhone] = useState<string>('')
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
   const [memberLookupLoading, setMemberLookupLoading] = useState(false)
+
+  // Voucher
+  const [voucherCode, setVoucherCode] = useState<string>('')
+  const [appliedVoucher, setAppliedVoucher] = useState<any>(null)
+  const [voucherLoading, setVoucherLoading] = useState(false)
 
   // Search Popup
   const [showSearchPopup, setShowSearchPopup] = useState(false)
@@ -361,7 +366,9 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
   }
 
   const getCartTotal = () => {
-    return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0)
+    const subtotal = cart.reduce((total, item) => total + (item.product.price * item.quantity), 0)
+    const discount = appliedVoucher?.discountAmount || 0
+    return Math.max(0, subtotal - discount)
   }
 
   const getCartCount = () => {
@@ -442,6 +449,66 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
     setSelectedMember(null)
   }
 
+  const handleVoucherApply = async () => {
+    if (!voucherCode.trim()) {
+      alert('Masukkan kode voucher!')
+      return
+    }
+
+    setVoucherLoading(true)
+    try {
+      const cartTotal = getCartTotal()
+      const response = await fetch(`/api/vouchers?code=${encodeURIComponent(voucherCode)}&cartTotal=${cartTotal}`)
+
+      if (!response.ok) {
+        const data = await response.json()
+        alert(data.error || 'Terjadi kesalahan saat memvalidasi voucher!')
+        return
+      }
+
+      const data = await response.json()
+
+      if (!data.valid) {
+        alert(data.error || 'Kode voucher tidak valid!')
+        return
+      }
+
+      const promo = data.promo
+      setAppliedVoucher(promo)
+
+      // If voucher has a free product, add it to cart
+      if (promo.freeProductId) {
+        const product = products.find(p => p.id === promo.freeProductId)
+        if (product) {
+          addToCart(product)
+          alert(`Voucher berhasil! Produk gratis "${promo.freeProductName}" ditambahkan ke keranjang.`)
+        }
+      } else if (promo.discountAmount > 0) {
+        alert(`Voucher berhasil! Diskon Rp${promo.discountAmount.toLocaleString('id-ID')} diterapkan.`)
+      } else {
+        alert('Voucher berhasil diterapkan!')
+      }
+
+      setVoucherCode('')
+    } catch (error) {
+      console.error('Error applying voucher:', error)
+      alert('Terjadi kesalahan saat memvalidasi voucher!')
+    } finally {
+      setVoucherLoading(false)
+    }
+  }
+
+  const handleVoucherKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleVoucherApply()
+    }
+  }
+
+  const handleVoucherClear = () => {
+    setVoucherCode('')
+    setAppliedVoucher(null)
+  }
+
   const handleVoidTransaction = async () => {
     if (!pinInput) {
       alert('Masukkan PIN supervisor!')
@@ -499,6 +566,10 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
     }
 
     try {
+      // Calculate subtotal before discount
+      const subtotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0)
+      const discount = appliedVoucher?.discountAmount || 0
+
       // Prepare transaction items
       const items = cart.map(item => ({
         productId: item.product.id,
@@ -515,13 +586,14 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
         },
         body: JSON.stringify({
           items,
-          totalAmount: total,
+          totalAmount: subtotal,
           paymentMethod,
           paidAmount: amount || total,
           cashierId: cashier?.id || '1',
           shiftId: currentShift?.id,
           memberId: selectedMember?.id || null,
-          discount: 0
+          discount: discount,
+          voucherCode: appliedVoucher?.code || null
         })
       })
 
@@ -548,6 +620,8 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
       setShowReceipt(true)
       setCart([])
       setPaymentAmount('')
+      setVoucherCode('')
+      setAppliedVoucher(null)
       setShowPaymentDialog(false)
     } catch (error) {
       console.error('Error processing payment:', error)
@@ -981,8 +1055,64 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
             </div>
           </div>
 
+          {/* Voucher Section */}
+          <div className="p-4 border-b border-gray-200 bg-orange-50/30 flex-shrink-0">
+            {appliedVoucher ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-green-800 text-sm">{appliedVoucher.name}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                        onClick={handleVoucherClear}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <p className="text-green-700 text-xs">Kode: {appliedVoucher.code}</p>
+                    {appliedVoucher.discountAmount > 0 && (
+                      <p className="text-green-700 text-xs font-semibold mt-1">
+                        Diskon: Rp{appliedVoucher.discountAmount.toLocaleString('id-ID')}
+                      </p>
+                    )}
+                    {appliedVoucher.freeProductName && (
+                      <p className="text-green-700 text-xs font-semibold mt-1">
+                        Gratis: {appliedVoucher.freeProductName}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <Ticket className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 w-4 h-4" />
+                  <Input
+                    value={voucherCode}
+                    onChange={(e) => setVoucherCode(e.target.value)}
+                    onKeyDown={handleVoucherKeyPress}
+                    placeholder="Masukkan kode voucher..."
+                    className="pl-10 border-orange-200 focus:border-orange-500 h-10 text-sm"
+                    disabled={voucherLoading}
+                  />
+                </div>
+                <Button
+                  onClick={handleVoucherApply}
+                  disabled={voucherLoading || !voucherCode.trim()}
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 h-10 px-4"
+                >
+                  {voucherLoading ? '...' : 'Terapkan'}
+                </Button>
+              </div>
+            )}
+          </div>
+
           {/* Cart Items - Scrollable */}
-          <ScrollArea className={`flex-1 ${cart.length > 3 ? 'bg-gray-50/80' : ''}`} style={{ maxHeight: 'calc(100vh - 340px)' }}>
+          <ScrollArea className={`flex-1 ${cart.length > 3 ? 'bg-gray-50/80' : ''}`} style={{ maxHeight: 'calc(100vh - 460px)' }}>
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-6">
                 <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-4">
