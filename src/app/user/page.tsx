@@ -590,9 +590,10 @@ export default function UserDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-4">
         <Tabs defaultValue="menu" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="menu">Menu</TabsTrigger>
             <TabsTrigger value="member">Member</TabsTrigger>
+            <TabsTrigger value="qr-member">QR Member</TabsTrigger>
             <TabsTrigger value="cetak-kartu">Cetak Kartu</TabsTrigger>
             <TabsTrigger value="orders">Pesanan Saya</TabsTrigger>
           </TabsList>
@@ -1055,6 +1056,141 @@ export default function UserDashboard() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* QR Member Tab */}
+          <TabsContent value="qr-member" className="space-y-6">
+            <Card className="border-orange-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <QrCode className="w-5 h-5 text-orange-600" />
+                  QR Code Member
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {member ? (
+                  <div className="space-y-6">
+                    {/* Search Member */}
+                    <div className="bg-orange-50 p-6 rounded-lg">
+                      <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <Search className="w-5 h-5 text-orange-600" />
+                        Cari Member untuk Tampilkan QR
+                      </h3>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Masukkan nomor telepon member"
+                          value={orderForm.customerPhone}
+                          onChange={(e) => setOrderForm({ ...orderForm, customerPhone: e.target.value })}
+                          className="flex-1"
+                        />
+                        <Button onClick={() => orderForm.customerPhone && fetchMemberInfo(orderForm.customerPhone)}>
+                          Cari
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Large QR Code Display */}
+                    <div className="bg-white p-8 rounded-2xl border-4 border-orange-300 shadow-xl max-w-md mx-auto text-center">
+                      {/* Member Name */}
+                      <div className="mb-6">
+                        <h2 className="text-2xl font-bold text-gray-800">{member.name}</h2>
+                        <p className="text-gray-600">{member.phone}</p>
+                      </div>
+
+                      {/* QR Code */}
+                      {qrCodeUrl && (
+                        <div className="bg-white p-6 rounded-xl border-4 border-gray-200 shadow-lg mb-6">
+                          <p className="text-sm font-semibold text-orange-600 mb-4">SCAN QR CODE INI</p>
+                          <img
+                            src={qrCodeUrl}
+                            alt="QR Code Member"
+                            className="mx-auto border-8 border-white shadow-xl"
+                            style={{ width: '280px', height: '280px' }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Barcode */}
+                      <div className="bg-gray-50 p-6 rounded-xl mb-6">
+                        <p className="text-sm font-semibold text-gray-700 mb-3">ATAU SCAN BARCODE</p>
+                        <div className="bg-white p-4 rounded-lg border-2 border-gray-300">
+                          <div className="flex justify-center">
+                            {(() => {
+                              const pattern = generateBarcodePattern(member.phone)
+                              const totalWidth = pattern.reduce((sum, bar) => sum + bar.width, 0)
+                              return (
+                                <svg width={totalWidth} height={80}>
+                                  {pattern.map((bar, index) => (
+                                    <rect
+                                      key={index}
+                                      x={pattern.slice(0, index).reduce((sum, b) => sum + b.width, 0)}
+                                      y={0}
+                                      width={bar.width}
+                                      height={80}
+                                      fill={bar.color}
+                                    />
+                                  ))}
+                                </svg>
+                              )
+                            })()}
+                          </div>
+                        </div>
+                        <p className="text-xl font-mono font-bold text-gray-800 bg-gray-200 py-3 px-6 rounded-lg mt-4 inline-block">
+                          {member.phone}
+                        </p>
+                      </div>
+
+                      {/* Points Display */}
+                      <div className="bg-gradient-to-r from-orange-500 to-orange-400 p-6 rounded-xl text-white">
+                        <p className="text-sm mb-2">Poin Anda Saat Ini</p>
+                        <div className="flex items-center justify-center gap-2">
+                          <Star className="w-8 h-8" />
+                          <span className="text-4xl font-bold">{member.points}</span>
+                          <span className="text-xl">poin</span>
+                        </div>
+                        <p className="text-xs mt-2 opacity-90">1 poin = Rp 1.000 pembelian</p>
+                      </div>
+                    </div>
+
+                    {/* Instructions */}
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                        <QrCode className="w-4 h-4" />
+                        Cara Menggunakan QR Member:
+                      </h4>
+                      <ul className="text-sm text-blue-700 space-y-1">
+                        <li>• Tampilkan QR Code atau Barcode ini di kasir</li>
+                        <li>• Kasir akan scan untuk mengumpulkan poin</li>
+                        <li>• Poin otomatis bertambah setiap pembelian</li>
+                        <li>• Poin bisa ditukar dengan diskon atau hadiah</li>
+                        <li>• Scan QR Code ini juga bisa untuk menukarkan poin</li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <QrCode className="w-20 h-20 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Cari Member Terlebih Dahulu</h3>
+                    <p className="text-gray-600 mb-6">
+                      Masukkan nomor telepon member untuk menampilkan QR Code member
+                    </p>
+                    <div className="bg-orange-50 p-6 rounded-lg max-w-md mx-auto">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Masukkan nomor telepon member"
+                          value={orderForm.customerPhone}
+                          onChange={(e) => setOrderForm({ ...orderForm, customerPhone: e.target.value })}
+                          className="flex-1"
+                        />
+                        <Button onClick={() => orderForm.customerPhone && fetchMemberInfo(orderForm.customerPhone)}>
+                          Cari
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Print Card Tab */}
