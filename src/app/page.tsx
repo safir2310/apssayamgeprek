@@ -1004,100 +1004,233 @@ export default function Home() {
 
   // QR Member Section
   const QRMemberSection = () => (
-    <div className="pb-24 bg-orange-50 min-h-screen">
-      <header className="bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300 text-white py-4 px-4 shadow-lg">
+    <div className="pb-24 bg-gradient-to-br from-orange-50 via-white to-orange-50 min-h-screen">
+      <header className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 text-white py-6 px-4 shadow-lg">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-xl font-bold">QR Member</h1>
-          <p className="text-orange-100 text-xs">Scan QR code untuk mendapatkan point</p>
+          <div className="flex items-center gap-3 mb-1">
+            <QrCode className="w-6 h-6" />
+            <h1 className="text-2xl font-bold">QR Member</h1>
+          </div>
+          <p className="text-orange-100 text-sm">Scan QR code ini di kasir untuk mendapatkan poin</p>
         </div>
       </header>
-      <main className="py-8 px-4">
+      <main className="py-6 px-4">
         <div className="max-w-md mx-auto">
           {!currentMember ? (
-            <Card className="border-orange-200">
-              <CardContent className="p-8 text-center">
-                <User className="w-24 h-24 mx-auto mb-6 text-orange-300" />
+            <Card className="border-0 shadow-xl overflow-hidden">
+              <div className="bg-gradient-to-br from-orange-100 to-orange-50 p-8 text-center">
+                <div className="w-28 h-28 bg-gradient-to-br from-orange-200 to-orange-300 rounded-full mx-auto mb-6 flex items-center justify-center">
+                  <User className="w-14 h-14 text-orange-600" />
+                </div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Belum Login</h2>
-                <p className="text-gray-600 mb-6">Login sebagai member untuk melihat QR code Anda</p>
-                <Link href="/login" className="block">
+                <p className="text-gray-600 mb-6">Login sebagai member untuk melihat QR code Anda dan mulai mengumpulkan poin</p>
+                <Link href="/login" className="block mb-3">
                   <Button
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+                    className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-semibold py-6 text-lg shadow-lg"
                   >
+                    <User className="mr-2 h-5 w-5" />
                     Login Member
                   </Button>
                 </Link>
-                <div className="mt-4 pt-4 border-t border-orange-200">
+                <div className="pt-4 border-t border-orange-200">
                   <p className="text-sm text-gray-600 mb-2">Belum punya akun?</p>
                   <Link href="/login" className="block">
                     <Button
                       variant="outline"
-                      className="w-full border-orange-300 text-orange-600 hover:bg-orange-50"
+                      className="w-full border-2 border-orange-400 text-orange-600 hover:bg-orange-50 font-medium"
                     >
                       Daftar Member Baru
                     </Button>
                   </Link>
                 </div>
-              </CardContent>
+              </div>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {/* Member Info Card */}
-              <Card className="border-orange-200">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
-                      <User className="w-8 h-8 text-white" />
+            <div className="space-y-5">
+              {/* Member Profile Card with Membership Level */}
+              <Card className="border-0 shadow-xl overflow-hidden">
+                <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 text-white p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border-2 border-white/30">
+                      {currentMember.photo ? (
+                        <img
+                          src={currentMember.photo}
+                          alt={currentMember.name}
+                          className="w-full h-full rounded-2xl object-cover"
+                        />
+                      ) : (
+                        <User className="w-10 h-10 text-white" />
+                      )}
                     </div>
                     <div className="flex-1">
-                      <h2 className="text-xl font-bold text-gray-800">{currentMember.name}</h2>
-                      <p className="text-sm text-gray-500">{currentMember.phone}</p>
+                      <h2 className="text-xl font-bold mb-1">{currentMember.name}</h2>
+                      <p className="text-orange-100 text-sm mb-2">{currentMember.phone}</p>
+                      <Badge className="bg-white/20 text-white border-0 text-xs">
+                        {memberPoints >= 10000 ? '🏆 Gold Member' :
+                         memberPoints >= 5000 ? '⭐ Silver Member' :
+                         memberPoints >= 1000 ? '🥉 Bronze Member' : '👤 New Member'}
+                      </Badge>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleMemberLogout}
-                      className="border-red-300 text-red-600 hover:bg-red-50"
+                      className="bg-white/10 text-white border-white/30 hover:bg-white/20"
                     >
-                      Logout
+                      <LogOut className="h-4 w-4 mr-1" />
+                      Keluar
+                    </Button>
+                  </div>
+                </div>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Member sejak:</span>
+                    <span className="font-semibold text-gray-800">
+                      {new Date(currentMember.createdAt).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long'
+                      })}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* QR Code Card - Enhanced Design */}
+              <Card className="border-0 shadow-xl overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="text-center mb-5">
+                    <h3 className="text-lg font-bold text-gray-800 mb-1">QR Code Member</h3>
+                    <p className="text-sm text-gray-500">Tunjukkan QR code ini saat bertransaksi</p>
+                  </div>
+
+                  {/* QR Code with Frame */}
+                  <div className="relative mx-auto mb-5">
+                    {/* Decorative corners */}
+                    <div className="absolute -top-2 -left-2 w-8 h-8 border-t-4 border-l-4 border-orange-500 rounded-tl-lg"></div>
+                    <div className="absolute -top-2 -right-2 w-8 h-8 border-t-4 border-r-4 border-orange-500 rounded-tr-lg"></div>
+                    <div className="absolute -bottom-2 -left-2 w-8 h-8 border-b-4 border-l-4 border-orange-500 rounded-bl-lg"></div>
+                    <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-orange-500 rounded-br-lg"></div>
+
+                    {/* QR Code Container */}
+                    <div className="bg-white p-5 rounded-xl border-2 border-orange-200 shadow-lg">
+                      <svg width={240} height={240} viewBox="0 0 25 25" className="w-60 h-60">
+                        {generateQRPattern(currentMember.phone).map((color, index) => (
+                          <rect
+                            key={index}
+                            x={index % 25}
+                            y={Math.floor(index / 25)}
+                            width={1}
+                            height={1}
+                            fill={color}
+                          />
+                        ))}
+                      </svg>
+                    </div>
+
+                    {/* Scan animation */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-full h-1 bg-gradient-to-r from-transparent via-orange-500 to-transparent animate-pulse opacity-30"></div>
+                    </div>
+                  </div>
+
+                  {/* Member ID */}
+                  <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200 mb-4">
+                    <p className="text-xs text-gray-500 mb-1">ID Member</p>
+                    <p className="text-lg font-bold text-gray-800 font-mono tracking-wider">
+                      {currentMember.phone}
+                    </p>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-orange-300 text-orange-600 hover:bg-orange-50"
+                      onClick={() => {
+                        navigator.clipboard.writeText(currentMember.phone)
+                        alert('ID Member berhasil disalin!')
+                      }}
+                    >
+                      <Copy className="h-4 w-4 mr-1" />
+                      Salin ID
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-orange-300 text-orange-600 hover:bg-orange-50"
+                      onClick={() => {
+                        alert('Fitur share QR akan segera tersedia!')
+                      }}
+                    >
+                      <Share2 className="h-4 w-4 mr-1" />
+                      Bagikan
                     </Button>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* QR Code Card */}
-              <Card className="border-orange-200">
-                <CardContent className="p-8 text-center">
-                  <h3 className="text-lg font-bold text-gray-800 mb-4">QR Code Member</h3>
-                  <div className="bg-white p-4 rounded-lg border-4 border-orange-200 inline-block mb-4">
-                    <svg width={200} height={200} viewBox="0 0 25 25" className="w-48 h-48">
-                      {generateQRPattern(currentMember.phone).map((color, index) => (
-                        <rect
-                          key={index}
-                          x={index % 25}
-                          y={Math.floor(index / 25)}
-                          width={1}
-                          height={1}
-                          fill={color}
-                        />
-                      ))}
-                    </svg>
+              {/* Points Card - Enhanced with Progress Bar */}
+              <Card className="border-0 shadow-xl overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                        <Award className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-600">Poin Saya</h3>
+                        <p className="text-xs text-gray-500">Tukarkan poin untuk hadiah</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveTab('tukar-point')}
+                      className="text-orange-600 hover:bg-orange-50"
+                    >
+                      Tukar Poin
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">Scan QR code ini saat melakukan transaksi</p>
-                  <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                    <p className="text-xs text-gray-600 font-mono">ID: {currentMember.phone}</p>
-                  </div>
-                </CardContent>
-              </Card>
 
-              {/* Points Card */}
-              <Card className="border-orange-200">
-                <CardContent className="p-6 text-center">
-                  <Award className="w-12 h-12 mx-auto mb-4 text-orange-500" />
-                  <h2 className="text-3xl font-bold text-orange-600 mb-2">{memberPoints}</h2>
-                  <p className="text-gray-600">Point Tersedia</p>
-                  <div className="mt-4 bg-orange-50 p-4 rounded-lg border border-orange-200">
-                    <p className="text-sm text-gray-600">Rp1.000 = 1 Point</p>
-                    <p className="text-sm text-gray-600 mt-2">Tukarkan point di menu Tukar Point</p>
+                  {/* Points Display */}
+                  <div className="text-center mb-4">
+                    <p className="text-5xl font-bold bg-gradient-to-r from-orange-600 to-orange-400 bg-clip-text text-transparent">
+                      {memberPoints.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">Poin Tersedia</p>
+                  </div>
+
+                  {/* Progress to next level */}
+                  <div className="mb-3">
+                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <span>Level saat ini</span>
+                      <span>
+                        {memberPoints >= 10000 ? 'Gold (10.000+)' :
+                         memberPoints >= 5000 ? 'Silver (5.000+)' :
+                         memberPoints >= 1000 ? 'Bronze (1.000+)' : 'New (0)'}
+                      </span>
+                    </div>
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, (memberPoints % 5000) / 50)}%`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Info Box */}
+                  <div className="bg-orange-50 p-4 rounded-xl border border-orange-200">
+                    <div className="flex items-start gap-2">
+                      <Flame className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                      <div className="text-xs text-gray-600">
+                        <p className="font-semibold mb-1">Cara Mendapatkan Poin:</p>
+                        <p>• Belanja Rp1.000 = 1 Poin</p>
+                        <p>• Tukarkan poin di menu Tukar Point</p>
+                        <p>• Kumpulkan lebih banyak untuk naik level!</p>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
