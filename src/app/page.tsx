@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import {
   ShoppingCart, Minus, Plus, X, Phone, MapPin, Award, Flame,
-  Home as HomeIcon, QrCode, History, Gift, User, Store, LayoutDashboard,
+  Home as HomeIcon, QrCode, History, Gift, User, Store,
   Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut, Share2, Copy, Scan, Percent, Star
 } from 'lucide-react'
 import Link from 'next/link'
@@ -943,27 +943,6 @@ export default function Home() {
                 <p className="text-sm text-gray-600 text-justify">Mudah dan cepat, pesan dari rumah saja</p>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Links */}
-      <section className="py-12 px-4 md:px-8">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-8 text-orange-800">Akses Cepat</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-            <Link href="/login">
-              <Button variant="outline" className="w-full h-20 text-lg border-orange-300 hover:bg-orange-50">
-                <Store className="w-6 h-6 mr-2" />
-                POS Kasir
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button variant="outline" className="w-full h-20 text-lg border-orange-300 hover:bg-orange-50">
-                <LayoutDashboard className="w-6 h-6 mr-2" />
-                Admin Dashboard
-              </Button>
-            </Link>
           </div>
         </div>
       </section>
