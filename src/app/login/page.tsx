@@ -188,7 +188,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-pattern-gradient-orange flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -197,7 +197,7 @@ export default function LoginPage() {
             <span className="text-orange-600 font-medium">Kembali ke Beranda</span>
           </Link>
           <div className="flex items-center justify-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow hover:scale-105">
               <Flame className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -208,7 +208,7 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <Card className="border-orange-200 shadow-xl">
+        <Card className="card-glass-orange shadow-2xl">
           <CardHeader>
             <CardTitle className="text-2xl text-center">Selamat Datang!</CardTitle>
             <CardDescription className="text-center">
@@ -230,7 +230,7 @@ export default function LoginPage() {
                   value={loginForm.email}
                   onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                   required
-                  className="border-orange-200 focus:border-orange-500"
+                  className="input-glass border-orange-200/60"
                 />
               </div>
 
@@ -247,7 +247,7 @@ export default function LoginPage() {
                     value={loginForm.password}
                     onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                     required
-                    className="border-orange-200 focus:border-orange-500"
+                    className="input-glass border-orange-200/60 pr-10"
                   />
                   <button
                     type="button"
@@ -270,7 +270,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
+                className="w-full btn-premium-orange py-6 text-lg"
               >
                 {loading ? 'Memproses...' : 'Login'}
               </Button>
@@ -291,7 +291,7 @@ export default function LoginPage() {
 
         {/* Register Card (shown below) */}
         {showRegister && (
-          <Card className="border-orange-200 shadow-xl mt-6">
+          <Card className="card-glass-orange shadow-2xl mt-6">
             <CardHeader>
               <CardTitle className="text-xl text-center">Daftar Member Baru</CardTitle>
               <CardDescription className="text-center">
@@ -311,7 +311,7 @@ export default function LoginPage() {
                     value={registerForm.name}
                     onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
                     required
-                    className="border-orange-200 focus:border-orange-500"
+                    className="input-glass border-orange-200/60"
                   />
                 </div>
 
@@ -327,7 +327,7 @@ export default function LoginPage() {
                     value={registerForm.username}
                     onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
                     required
-                    className="border-orange-200 focus:border-orange-500"
+                    className="input-glass border-orange-200/60"
                   />
                 </div>
 
@@ -343,7 +343,7 @@ export default function LoginPage() {
                     value={registerForm.phone}
                     onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
                     required
-                    className="border-orange-200 focus:border-orange-500"
+                    className="input-glass border-orange-200/60"
                   />
                 </div>
 
@@ -359,7 +359,7 @@ export default function LoginPage() {
                     value={registerForm.email}
                     onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
                     required
-                    className="border-orange-200 focus:border-orange-500"
+                    className="input-glass border-orange-200/60"
                   />
                 </div>
 

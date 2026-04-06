@@ -1107,9 +1107,9 @@ export default function Home() {
 
   // Menu Section Component
   const MenuSection = () => (
-    <div className="pb-24 bg-orange-50">
+    <div className="pb-24 bg-gradient-to-br from-orange-50/50 to-white">
       {/* Header */}
-      <header className="bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300 text-white py-4 px-4 shadow-lg sticky top-0 z-10">
+      <header className="nav-glass-orange text-white py-4 px-4 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-xl font-bold">Menu Kami</h1>
           <p className="text-orange-100 text-xs">Pilih menu favoritmu</p>
@@ -1117,7 +1117,7 @@ export default function Home() {
       </header>
 
       {/* Category Filter */}
-      <div className="bg-white border-b border-orange-200 sticky top-[60px] z-9">
+      <div className="glass border-b-2 border-orange-200/30 sticky top-[60px] z-9 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 overflow-x-auto">
           <div className="flex gap-2 min-w-max">
             <Button
@@ -1125,9 +1125,9 @@ export default function Home() {
               variant={selectedCategory === 'all' ? 'default' : 'outline'}
               className={`${
                 selectedCategory === 'all'
-                  ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white border-0'
-                  : 'border-orange-300 text-orange-700 hover:bg-orange-50'
-              }`}
+                  ? 'btn-premium-orange border-0 shadow-orange-md'
+                  : 'btn-glass border-orange-300/60 text-orange-700 hover:bg-orange-50'
+              } transition-all duration-300`}
               onClick={() => setSelectedCategory('all')}
             >
               Semua
@@ -1166,7 +1166,7 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {filteredProducts.map(product => (
-                <Card key={product.id} className="overflow-hidden border-orange-200 hover:shadow-lg transition-shadow">
+                <Card key={product.id} className="card-glass-orange overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:scale-105">
                   {product.image ? (
                     <div className="aspect-square bg-orange-100 relative">
                       <img
@@ -1207,7 +1207,7 @@ export default function Home() {
                     <Button
                       onClick={() => addToCart(product)}
                       disabled={product.stock === 0}
-                      className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white text-sm"
+                      className="w-full btn-premium-orange text-sm shadow-md hover:shadow-lg"
                       size="sm"
                     >
                       <Plus className="h-3 w-3 mr-1" />
@@ -1225,8 +1225,8 @@ export default function Home() {
 
   // QR Member Section
   const QRMemberSection = () => (
-    <div className="pb-24 bg-gradient-to-br from-orange-50 via-white to-orange-50 min-h-screen">
-      <header className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 text-white py-6 px-4 shadow-lg">
+    <div className="pb-24 bg-pattern-gradient-orange min-h-screen">
+      <header className="nav-glass-orange text-white py-6 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-3 mb-1">
             <Scan className="w-6 h-6" />
@@ -1238,16 +1238,16 @@ export default function Home() {
       <main className="py-6 px-4">
         <div className="max-w-md mx-auto">
           {!currentMember ? (
-            <Card className="border-0 shadow-xl overflow-hidden">
-              <div className="bg-gradient-to-br from-orange-100 to-orange-50 p-8 text-center">
-                <div className="w-28 h-28 bg-gradient-to-br from-orange-200 to-orange-300 rounded-full mx-auto mb-6 flex items-center justify-center">
-                  <User className="w-14 h-14 text-orange-600" />
+            <Card className="card-glass-orange overflow-hidden">
+              <div className="bg-gradient-to-br from-orange-100/80 to-white/80 backdrop-blur-sm p-8 text-center">
+                <div className="w-28 h-28 bg-gradient-to-br from-orange-400 to-orange-500 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg animate-float">
+                  <User className="w-14 h-14 text-white" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Belum Login</h2>
                 <p className="text-gray-600 mb-6">Login sebagai member untuk melihat kode batang Anda dan mulai mengumpulkan poin</p>
                 <Link href="/login" className="block mb-3">
                   <Button
-                    className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-semibold py-6 text-lg shadow-lg"
+                    className="w-full btn-premium-orange py-6 text-lg"
                   >
                     <User className="mr-2 h-5 w-5" />
                     Login Member
@@ -1269,8 +1269,8 @@ export default function Home() {
           ) : (
             <div className="space-y-5">
               {/* Member Profile Card with Membership Level */}
-              <Card className="border-0 shadow-xl overflow-hidden">
-                <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 text-white p-6">
+              <Card className="card-glass-orange overflow-hidden">
+                <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 text-white p-6 backdrop-blur-md">
                   <div className="flex items-center gap-4">
                     <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border-2 border-white/30">
                       {currentMember.photo ? (
@@ -1466,8 +1466,8 @@ export default function Home() {
 
   // Riwayat Pesanan Section
   const RiwayatSection = () => (
-    <div className="pb-24 bg-orange-50 min-h-screen">
-      <header className="bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300 text-white py-4 px-4 shadow-lg">
+    <div className="pb-24 bg-gradient-to-br from-orange-50/50 to-white min-h-screen">
+      <header className="nav-glass-orange text-white py-4 px-4">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-xl font-bold">Riwayat Pesanan</h1>
           <p className="text-orange-100 text-xs">Lihat riwayat pesanan Anda</p>
@@ -1476,14 +1476,14 @@ export default function Home() {
       <main className="py-4 px-4">
         <div className="max-w-4xl mx-auto">
           {orders.length === 0 ? (
-            <Card className="border-orange-200">
+            <Card className="card-glass-orange">
               <CardContent className="p-12 text-center">
-                <History className="w-16 h-16 mx-auto mb-4 text-orange-300" />
-                <h2 className="text-xl font-semibold text-gray-700 mb-2">Belum Ada Pesanan</h2>
-                <p className="text-gray-500 mb-6">Anda belum memiliki riwayat pesanan</p>
+                <History className="w-16 h-16 mx-auto mb-4 text-orange-400 animate-pulse" />
+                <h2 className="text-xl font-bold text-gray-800 mb-2">Belum Ada Pesanan</h2>
+                <p className="text-gray-600 mb-6">Anda belum memiliki riwayat pesanan</p>
                 <Button
                   onClick={() => setActiveTab('menu')}
-                  className="bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+                  className="btn-premium-orange"
                 >
                   Pesan Sekarang
                 </Button>
@@ -2319,7 +2319,7 @@ export default function Home() {
   )
 
   return (
-    <div className="min-h-screen bg-orange-50">
+    <div className="min-h-screen bg-pattern-gradient-orange">
       {/* Print Styles - Always Available */}
       <style>{styles}</style>
 
@@ -2394,7 +2394,7 @@ export default function Home() {
 
       {/* Notification Hero - Shows on all pages */}
       {showNotification && (
-        <div className="relative bg-gradient-to-r from-orange-600 via-red-500 to-orange-600 text-white overflow-hidden">
+        <div className="relative bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 text-white overflow-hidden backdrop-blur-sm shadow-lg">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0" style={{
@@ -3110,7 +3110,7 @@ export default function Home() {
       </Dialog>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-orange-200 shadow-lg z-50">
+      <nav className="fixed bottom-0 left-0 right-0 nav-glass z-50 border-t-2 border-orange-200/30">
         <div className="max-w-7xl mx-auto px-2">
           <div className="flex items-center justify-around py-2">
             {bottomNavItems.map((item) => {
@@ -3122,21 +3122,21 @@ export default function Home() {
                 <button
                   key={item.id}
                   onClick={isCart ? () => setShowCart(true) : () => handleTabClick(item.id)}
-                  className={`flex flex-col items-center justify-center py-2 px-3 min-w-[60px] transition-colors relative ${
-                    isActive ? 'text-orange-600' : 'text-gray-500 hover:text-orange-500'
+                  className={`flex flex-col items-center justify-center py-2 px-3 min-w-[60px] transition-all duration-300 relative rounded-xl mx-1 ${
+                    isActive ? 'bg-gradient-to-r from-orange-500/10 to-orange-400/10 text-orange-600 scale-110' : 'text-gray-500 hover:text-orange-500 hover:bg-orange-50/50'
                   }`}
                 >
                   <div className="relative">
                     <Icon className={`w-5 h-5 ${isActive ? 'text-orange-600' : 'text-gray-500'}`} />
                     {/* Show cart count badge */}
                     {isCart && getCartCount() > 0 && (
-                      <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center">
+                      <Badge className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center shadow-md badge-pulse">
                         {getCartCount()}
                       </Badge>
                     )}
                     {/* Show points badge on Tukar Point */}
                     {item.id === 'tukar-point' && memberPoints > 0 && (
-                      <Badge className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center">
+                      <Badge className="absolute -top-1 -right-1 badge-premium-orange text-xs px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center shadow-md badge-pulse">
                         {memberPoints}
                       </Badge>
                     )}

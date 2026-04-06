@@ -423,20 +423,6 @@ export default function UserDashboard() {
     return { pattern, modules, cellSize }
   }
 
-  // Generate simple barcode pattern based on phone number
-  const generateBarcodePattern = (phone: string) => {
-    const bars = phone.split('').map((char, index) => {
-      const charCode = char.charCodeAt(0)
-      const barWidth = (charCode % 5) + 2
-      const isBlack = index % 2 === 0
-      return {
-        width: barWidth,
-        color: isBlack ? '#000' : '#fff'
-      }
-    })
-    return bars
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center">
@@ -449,7 +435,7 @@ export default function UserDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50 to-white">
+    <div className="min-h-screen bg-pattern-gradient-orange">
       {/* Print Styles */}
       <style jsx global>{`
         @media print {
@@ -545,10 +531,10 @@ export default function UserDashboard() {
         </div>
       )}
       {/* Header */}
-      <header className="bg-white border-b border-orange-200 px-4 py-3 sticky top-0 z-40 shadow-sm">
+      <header className="nav-glass border-b-2 border-orange-200/30 px-4 py-3 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow hover:scale-105">
               <Flame className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -614,7 +600,7 @@ export default function UserDashboard() {
                   placeholder="Cari menu..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 border-orange-200 focus:border-orange-500"
+                  className="pl-10 input-glass border-orange-200/60"
                 />
               </div>
               <div className="flex gap-2 overflow-x-auto">
@@ -623,9 +609,9 @@ export default function UserDashboard() {
                   variant={selectedCategory === 'all' ? 'default' : 'outline'}
                   className={`${
                     selectedCategory === 'all'
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white border-0'
-                      : 'border-orange-300 text-orange-700 hover:bg-orange-50'
-                  } whitespace-nowrap`}
+                      ? 'btn-premium-orange border-0 shadow-orange-md'
+                      : 'btn-glass border-orange-300/60 text-orange-700 hover:bg-orange-50'
+                  } whitespace-nowrap transition-all duration-300`}
                   onClick={() => setSelectedCategory('all')}
                 >
                   Semua
@@ -651,7 +637,7 @@ export default function UserDashboard() {
             {/* Product Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredProducts.map(product => (
-                <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow border-orange-200">
+                <Card key={product.id} className="card-glass-orange overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:scale-105">
                   <div className="aspect-square bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
                     {product.image ? (
                       <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
@@ -673,7 +659,7 @@ export default function UserDashboard() {
                     <Button
                       onClick={() => addToCart(product)}
                       disabled={product.stock === 0}
-                      className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                      className="w-full btn-premium-orange shadow-md hover:shadow-lg"
                     >
                       <Plus className="w-4 h-4 mr-1" />
                       Tambah
