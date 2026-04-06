@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -54,6 +55,7 @@ interface Order {
 }
 
 export default function Home() {
+  const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -258,6 +260,17 @@ export default function Home() {
     setCurrentMember(null)
     setMemberPoints(0)
     localStorage.removeItem('member')
+  }
+
+  // Handle navigation tab click
+  const handleTabClick = (tabId: string) => {
+    // If clicking profile tab and not logged in, redirect to login
+    if (tabId === 'profile' && !currentMember) {
+      router.push('/login')
+      return
+    }
+    // Otherwise, set the active tab
+    setActiveTab(tabId as any)
   }
 
   // Beranda Section Component
@@ -1042,7 +1055,7 @@ export default function Home() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => handleTabClick(item.id)}
                   className={`flex flex-col items-center justify-center py-2 px-3 min-w-[60px] transition-colors relative ${
                     isActive ? 'text-orange-600' : 'text-gray-500 hover:text-orange-500'
                   }`}
