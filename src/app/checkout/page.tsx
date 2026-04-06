@@ -53,12 +53,12 @@ export default function CheckoutPage() {
   const phoneRef = useRef<HTMLInputElement>(null)
   const addressRef = useRef<HTMLTextAreaElement>(null)
   const notesRef = useRef<HTMLTextAreaElement>(null)
+  const redeemCodeRef = useRef<HTMLInputElement>(null)
 
   // Payment method state
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('CASH')
 
   // Redeem code state
-  const [redeemCode, setRedeemCode] = useState('')
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null)
   const [appliedVoucher, setAppliedVoucher] = useState<any>(null)
   const [validatingRedeemCode, setValidatingRedeemCode] = useState(false)
@@ -197,7 +197,9 @@ export default function CheckoutPage() {
 
   // Handle redeem code validation
   const handleValidateRedeemCode = async () => {
-    if (!redeemCode.trim()) {
+    const code = redeemCodeRef.current?.value || ''
+
+    if (!code.trim()) {
       alert('Silakan masukkan kode redeem/voucher')
       return
     }
@@ -206,7 +208,7 @@ export default function CheckoutPage() {
     try {
       // First try to validate as voucher
       const cartTotal = getCartTotal()
-      const voucherResponse = await fetch(`/api/vouchers?code=${encodeURIComponent(redeemCode.trim())}&cartTotal=${cartTotal}`)
+      const voucherResponse = await fetch(`/api/vouchers?code=${encodeURIComponent(code.trim())}&cartTotal=${cartTotal}`)
 
       if (voucherResponse.ok) {
         const voucherResult = await voucherResponse.json()
@@ -243,18 +245,22 @@ export default function CheckoutPage() {
             freeProductName: promo.freeProductName
           })
 
+          // Clear input
+          if (redeemCodeRef.current) {
+            redeemCodeRef.current.value = ''
+          }
+
           alert(
             promo.type === 'FREE_PRODUCT' || promo.type === 'BOGO'
               ? `Voucher berhasil! ${promo.freeProductName} telah ditambahkan ke keranjang!`
               : `Voucher berhasil diterapkan! Diskon: Rp${promo.discountAmount.toLocaleString('id-ID')}`
           )
-          setRedeemCode('')
           return
         }
       }
 
       // If voucher validation fails, try as redeem code
-      const response = await fetch(`/api/redeem-codes?code=${encodeURIComponent(redeemCode.trim())}`)
+      const response = await fetch(`/api/redeem-codes?code=${encodeURIComponent(code.trim())}`)
 
       if (!response.ok) {
         const error = await response.json()
@@ -284,8 +290,12 @@ export default function CheckoutPage() {
           discountAmount
         })
 
+        // Clear input
+        if (redeemCodeRef.current) {
+          redeemCodeRef.current.value = ''
+        }
+
         alert(`Kode redeem berhasil diterapkan! Diskon: Rp${discountAmount.toLocaleString('id-ID')}`)
-        setRedeemCode('')
       }
     } catch (error) {
       console.error('Error validating code:', error)
@@ -296,7 +306,9 @@ export default function CheckoutPage() {
   }
 
   const handleRemoveRedeemCode = () => {
-    setRedeemCode('')
+    if (redeemCodeRef.current) {
+      redeemCodeRef.current.value = ''
+    }
     setAppliedDiscount(null)
     setAppliedVoucher(null)
   }
@@ -647,15 +659,20 @@ export default function CheckoutPage() {
                     {!appliedDiscount && !appliedVoucher ? (
                       <div className="flex gap-2">
                         <Input
-                          value={redeemCode}
-                          onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+                          ref={redeemCodeRef}
+                          onChange={(e) => {
+                            // Auto uppercase while typing
+                            if (e.target) {
+                              e.target.value = e.target.value.toUpperCase()
+                            }
+                          }}
                           placeholder="Masukkan kode voucher atau redeem"
                           className="border-orange-200 focus:border-orange-500 uppercase"
                         />
                         <Button
                           type="button"
                           onClick={handleValidateRedeemCode}
-                          disabled={validatingRedeemCode || !redeemCode.trim()}
+                          disabled={validatingRedeemCode}
                           variant="outline"
                           className="border-orange-300 hover:bg-orange-50 text-orange-600 whitespace-nowrap"
                         >
