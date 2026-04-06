@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Flame, User, Lock, Mail, Phone, MapPin, ArrowLeft, Eye, EyeOff, CheckCircle } from 'lucide-react'
+import { Flame, User, Lock, Mail, Phone, MapPin, ArrowLeft, Eye, EyeOff, CheckCircle, KeyRound } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
+  const [activeTab, setActiveTab] = useState('login')
   const [loginForm, setLoginForm] = useState({
     username: '',
     password: ''
@@ -25,6 +26,9 @@ export default function LoginPage() {
     address: '',
     password: '',
     confirmPassword: ''
+  })
+  const [forgotPasswordForm, setForgotPasswordForm] = useState({
+    email: ''
   })
   const [loading, setLoading] = useState(false)
   const [registerSuccess, setRegisterSuccess] = useState(false)
@@ -124,6 +128,28 @@ export default function LoginPage() {
     }
   }
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!forgotPasswordForm.email) {
+      alert('Mohon masukkan email!')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      // TODO: Implement forgot password logic
+      // For now, just show a message
+      alert('Fitur reset password akan dikirim ke email Anda. (Fitur ini akan segera tersedia)')
+    } catch (error) {
+      console.error('Forgot password error:', error)
+      alert('Terjadi kesalahan. Silakan coba lagi.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   if (registerSuccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center p-4">
@@ -137,6 +163,7 @@ export default function LoginPage() {
             <Button
               onClick={() => {
                 setRegisterSuccess(false)
+                setActiveTab('login')
                 setRegisterForm({
                   name: '',
                   username: '',
@@ -185,10 +212,10 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              {/* Only show login tab in the list */}
+              <TabsList className="grid w-full grid-cols-1 mb-6">
                 <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Daftar</TabsTrigger>
               </TabsList>
 
               {/* Login Tab */}
@@ -233,6 +260,14 @@ export default function LoginPage() {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                    {/* Lupa Password Link */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('forgot-password')}
+                      className="text-sm text-orange-600 hover:text-orange-700 hover:underline mt-2 block text-right"
+                    >
+                      Lupa Password?
+                    </button>
                   </div>
 
                   <Button
@@ -242,6 +277,68 @@ export default function LoginPage() {
                   >
                     {loading ? 'Memproses...' : 'Login'}
                   </Button>
+                </form>
+
+                {/* Daftar Link at Bottom */}
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-gray-600">
+                    Belum punya akun?{' '}
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('register')}
+                      className="text-orange-600 font-medium hover:underline"
+                    >
+                      Daftar Sekarang
+                    </button>
+                  </p>
+                </div>
+              </TabsContent>
+
+              {/* Forgot Password Tab */}
+              <TabsContent value="forgot-password">
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="text-center mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <KeyRound className="w-8 h-8 text-orange-600" />
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Masukkan email Anda untuk mereset password
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="forgot-email" className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-orange-600" />
+                      Email
+                    </Label>
+                    <Input
+                      id="forgot-email"
+                      type="email"
+                      placeholder="Masukkan email terdaftar"
+                      value={forgotPasswordForm.email}
+                      onChange={(e) => setForgotPasswordForm({ ...forgotPasswordForm, email: e.target.value })}
+                      required
+                      className="border-orange-200 focus:border-orange-500"
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
+                  >
+                    {loading ? 'Memproses...' : 'Kirim Link Reset'}
+                  </Button>
+
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('login')}
+                      className="text-sm text-gray-600 hover:text-orange-600 hover:underline"
+                    >
+                      Kembali ke Login
+                    </button>
+                  </div>
                 </form>
               </TabsContent>
 
@@ -373,6 +470,16 @@ export default function LoginPage() {
                   >
                     {loading ? 'Mendaftar...' : 'Daftar Sekarang'}
                   </Button>
+
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('login')}
+                      className="text-sm text-gray-600 hover:text-orange-600 hover:underline"
+                    >
+                      Sudah punya akun? Login
+                    </button>
+                  </div>
                 </form>
               </TabsContent>
             </Tabs>
