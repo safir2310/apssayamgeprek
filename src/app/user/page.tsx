@@ -10,7 +10,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ShoppingCart, Package, Search, Plus, Minus, X, Clock, CheckCircle, Flame, User, Phone, MapPin, Printer, QrCode, Star } from 'lucide-react'
+import { ShoppingCart, Package, Search, Plus, Minus, X, Clock, CheckCircle, Flame, User, Phone, MapPin, Printer, QrCode, Star, Scan, Award, Gift } from 'lucide-react'
+import QRCode from 'qrcode'
 
 interface Product {
   id: string
@@ -100,6 +101,7 @@ export default function UserDashboard() {
   const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<Order | null>(null)
   const [member, setMember] = useState<Member | null>(null)
   const [showMemberDialog, setShowMemberDialog] = useState(false)
+  const [qrCodeUrl, setQrCodeUrl] = useState('')
 
   // Order Form
   const [orderForm, setOrderForm] = useState({
@@ -123,6 +125,22 @@ export default function UserDashboard() {
       setMember(null)
     }
   }, [orderForm.customerPhone])
+
+  // Generate QR Code when member changes
+  useEffect(() => {
+    if (member && member.phone) {
+      QRCode.toDataURL(member.phone, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      }).then(setQrCodeUrl).catch(console.error)
+    } else {
+      setQrCodeUrl('')
+    }
+  }, [member])
 
   const fetchProducts = async () => {
     try {
@@ -572,9 +590,10 @@ export default function UserDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-4">
         <Tabs defaultValue="menu" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="menu">Menu</TabsTrigger>
             <TabsTrigger value="member">Member</TabsTrigger>
+            <TabsTrigger value="cetak-kartu">Cetak Kartu</TabsTrigger>
             <TabsTrigger value="orders">Pesanan Saya</TabsTrigger>
           </TabsList>
 
@@ -1036,6 +1055,184 @@ export default function UserDashboard() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* Print Card Tab */}
+          <TabsContent value="cetak-kartu" className="space-y-6">
+            <Card className="border-orange-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Printer className="w-5 h-5 text-orange-600" />
+                  Cetak Kartu Member
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {member ? (
+                  <div className="space-y-6">
+                    {/* Search Member for Print */}
+                    <div className="bg-orange-50 p-6 rounded-lg">
+                      <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <Search className="w-5 h-5 text-orange-600" />
+                        Cari Member untuk Cetak Kartu
+                      </h3>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Masukkan nomor telepon member"
+                          value={orderForm.customerPhone}
+                          onChange={(e) => setOrderForm({ ...orderForm, customerPhone: e.target.value })}
+                          className="flex-1"
+                        />
+                        <Button onClick={() => member && orderForm.customerPhone && fetchMemberInfo(orderForm.customerPhone)}>
+                          Cari
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Member Card Preview - For Printing */}
+                    <div id="member-card-print" className="bg-white p-8 rounded-xl border-4 border-orange-300 shadow-xl max-w-md mx-auto">
+                      {/* Store Header */}
+                      <div className="text-center mb-6 pb-4 border-b-4 border-orange-500">
+                        <h1 className="text-3xl font-bold text-orange-600">AYAM GEPREK</h1>
+                        <h2 className="text-xl font-bold text-green-700">SAMBAL IJO</h2>
+                        <p className="text-sm text-gray-500 mt-2">Kartu Member Resmi</p>
+                      </div>
+
+                      {/* Member Info */}
+                      <div className="space-y-3 mb-6">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600 font-medium">Nama:</span>
+                          <span className="font-bold text-gray-800">{member.name}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600 font-medium">No. HP:</span>
+                          <span className="font-bold text-gray-800">{member.phone}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600 font-medium">Poin:</span>
+                          <span className="font-bold text-orange-600 text-lg">{member.points}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600 font-medium">Terdaftar:</span>
+                          <span className="font-medium text-gray-700 text-sm">
+                            {new Date(member.createdAt).toLocaleDateString('id-ID')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* QR Code */}
+                      {qrCodeUrl && (
+                        <div className="bg-gray-50 p-4 rounded-lg mb-6 text-center">
+                          <p className="text-sm font-semibold text-gray-700 mb-3">QR Code Member</p>
+                          <img
+                            src={qrCodeUrl}
+                            alt="QR Code Member"
+                            className="mx-auto border-4 border-white shadow-lg"
+                            style={{ width: '200px', height: '200px' }}
+                          />
+                          <p className="text-xs text-gray-500 mt-2">Scan QR Code ini untuk akses member</p>
+                        </div>
+                      )}
+
+                      {/* Barcode */}
+                      <div className="bg-gray-50 p-4 rounded-lg mb-6 text-center">
+                        <p className="text-sm font-semibold text-gray-700 mb-3">Barcode Member</p>
+                        <div className="bg-white p-4 rounded border-2 border-gray-300">
+                          <div className="flex justify-center">
+                            {(() => {
+                              const pattern = generateBarcodePattern(member.phone)
+                              const totalWidth = pattern.reduce((sum, bar) => sum + bar.width, 0)
+                              return (
+                                <svg width={totalWidth} height={60}>
+                                  {pattern.map((bar, index) => (
+                                    <rect
+                                      key={index}
+                                      x={pattern.slice(0, index).reduce((sum, b) => sum + b.width, 0)}
+                                      y={0}
+                                      width={bar.width}
+                                      height={60}
+                                      fill={bar.color}
+                                    />
+                                  ))}
+                                </svg>
+                              )
+                            })()}
+                          </div>
+                          <p className="text-lg font-mono font-bold text-gray-800 bg-gray-100 py-2 px-4 rounded mt-3 inline-block">
+                            {member.phone}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Card Footer */}
+                      <div className="text-center pt-4 border-t-2 border-gray-200">
+                        <p className="text-xs text-gray-500">Gunakan kartu ini saat berbelanja</p>
+                        <p className="text-xs text-gray-500">untuk mengumpulkan poin dan keuntungan eksklusif</p>
+                      </div>
+                    </div>
+
+                    {/* Print Button */}
+                    <div className="flex justify-center gap-4 no-print">
+                      <Button
+                        onClick={() => {
+                          const printContent = document.getElementById('member-card-print')
+                          if (printContent) {
+                            const printWindow = window.open('', '', 'height=600,width=800')
+                            if (printWindow) {
+                              printWindow.document.write('<html><head><title>Kartu Member</title>')
+                              printWindow.document.write('<style>body { font-family: Arial, sans-serif; padding: 20px; display: flex; justify-content: center; }</style>')
+                              printWindow.document.write('</head><body>')
+                              printWindow.document.write(printContent.innerHTML)
+                              printWindow.document.write('</body></html>')
+                              printWindow.document.close()
+                              printWindow.print()
+                            }
+                          }
+                        }}
+                        className="bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white px-8"
+                      >
+                        <Printer className="w-5 h-5 mr-2" />
+                        Cetak Kartu
+                      </Button>
+                    </div>
+
+                    {/* Instructions */}
+                    <div className="bg-blue-50 p-4 rounded-lg no-print">
+                      <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                        <QrCode className="w-4 h-4" />
+                        Cara Menggunakan Kartu:
+                      </h4>
+                      <ul className="text-sm text-blue-700 space-y-1">
+                        <li>• Tampilkan QR Code atau Barcode ini di kasir</li>
+                        <li>• Kasir akan scan untuk mengumpulkan poin</li>
+                        <li>• 1 poin = Rp 1.000 pembelian</li>
+                        <li>• Poin bisa ditukar dengan diskon atau hadiah</li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Printer className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Cari Member Terlebih Dahulu</h3>
+                    <p className="text-gray-600 mb-6">
+                      Masukkan nomor telepon member untuk mencetak kartu member
+                    </p>
+                    <div className="bg-orange-50 p-6 rounded-lg max-w-md mx-auto">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Masukkan nomor telepon member"
+                          value={orderForm.customerPhone}
+                          onChange={(e) => setOrderForm({ ...orderForm, customerPhone: e.target.value })}
+                          className="flex-1"
+                        />
+                        <Button onClick={() => orderForm.customerPhone && fetchMemberInfo(orderForm.customerPhone)}>
+                          Cari
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
