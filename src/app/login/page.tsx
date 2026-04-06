@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Flame, Mail, Lock, Eye, EyeOff, User, Phone, MapPin, ArrowLeft, KeyRound, Store, Shield, Users } from 'lucide-react'
+import { Flame, Mail, Lock, Eye, EyeOff, User, Phone, MapPin, ArrowLeft, Shield, Store } from 'lucide-react'
 import Link from 'next/link'
 
 export default function LoginPage() {
@@ -189,49 +188,50 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {/* Login Card */}
         <Card className="border-orange-200 shadow-xl">
           <CardHeader>
             <CardTitle className="text-2xl text-center">Selamat Datang!</CardTitle>
             <CardDescription className="text-center">
-              Masuk sebagai Staff atau Member
+              Masuk untuk melanjutkan
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Login Type Tabs */}
-            <div className="flex gap-2 mb-6">
+            {/* Login Type Toggle */}
+            <div className="flex gap-2 mb-6 bg-orange-50 p-1 rounded-lg">
               <button
+                type="button"
                 onClick={() => setLoginType('staff')}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
                   loginType === 'staff'
-                    ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-white text-orange-600 shadow-sm'
+                    : 'text-gray-600 hover:text-orange-600'
                 }`}
               >
-                <Shield className="w-4 h-4 inline mr-1" />
                 Staff
               </button>
               <button
+                type="button"
                 onClick={() => setLoginType('member')}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
                   loginType === 'member'
-                    ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-white text-orange-600 shadow-sm'
+                    : 'text-gray-600 hover:text-orange-600'
                 }`}
               >
-                <Users className="w-4 h-4 inline mr-1" />
                 Member
               </button>
             </div>
 
-            {/* Unified Login Form */}
+            {/* Login Form */}
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <Label htmlFor="login-email" className="flex items-center gap-2">
+                <Label htmlFor="email" className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-orange-600" />
-                  Email {loginType === 'staff' ? 'Staff' : 'Member'}
+                  Email
                 </Label>
                 <Input
-                  id="login-email"
+                  id="email"
                   type="email"
                   placeholder={loginType === 'staff' ? 'admin@geprek.com' : 'member@example.com'}
                   value={loginForm.email}
@@ -242,13 +242,13 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <Label htmlFor="login-password" className="flex items-center gap-2">
+                <Label htmlFor="password" className="flex items-center gap-2">
                   <Lock className="w-4 h-4 text-orange-600" />
                   Password
                 </Label>
                 <div className="relative">
                   <Input
-                    id="login-password"
+                    id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Masukkan password"
                     value={loginForm.password}
@@ -271,65 +271,59 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
               >
-                {loading ? 'Memproses...' : `Login sebagai ${loginType === 'staff' ? 'Staff' : 'Member'}`}
+                {loading ? 'Memproses...' : 'Login'}
               </Button>
             </form>
 
-            {/* Account Info */}
+            {/* Demo Accounts Info */}
             <Card className="mt-6 border-orange-200 bg-orange-50">
               <CardContent className="p-4">
+                <h3 className="font-bold text-sm text-orange-800 mb-3">
+                  {loginType === 'staff' ? '📋 Akun Staff:' : '👤 Akun Member Demo:'}
+                </h3>
                 {loginType === 'staff' ? (
-                  <>
-                    <h3 className="font-bold text-sm text-orange-800 mb-3">📋 Akun Staff:</h3>
-                    <div className="space-y-2 text-xs">
-                      <div className="flex justify-between items-center bg-white p-2 rounded border border-orange-200">
-                        <div>
-                          <span className="font-semibold">Admin:</span> admin@geprek.com / admin123
-                        </div>
-                        <Shield className="w-4 h-4 text-orange-600" />
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between items-center bg-white p-2 rounded border border-orange-200">
+                      <div>
+                        <span className="font-semibold">Admin:</span> admin@geprek.com / admin123
                       </div>
-                      <div className="flex justify-between items-center bg-white p-2 rounded border border-orange-200">
-                        <div>
-                          <span className="font-semibold">Kasir:</span> kasir@geprek.com / kasir123
-                        </div>
-                        <Store className="w-4 h-4 text-blue-600" />
-                      </div>
+                      <Shield className="w-4 h-4 text-orange-600" />
                     </div>
-                  </>
+                    <div className="flex justify-between items-center bg-white p-2 rounded border border-orange-200">
+                      <div>
+                        <span className="font-semibold">Kasir:</span> kasir@geprek.com / kasir123
+                      </div>
+                      <Store className="w-4 h-4 text-blue-600" />
+                    </div>
+                  </div>
                 ) : (
-                  <>
-                    <h3 className="font-bold text-sm text-orange-800 mb-2">👤 Akun Member Demo:</h3>
-                    <p className="text-xs text-gray-600">
-                      Email: member@geprek.com / Password: member123
-                    </p>
-                  </>
+                  <p className="text-xs text-gray-600">
+                    Email: member@geprek.com / Password: member123
+                  </p>
                 )}
               </CardContent>
             </Card>
+
+            {/* Register Link */}
+            <div className="text-center mt-6">
+              <button
+                type="button"
+                onClick={() => setShowRegister(!showRegister)}
+                className="text-sm text-orange-600 hover:text-orange-700 hover:underline"
+              >
+                {showRegister ? 'Sudah punya akun? Login' : 'Belum punya akun? Daftar Sekarang'}
+              </button>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Register Section - Below Login Card */}
-        {!showRegister && (
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 mb-3">Belum punya akun member?</p>
-            <Button
-              onClick={() => setShowRegister(true)}
-              variant="outline"
-              className="border-orange-300 text-orange-600 hover:bg-orange-50"
-            >
-              Daftar Member Baru
-            </Button>
-          </div>
-        )}
-
-        {/* Register Form Card */}
+        {/* Register Card (shown below) */}
         {showRegister && (
-          <Card className="mt-6 border-orange-200 shadow-xl">
+          <Card className="border-orange-200 shadow-xl mt-6">
             <CardHeader>
               <CardTitle className="text-xl text-center">Daftar Member Baru</CardTitle>
               <CardDescription className="text-center">
-                Isi formulir di bawah untuk mendaftar
+                Isi form di bawah untuk mendaftar
               </CardDescription>
             </CardHeader>
             <CardContent>
