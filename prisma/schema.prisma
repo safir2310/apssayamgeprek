@@ -214,6 +214,8 @@ model VoidLog {
 // Member Loyalty System
 model Member {
   id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
   phone     String   @unique
   name      String
   email     String?
@@ -225,6 +227,7 @@ model Member {
 
   pointHistory PointHistory[]
 
+  @@index([username])
   @@index([phone])
 }
 

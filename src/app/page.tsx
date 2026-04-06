@@ -79,15 +79,25 @@ export default function Home() {
 
   // Member state
   const [currentMember, setCurrentMember] = useState<any>(null)
-  const [showMemberLogin, setShowMemberLogin] = useState(false)
-  const [memberPhone, setMemberPhone] = useState('')
-  const [memberLoading, setMemberLoading] = useState(false)
 
-  // Fetch products and categories
+  // Fetch products and categories and load member from localStorage
   useEffect(() => {
     fetchProducts()
     if (activeTab === 'riwayat') {
       fetchOrders()
+    }
+
+    // Load member from localStorage
+    const savedMember = localStorage.getItem('member')
+    if (savedMember) {
+      try {
+        const member = JSON.parse(savedMember)
+        setCurrentMember(member)
+        setMemberPoints(member.points || 0)
+      } catch (error) {
+        console.error('Error parsing member data:', error)
+        localStorage.removeItem('member')
+      }
     }
   }, [activeTab])
 
@@ -225,37 +235,7 @@ export default function Home() {
     { id: 'profile' as const, label: 'Profile', icon: User },
   ]
 
-  // Fetch member by phone
-  const handleMemberLogin = async () => {
-    if (!memberPhone || memberPhone.length < 10) {
-      alert('Masukkan nomor telepon yang valid!')
-      return
-    }
 
-    setMemberLoading(true)
-    try {
-      const response = await fetch(`/api/members/lookup?phone=${memberPhone}`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.found && data.member) {
-          setCurrentMember(data.member)
-          setMemberPoints(data.member.points)
-          setShowMemberLogin(false)
-          setMemberPhone('')
-          alert(`Selamat datang, ${data.member.name}!`)
-        } else {
-          alert('Member tidak ditemukan. Silakan daftar di kasir.')
-        }
-      } else {
-        alert('Terjadi kesalahan. Silakan coba lagi.')
-      }
-    } catch (error) {
-      console.error('Error looking up member:', error)
-      alert('Terjadi kesalahan. Silakan coba lagi.')
-    } finally {
-      setMemberLoading(false)
-    }
-  }
 
   // Generate QR code pattern
   const generateQRPattern = (phone: string) => {
@@ -277,6 +257,7 @@ export default function Home() {
   const handleMemberLogout = () => {
     setCurrentMember(null)
     setMemberPoints(0)
+    localStorage.removeItem('member')
   }
 
   // Beranda Section Component
@@ -529,12 +510,13 @@ export default function Home() {
                 <User className="w-24 h-24 mx-auto mb-6 text-orange-300" />
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Belum Login</h2>
                 <p className="text-gray-600 mb-6">Login sebagai member untuk melihat QR code Anda</p>
-                <Button
-                  onClick={() => setShowMemberLogin(true)}
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
-                >
-                  Login Member
-                </Button>
+                <Link href="/login" className="block">
+                  <Button
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+                  >
+                    Login Member
+                  </Button>
+                </Link>
                 <div className="mt-4 pt-4 border-t border-orange-200">
                   <p className="text-sm text-gray-600 mb-2">Belum punya akun?</p>
                   <Link href="/login" className="block">
@@ -800,12 +782,13 @@ export default function Home() {
                 <>
                   <h2 className="text-2xl font-bold text-gray-800 mb-1">Guest User</h2>
                   <p className="text-gray-500 mb-4">Belum login</p>
-                  <Button
-                    onClick={() => setShowMemberLogin(true)}
-                    className="bg-gradient-to-r from-orange-500 to-orange-400 text-white mb-3"
-                  >
-                    Login Member
-                  </Button>
+                  <Link href="/login" className="block">
+                    <Button
+                      className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white mb-3"
+                    >
+                      Login Member
+                    </Button>
+                  </Link>
                   <Link href="/login" className="block">
                     <Button
                       variant="outline"
@@ -852,12 +835,13 @@ export default function Home() {
                 <Award className="w-16 h-16 mx-auto mb-4 text-orange-300" />
                 <h3 className="font-bold text-gray-800 mb-2">Login untuk Akses Fitur</h3>
                 <p className="text-gray-600 mb-4">Login sebagai member untuk mengakses fitur profile lengkap</p>
-                <Button
-                  onClick={() => setShowMemberLogin(true)}
-                  className="bg-gradient-to-r from-orange-500 to-orange-400 text-white"
-                >
-                  Login Member
-                </Button>
+                <Link href="/login" className="block">
+                  <Button
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+                  >
+                    Login Member
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           )}
@@ -1093,41 +1077,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Member Login Dialog */}
-      <Dialog open={showMemberLogin} onOpenChange={setShowMemberLogin}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="w-5 h-5 text-orange-600" />
-              Login Member
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="memberPhone">Nomor Telepon</Label>
-              <Input
-                id="memberPhone"
-                type="tel"
-                value={memberPhone}
-                onChange={(e) => setMemberPhone(e.target.value)}
-                placeholder="08xxxxxxxxxx"
-                className="border-orange-200 focus:border-orange-500"
-                onKeyPress={(e) => e.key === 'Enter' && handleMemberLogin()}
-              />
-            </div>
-            <Button
-              onClick={handleMemberLogin}
-              disabled={memberLoading}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
-            >
-              {memberLoading ? 'Memproses...' : 'Login'}
-            </Button>
-            <p className="text-xs text-center text-gray-500">
-              Masukkan nomor telepon yang terdaftar sebagai member
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
+
 
       {/* Dialogs */}
       <CartDialog />

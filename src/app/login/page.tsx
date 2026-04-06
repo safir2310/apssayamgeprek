@@ -14,19 +14,17 @@ export default function LoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [loginForm, setLoginForm] = useState({
-    phone: '',
+    username: '',
     password: ''
   })
   const [registerForm, setRegisterForm] = useState({
     name: '',
+    username: '',
     phone: '',
     email: '',
     address: '',
     password: '',
     confirmPassword: ''
-  })
-  const [forgotForm, setForgotForm] = useState({
-    phone: ''
   })
   const [loading, setLoading] = useState(false)
   const [registerSuccess, setRegisterSuccess] = useState(false)
@@ -36,20 +34,26 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      // Check if user exists in member database
-      const response = await fetch(`/api/members/lookup?phone=${loginForm.phone}`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.found && data.member) {
-          // Store member info in localStorage
-          localStorage.setItem('member', JSON.stringify(data.member))
-          alert(`Selamat datang kembali, ${data.member.name}!`)
-          router.push('/')
-        } else {
-          alert('Nomor telepon tidak terdaftar. Silakan daftar terlebih dahulu.')
-        }
+      const response = await fetch('/api/members/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: loginForm.username,
+          password: loginForm.password
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        // Store member info in localStorage
+        localStorage.setItem('member', JSON.stringify(data.member))
+        alert(`Selamat datang kembali, ${data.member.name}!`)
+        router.push('/')
       } else {
-        alert('Terjadi kesalahan. Silakan coba lagi.')
+        alert(data.error || 'Username atau password salah')
       }
     } catch (error) {
       console.error('Login error:', error)
@@ -63,8 +67,13 @@ export default function LoginPage() {
     e.preventDefault()
 
     // Validation
-    if (!registerForm.name || !registerForm.phone || !registerForm.password) {
+    if (!registerForm.name || !registerForm.username || !registerForm.phone || !registerForm.password) {
       alert('Mohon lengkapi semua field yang wajib diisi!')
+      return
+    }
+
+    if (registerForm.username.length < 3) {
+      alert('Username minimal 3 karakter!')
       return
     }
 
@@ -92,6 +101,7 @@ export default function LoginPage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          username: registerForm.username,
           name: registerForm.name,
           phone: registerForm.phone,
           email: registerForm.email || null,
@@ -114,32 +124,6 @@ export default function LoginPage() {
     }
   }
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-
-    try {
-      // Check if member exists
-      const response = await fetch(`/api/members/lookup?phone=${forgotForm.phone}`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.found) {
-          alert(`Reset password link akan dikirim ke nomor ${forgotForm.phone} (Simulasi)`)
-          setForgotForm({ phone: '' })
-        } else {
-          alert('Nomor telepon tidak terdaftar!')
-        }
-      } else {
-        alert('Terjadi kesalahan. Silakan coba lagi.')
-      }
-    } catch (error) {
-      console.error('Forgot password error:', error)
-      alert('Terjadi kesalahan. Silakan coba lagi.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   if (registerSuccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center p-4">
@@ -155,6 +139,7 @@ export default function LoginPage() {
                 setRegisterSuccess(false)
                 setRegisterForm({
                   name: '',
+                  username: '',
                   phone: '',
                   email: '',
                   address: '',
@@ -201,26 +186,25 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="register">Daftar</TabsTrigger>
-                <TabsTrigger value="forgot">Lupa Password</TabsTrigger>
               </TabsList>
 
               {/* Login Tab */}
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <Label htmlFor="login-phone" className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-orange-600" />
-                      Nomor Telepon
+                    <Label htmlFor="login-username" className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-orange-600" />
+                      Username
                     </Label>
                     <Input
-                      id="login-phone"
-                      type="tel"
-                      placeholder="08xxxxxxxxxx"
-                      value={loginForm.phone}
-                      onChange={(e) => setLoginForm({ ...loginForm, phone: e.target.value })}
+                      id="login-username"
+                      type="text"
+                      placeholder="Masukkan username"
+                      value={loginForm.username}
+                      onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
                       required
                       className="border-orange-200 focus:border-orange-500"
                     />
@@ -274,6 +258,22 @@ export default function LoginPage() {
                       placeholder="Masukkan nama lengkap"
                       value={registerForm.name}
                       onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                      required
+                      className="border-orange-200 focus:border-orange-500"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="reg-username" className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-orange-600" />
+                      Username *
+                    </Label>
+                    <Input
+                      id="reg-username"
+                      type="text"
+                      placeholder="Minimal 3 karakter"
+                      value={registerForm.username}
+                      onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
                       required
                       className="border-orange-200 focus:border-orange-500"
                     />
@@ -372,44 +372,6 @@ export default function LoginPage() {
                     className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
                   >
                     {loading ? 'Mendaftar...' : 'Daftar Sekarang'}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              {/* Forgot Password Tab */}
-              <TabsContent value="forgot">
-                <form onSubmit={handleForgotPassword} className="space-y-4">
-                  <div className="text-center mb-4">
-                    <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Lock className="w-8 h-8 text-orange-500" />
-                    </div>
-                    <p className="text-gray-600">
-                      Masukkan nomor telepon yang terdaftar. Kami akan mengirimkan link untuk mereset password Anda.
-                    </p>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="forgot-phone" className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-orange-600" />
-                      Nomor Telepon
-                    </Label>
-                    <Input
-                      id="forgot-phone"
-                      type="tel"
-                      placeholder="08xxxxxxxxxx"
-                      value={forgotForm.phone}
-                      onChange={(e) => setForgotForm({ ...forgotForm, phone: e.target.value })}
-                      required
-                      className="border-orange-200 focus:border-orange-500"
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
-                  >
-                    {loading ? 'Memproses...' : 'Kirim Link Reset'}
                   </Button>
                 </form>
               </TabsContent>
