@@ -32,6 +32,9 @@ const styles = `
     scrollbar-width: none;
   }
   @media print {
+    @page {
+      margin: 0;
+    }
     body * {
       visibility: hidden;
     }

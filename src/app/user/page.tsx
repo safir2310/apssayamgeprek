@@ -453,6 +453,9 @@ export default function UserDashboard() {
       {/* Print Styles */}
       <style jsx global>{`
         @media print {
+          @page {
+            margin: 0;
+          }
           body * {
             visibility: hidden;
           }
