@@ -6,17 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Flame, Mail, Lock, Eye, EyeOff, User, Phone, MapPin, ArrowLeft, Shield, Store } from 'lucide-react'
+import { Flame, Mail, Lock, Eye, EyeOff, User, Phone, MapPin, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [loginType, setLoginType] = useState<'staff' | 'member'>('staff')
   const [showRegister, setShowRegister] = useState(false)
 
-  // Login Form (Unified)
+  // Login Form
   const [loginForm, setLoginForm] = useState({
     email: '',
     password: ''
@@ -38,12 +37,10 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      console.log(`Attempting ${loginType} login with email:`, loginForm.email)
+      console.log('Attempting login with email:', loginForm.email)
 
-      // Determine which API to call based on login type
-      const apiUrl = loginType === 'staff' ? '/api/auth/login' : '/api/members/login'
-
-      const response = await fetch(apiUrl, {
+      // Try to login as staff first
+      let staffResponse = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -54,11 +51,10 @@ export default function LoginPage() {
         })
       })
 
-      const data = await response.json()
-
-      if (response.ok && data.success) {
-        if (loginType === 'staff') {
-          // Store user data in localStorage
+      if (staffResponse.ok) {
+        const data = await staffResponse.json()
+        if (data.success) {
+          // Staff login successful
           localStorage.setItem('admin-user', JSON.stringify(data.user))
           localStorage.setItem('admin-session', Date.now().toString())
 
@@ -73,15 +69,38 @@ export default function LoginPage() {
           } else {
             alert('Role tidak dikenali. Hubungi administrator.')
           }
-        } else {
-          // Member login
+          setLoading(false)
+          return
+        }
+      }
+
+      // If staff login failed, try member login
+      let memberResponse = await fetch('/api/members/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: loginForm.email,
+          password: loginForm.password
+        })
+      })
+
+      if (memberResponse.ok) {
+        const data = await memberResponse.json()
+        if (data.success) {
+          // Member login successful
           localStorage.setItem('member', JSON.stringify(data.member))
           alert(`Selamat datang kembali, ${data.member.name}!`)
           router.push('/')
+          setLoading(false)
+          return
         }
-      } else {
-        alert(data.error || 'Email atau password salah')
       }
+
+      // Both login attempts failed
+      alert('Email atau password salah')
+
     } catch (error) {
       console.error('Login error:', error)
       alert('Terjadi kesalahan koneksi. Silakan coba lagi.')
@@ -193,36 +212,10 @@ export default function LoginPage() {
           <CardHeader>
             <CardTitle className="text-2xl text-center">Selamat Datang!</CardTitle>
             <CardDescription className="text-center">
-              Masuk untuk melanjutkan
+              Masuk dengan email dan password Anda
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Login Type Toggle */}
-            <div className="flex gap-2 mb-6 bg-orange-50 p-1 rounded-lg">
-              <button
-                type="button"
-                onClick={() => setLoginType('staff')}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                  loginType === 'staff'
-                    ? 'bg-white text-orange-600 shadow-sm'
-                    : 'text-gray-600 hover:text-orange-600'
-                }`}
-              >
-                Staff
-              </button>
-              <button
-                type="button"
-                onClick={() => setLoginType('member')}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                  loginType === 'member'
-                    ? 'bg-white text-orange-600 shadow-sm'
-                    : 'text-gray-600 hover:text-orange-600'
-                }`}
-              >
-                Member
-              </button>
-            </div>
-
             {/* Login Form */}
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
@@ -233,7 +226,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder={loginType === 'staff' ? 'admin@geprek.com' : 'member@example.com'}
+                  placeholder="email@example.com"
                   value={loginForm.email}
                   onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                   required
@@ -278,29 +271,24 @@ export default function LoginPage() {
             {/* Demo Accounts Info */}
             <Card className="mt-6 border-orange-200 bg-orange-50">
               <CardContent className="p-4">
-                <h3 className="font-bold text-sm text-orange-800 mb-3">
-                  {loginType === 'staff' ? '📋 Akun Staff:' : '👤 Akun Member Demo:'}
-                </h3>
-                {loginType === 'staff' ? (
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between items-center bg-white p-2 rounded border border-orange-200">
-                      <div>
-                        <span className="font-semibold">Admin:</span> admin@geprek.com / admin123
-                      </div>
-                      <Shield className="w-4 h-4 text-orange-600" />
-                    </div>
-                    <div className="flex justify-between items-center bg-white p-2 rounded border border-orange-200">
-                      <div>
-                        <span className="font-semibold">Kasir:</span> kasir@geprek.com / kasir123
-                      </div>
-                      <Store className="w-4 h-4 text-blue-600" />
-                    </div>
+                <h3 className="font-bold text-sm text-orange-800 mb-3">📋 Akun Demo:</h3>
+                <div className="space-y-2 text-xs">
+                  <div className="bg-white p-2 rounded border border-orange-200">
+                    <p className="font-semibold text-orange-600">Admin (Staff):</p>
+                    <p className="text-gray-600">admin@geprek.com / admin123</p>
                   </div>
-                ) : (
-                  <p className="text-xs text-gray-600">
-                    Email: member@geprek.com / Password: member123
-                  </p>
-                )}
+                  <div className="bg-white p-2 rounded border border-orange-200">
+                    <p className="font-semibold text-blue-600">Kasir (Staff):</p>
+                    <p className="text-gray-600">kasir@geprek.com / kasir123</p>
+                  </div>
+                  <div className="bg-white p-2 rounded border border-orange-200">
+                    <p className="font-semibold text-green-600">Member (User):</p>
+                    <p className="text-gray-600">member@geprek.com / member123</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2 italic">
+                  * Sistem otomatis mendeteksi role Anda
+                </p>
               </CardContent>
             </Card>
 
