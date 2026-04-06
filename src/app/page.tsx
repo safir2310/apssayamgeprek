@@ -17,9 +17,20 @@ import { Separator } from '@/components/ui/separator'
 import {
   ShoppingCart, Minus, Plus, X, Phone, MapPin, Award, Flame,
   Home as HomeIcon, QrCode, History, Gift, User, Store, LayoutDashboard,
-  Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut, Share2, Copy, Scan
+  Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut, Share2, Copy, Scan, Percent, Star
 } from 'lucide-react'
 import Link from 'next/link'
+
+// Custom scrollbar styles
+const styles = `
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+`
 
 // Dynamic import for Barcode to avoid SSR issues
 const Barcode = dynamic(() => import('react-barcode').then(mod => mod.default), {
@@ -89,6 +100,9 @@ export default function Home() {
   // Orders state
   const [orders, setOrders] = useState<Order[]>([])
   const [memberPoints, setMemberPoints] = useState(0)
+
+  // Promos state
+  const [promos, setPromos] = useState<any[]>([])
 
   // Member state
   const [currentMember, setCurrentMember] = useState<any>(null)
@@ -176,9 +190,22 @@ export default function Home() {
     }
   }
 
+  const fetchPromos = async () => {
+    try {
+      const response = await fetch('/api/admin/promos')
+      if (response.ok) {
+        const data = await response.json()
+        setPromos(data.data?.filter((p: any) => p.isActive) || [])
+      }
+    } catch (error) {
+      console.error('Error fetching promos:', error)
+    }
+  }
+
   // Fetch products and categories and load member from localStorage
   useEffect(() => {
     fetchProducts()
+    fetchPromos()
 
     // Load member from localStorage
     const savedMember = localStorage.getItem('member')
@@ -776,6 +803,7 @@ export default function Home() {
   // Beranda Section Component
   const BerandaSection = () => (
     <div className="pb-20">
+      <style>{styles}</style>
       {/* Hero Section with Dark Orange Gradient */}
       <section className="relative bg-gradient-to-br from-orange-700 via-orange-600 to-orange-500 text-white py-16 px-4 md:py-24 md:px-8">
         <div className="max-w-7xl mx-auto text-center">
@@ -797,15 +825,94 @@ export default function Home() {
             Pesan Sekarang
           </Button>
 
-          {/* Latest Products Info */}
-          <div className="mt-12 max-w-4xl mx-auto">
-            <Card className="bg-white/10 backdrop-blur-sm border-0 text-white">
-              <CardContent className="p-6 text-center">
-                <ShoppingCart className="w-8 h-8 mx-auto mb-3" />
-                <p className="font-semibold text-sm">Produk Terbaru</p>
-                <p className="text-orange-100 text-xs mt-1">{products.length} menu tersedia</p>
-              </CardContent>
-            </Card>
+          {/* Latest Products & Promos Cards */}
+          <div className="mt-12 max-w-6xl mx-auto">
+            {/* Latest Products - Horizontal Scroll */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Star className="w-5 h-5 text-yellow-300" />
+                <h3 className="text-lg font-semibold">Produk Terbaru</h3>
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                {products.slice(0, 6).map((product) => (
+                  <Card
+                    key={product.id}
+                    className="min-w-[160px] md:min-w-[200px] bg-white/10 backdrop-blur-sm border-white/20 text-white cursor-pointer hover:bg-white/20 transition-all hover:scale-105"
+                    onClick={() => {
+                      addToCart(product)
+                      setActiveTab('menu')
+                    }}
+                  >
+                    <CardContent className="p-3">
+                      <div className="aspect-square bg-white/20 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                        {product.image ? (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Flame className="w-8 h-8 text-white/60" />
+                        )}
+                      </div>
+                      <h4 className="font-semibold text-sm mb-1 line-clamp-2 min-h-[2.5rem]">
+                        {product.name}
+                      </h4>
+                      <p className="text-orange-100 text-xs font-bold">
+                        Rp{product.price.toLocaleString('id-ID')}
+                      </p>
+                      {product.stock > 0 ? (
+                        <Badge className="mt-2 bg-green-500/80 text-white text-xs">
+                          Tersedia
+                        </Badge>
+                      ) : (
+                        <Badge className="mt-2 bg-gray-500/80 text-white text-xs">
+                          Habis
+                        </Badge>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Promos - Horizontal Scroll */}
+            {promos.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Percent className="w-5 h-5 text-yellow-300" />
+                  <h3 className="text-lg font-semibold">Promo Spesial</h3>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                  {promos.slice(0, 4).map((promo) => (
+                    <Card
+                      key={promo.id}
+                      className="min-w-[200px] md:min-w-[250px] bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-sm border-yellow-400/30 text-white cursor-pointer hover:scale-105 transition-all"
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <Percent className="w-8 h-8 text-yellow-300" />
+                          <Badge className="bg-yellow-500/80 text-white text-xs">
+                            {promo.type === 'PERCENTAGE' ? `${promo.value}%` :
+                             promo.type === 'FIXED' ? 'Diskon' :
+                             promo.type === 'FREE_PRODUCT' ? 'Gratis' :
+                             promo.type === 'BOGO' ? 'BOGO' : 'Promo'}
+                          </Badge>
+                        </div>
+                        <h4 className="font-bold text-lg mb-2">{promo.name}</h4>
+                        <p className="text-orange-100 text-xs mb-3 line-clamp-2">
+                          {promo.description || 'Gunakan kode ini untuk mendapatkan promo spesial'}
+                        </p>
+                        <div className="bg-white/20 rounded-lg px-3 py-2 text-center">
+                          <p className="text-xs text-orange-100 mb-1">Kode Promo</p>
+                          <p className="font-bold text-lg">{promo.code}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
