@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator'
 import {
   ShoppingCart, Minus, Plus, X, Phone, MapPin, Award, Flame,
   Home as HomeIcon, QrCode, History, Gift, User, Store,
-  Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut, Share2, Copy, Scan, Percent, Star
+  Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut, Share2, Copy, Scan, Percent, Star, Megaphone, AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -103,6 +103,9 @@ export default function Home() {
 
   // Promos state
   const [promos, setPromos] = useState<any[]>([])
+
+  // Notification Hero state
+  const [showNotification, setShowNotification] = useState(false)
 
   // Member state
   const [currentMember, setCurrentMember] = useState<any>(null)
@@ -207,6 +210,12 @@ export default function Home() {
     fetchProducts()
     fetchPromos()
 
+    // Check notification hero display state
+    const notificationDismissed = localStorage.getItem('notificationHeroDismissed')
+    if (!notificationDismissed) {
+      setShowNotification(true)
+    }
+
     // Load member from localStorage
     const savedMember = localStorage.getItem('member')
     if (savedMember) {
@@ -274,6 +283,18 @@ export default function Home() {
       localStorage.removeItem('cart')
     }
   }, [cart])
+
+  // Handle dismiss notification
+  const handleDismissNotification = () => {
+    setShowNotification(false)
+    localStorage.setItem('notificationHeroDismissed', 'true')
+  }
+
+  // Handle show notification again (for testing)
+  const handleShowNotification = () => {
+    localStorage.removeItem('notificationHeroDismissed')
+    setShowNotification(true)
+  }
 
   const saveCartToLocalStorage = (newCart: CartItem[]) => {
     if (newCart.length > 0) {
@@ -1702,6 +1723,15 @@ export default function Home() {
                   Riwayat Point
                   <ChevronRight className="w-5 h-5 ml-auto text-gray-400" />
                 </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start border-orange-300 hover:bg-orange-50"
+                  onClick={handleShowNotification}
+                >
+                  <Megaphone className="w-5 h-5 mr-3 text-orange-600" />
+                  Tampilkan Notifikasi
+                  <ChevronRight className="w-5 h-5 ml-auto text-gray-400" />
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -2006,6 +2036,77 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-orange-50">
+      {/* Notification Hero - Shows on all pages */}
+      {showNotification && (
+        <div className="relative bg-gradient-to-r from-orange-600 via-red-500 to-orange-600 text-white overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255,255,255,0.1) 10px,
+                rgba(255,255,255,0.1) 20px
+              )`
+            }}></div>
+          </div>
+
+          <div className="relative max-w-7xl mx-auto px-4 py-3 md:py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm animate-pulse">
+                    <Megaphone className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-yellow-300 flex-shrink-0" />
+                    <h3 className="font-bold text-sm md:text-base">
+                      {promos.length > 0 ? `${promos.length} Promo Aktif! 🎉` : 'Promo Spesial! 🎉'}
+                    </h3>
+                  </div>
+                  {promos.length > 0 ? (
+                    <p className="text-xs md:text-sm text-white/90 line-clamp-1 md:line-clamp-2">
+                      Gunakan kode <span className="font-bold bg-white/20 px-2 py-0.5 rounded">{promos[0].code}</span> untuk {promos[0].name}!
+                    </p>
+                  ) : (
+                    <p className="text-xs md:text-sm text-white/90 line-clamp-1 md:line-clamp-2">
+                      Gunakan kode <span className="font-bold bg-white/20 px-2 py-0.5 rounded">PROMO20</span> untuk diskon 20% di semua menu!
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/30 text-xs md:text-sm"
+                  onClick={() => {
+                    setActiveTab('menu')
+                    handleDismissNotification()
+                  }}
+                >
+                  Lihat Menu
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="text-white/80 hover:text-white hover:bg-white/10 flex-shrink-0"
+                  onClick={handleDismissNotification}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Animated bottom border */}
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-yellow-400 to-transparent animate-pulse"></div>
+        </div>
+      )}
+
       {/* Main Content */}
       {activeTab === 'beranda' && <BerandaSection />}
       {activeTab === 'menu' && <MenuSection />}
