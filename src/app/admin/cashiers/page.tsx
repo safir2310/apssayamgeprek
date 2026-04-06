@@ -79,13 +79,13 @@ export default function CashierManagementPage() {
 
   const fetchRoles = async () => {
     try {
-      // Get roles from existing cashiers or use default roles
-      const uniqueRoles = Array.from(new Set(cashiers.map(c => ({ id: c.roleId, name: c.roleName }))))
-      setRoles(uniqueRoles.length > 0 ? uniqueRoles : [
-        { id: '1', name: 'Admin' },
-        { id: '2', name: 'Kasir' },
-        { id: '3', name: 'Supervisor' }
-      ])
+      const response = await fetch('/api/admin/roles')
+      if (response.ok) {
+        const result = await response.json()
+        setRoles(result.data || [])
+      } else {
+        console.error('Failed to fetch roles')
+      }
     } catch (error) {
       console.error('Error fetching roles:', error)
     }
@@ -461,9 +461,11 @@ export default function CashierManagementPage() {
                     <SelectValue placeholder="Pilih role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Admin</SelectItem>
-                    <SelectItem value="2">Kasir</SelectItem>
-                    <SelectItem value="3">Supervisor</SelectItem>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
