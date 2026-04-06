@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -297,14 +297,14 @@ export default function Home() {
   }
 
   // Handle member logout
-  const handleMemberLogout = () => {
+  const handleMemberLogout = useCallback(() => {
     setCurrentMember(null)
     setMemberPoints(0)
     localStorage.removeItem('member')
-  }
+  }, [])
 
   // Handle edit profile
-  const handleEditProfile = async () => {
+  const handleEditProfile = useCallback(async () => {
     try {
       const response = await fetch('/api/members/profile', {
         method: 'PUT',
@@ -330,10 +330,10 @@ export default function Home() {
       console.error('Error updating profile:', error)
       alert('Terjadi kesalahan. Silakan coba lagi.')
     }
-  }
+  }, [currentMember?.id, editProfileForm])
 
   // Handle photo upload
-  const handlePhotoUpload = async (file: File) => {
+  const handlePhotoUpload = useCallback(async (file: File) => {
     try {
       const reader = new FileReader()
       reader.onload = async (e) => {
@@ -365,10 +365,10 @@ export default function Home() {
       console.error('Error uploading photo:', error)
       alert('Terjadi kesalahan. Silakan coba lagi.')
     }
-  }
+  }, [currentMember?.id, currentMember])
 
   // Handle photo removal
-  const handlePhotoRemove = async () => {
+  const handlePhotoRemove = useCallback(async () => {
     try {
       const response = await fetch(`/api/members/photo?id=${currentMember.id}`, {
         method: 'DELETE'
@@ -387,10 +387,10 @@ export default function Home() {
       console.error('Error removing photo:', error)
       alert('Terjadi kesalahan. Silakan coba lagi.')
     }
-  }
+  }, [currentMember?.id, currentMember])
 
   // Handle password change
-  const handlePasswordChange = async () => {
+  const handlePasswordChange = useCallback(async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       alert('Password baru dan konfirmasi tidak cocok')
       return
@@ -424,10 +424,10 @@ export default function Home() {
       console.error('Error changing password:', error)
       alert('Terjadi kesalahan. Silakan coba lagi.')
     }
-  }
+  }, [currentMember?.id, passwordForm])
 
   // Handle notification settings update
-  const handleNotificationUpdate = async () => {
+  const handleNotificationUpdate = useCallback(async () => {
     try {
       const response = await fetch('/api/members/notifications', {
         method: 'PUT',
@@ -451,7 +451,7 @@ export default function Home() {
       console.error('Error updating notifications:', error)
       alert('Terjadi kesalahan. Silakan coba lagi.')
     }
-  }
+  }, [currentMember?.id, notificationSettings, currentMember])
 
   // Handle navigation tab click
   const handleTabClick = (tabId: string) => {
@@ -1155,7 +1155,193 @@ export default function Home() {
           )}
         </div>
       </main>
+    </div>
+  )
 
+  // Cart Dialog
+  const CartDialog = () => (
+    <Dialog open={showCart} onOpenChange={setShowCart}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Keranjang Belanja</DialogTitle>
+        </DialogHeader>
+        {cart.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <ShoppingCart className="w-16 h-16 mx-auto mb-4 text-orange-300" />
+            <p>Keranjang kosong</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <ScrollArea className="max-h-60">
+              <div className="space-y-3">
+                {cart.map(item => (
+                  <Card key={item.product.id} className="border-orange-200">
+                    <CardContent className="p-3">
+                      <div className="flex items-start gap-3">
+                        {item.product.image ? (
+                          <img
+                            src={item.product.image}
+                            alt={item.product.name}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center">
+                            <Flame className="w-8 h-8 text-orange-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm text-gray-800 mb-1 line-clamp-1">
+                            {item.product.name}
+                          </h4>
+                          <p className="text-orange-600 font-bold text-sm">
+                            Rp{item.product.price.toLocaleString('id-ID')}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 w-7 p-0 border-orange-300 hover:bg-orange-50"
+                              onClick={() => updateQuantity(item.product.id, -1)}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="w-8 text-center text-sm font-semibold">{item.quantity}</span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 w-7 p-0 border-orange-300 hover:bg-orange-50"
+                              onClick={() => updateQuantity(item.product.id, 1)}
+                              disabled={item.quantity >= item.product.stock}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 w-7 p-0 border-red-300 text-red-600 hover:bg-red-50 ml-auto"
+                              onClick={() => removeFromCart(item.product.id)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-orange-600 text-sm">
+                            Rp{(item.product.price * item.quantity).toLocaleString('id-ID')}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+
+            <div className="border-t border-orange-200 pt-4">
+              <div className="flex justify-between font-bold text-lg text-orange-800 mb-4">
+                <span>Total</span>
+                <span>Rp{getCartTotal().toLocaleString('id-ID')}</span>
+              </div>
+              <Button
+                onClick={() => { setShowCheckout(true); setShowCart(false); }}
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
+              >
+                Lanjut ke Pembayaran
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+
+  // Checkout Dialog
+  const CheckoutDialog = () => (
+    <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Checkout</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleCheckout} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Nama Lengkap *</Label>
+            <Input
+              id="name"
+              required
+              value={checkoutForm.name}
+              onChange={(e) => setCheckoutForm({ ...checkoutForm, name: e.target.value })}
+              placeholder="Masukkan nama lengkap"
+              className="border-orange-200 focus:border-orange-500"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="phone">No. WhatsApp *</Label>
+            <Input
+              id="phone"
+              type="tel"
+              required
+              value={checkoutForm.phone}
+              onChange={(e) => setCheckoutForm({ ...checkoutForm, phone: e.target.value })}
+              placeholder="08xxxxxxxxxx"
+              className="border-orange-200 focus:border-orange-500"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="address">Alamat Pengiriman *</Label>
+            <Textarea
+              id="address"
+              required
+              value={checkoutForm.address}
+              onChange={(e) => setCheckoutForm({ ...checkoutForm, address: e.target.value })}
+              placeholder="Masukkan alamat lengkap"
+              rows={3}
+              className="border-orange-200 focus:border-orange-500"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Catatan (Opsional)</Label>
+            <Textarea
+              id="notes"
+              value={checkoutForm.notes}
+              onChange={(e) => setCheckoutForm({ ...checkoutForm, notes: e.target.value })}
+              placeholder="Catatan tambahan untuk pesanan"
+              rows={2}
+              className="border-orange-200 focus:border-orange-500"
+            />
+          </div>
+
+          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+            <div className="flex justify-between font-bold text-lg">
+              <span>Total Pembayaran:</span>
+              <span className="text-orange-600">Rp{getCartTotal().toLocaleString('id-ID')}</span>
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
+          >
+            Konfirmasi Pesanan
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+
+  return (
+    <div className="min-h-screen bg-orange-50">
+      {/* Main Content */}
+      {activeTab === 'beranda' && <BerandaSection />}
+      {activeTab === 'menu' && <MenuSection />}
+      {activeTab === 'qr-member' && <QRMemberSection />}
+      {activeTab === 'riwayat' && <RiwayatSection />}
+      {activeTab === 'tukar-point' && <TukarPointSection />}
+      {activeTab === 'profile' && <ProfileSection />}
+
+      {/* Profile Dialogs */}
       {/* Edit Profile Modal */}
       <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
         <DialogContent className="max-w-md" key="edit-profile-modal">
@@ -1512,191 +1698,6 @@ export default function Home() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  )
-
-  // Cart Dialog
-  const CartDialog = () => (
-    <Dialog open={showCart} onOpenChange={setShowCart}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Keranjang Belanja</DialogTitle>
-        </DialogHeader>
-        {cart.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <ShoppingCart className="w-16 h-16 mx-auto mb-4 text-orange-300" />
-            <p>Keranjang kosong</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <ScrollArea className="max-h-60">
-              <div className="space-y-3">
-                {cart.map(item => (
-                  <Card key={item.product.id} className="border-orange-200">
-                    <CardContent className="p-3">
-                      <div className="flex items-start gap-3">
-                        {item.product.image ? (
-                          <img
-                            src={item.product.image}
-                            alt={item.product.name}
-                            className="w-16 h-16 object-cover rounded-lg"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center">
-                            <Flame className="w-8 h-8 text-orange-400" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm text-gray-800 mb-1 line-clamp-1">
-                            {item.product.name}
-                          </h4>
-                          <p className="text-orange-600 font-bold text-sm">
-                            Rp{item.product.price.toLocaleString('id-ID')}
-                          </p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 w-7 p-0 border-orange-300 hover:bg-orange-50"
-                              onClick={() => updateQuantity(item.product.id, -1)}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="w-8 text-center text-sm font-semibold">{item.quantity}</span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 w-7 p-0 border-orange-300 hover:bg-orange-50"
-                              onClick={() => updateQuantity(item.product.id, 1)}
-                              disabled={item.quantity >= item.product.stock}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 w-7 p-0 border-red-300 text-red-600 hover:bg-red-50 ml-auto"
-                              onClick={() => removeFromCart(item.product.id)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-orange-600 text-sm">
-                            Rp{(item.product.price * item.quantity).toLocaleString('id-ID')}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-
-            <div className="border-t border-orange-200 pt-4">
-              <div className="flex justify-between font-bold text-lg text-orange-800 mb-4">
-                <span>Total</span>
-                <span>Rp{getCartTotal().toLocaleString('id-ID')}</span>
-              </div>
-              <Button
-                onClick={() => { setShowCheckout(true); setShowCart(false); }}
-                className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
-              >
-                Lanjut ke Pembayaran
-              </Button>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  )
-
-  // Checkout Dialog
-  const CheckoutDialog = () => (
-    <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Checkout</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleCheckout} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nama Lengkap *</Label>
-            <Input
-              id="name"
-              required
-              value={checkoutForm.name}
-              onChange={(e) => setCheckoutForm({ ...checkoutForm, name: e.target.value })}
-              placeholder="Masukkan nama lengkap"
-              className="border-orange-200 focus:border-orange-500"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="phone">No. WhatsApp *</Label>
-            <Input
-              id="phone"
-              type="tel"
-              required
-              value={checkoutForm.phone}
-              onChange={(e) => setCheckoutForm({ ...checkoutForm, phone: e.target.value })}
-              placeholder="08xxxxxxxxxx"
-              className="border-orange-200 focus:border-orange-500"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="address">Alamat Pengiriman *</Label>
-            <Textarea
-              id="address"
-              required
-              value={checkoutForm.address}
-              onChange={(e) => setCheckoutForm({ ...checkoutForm, address: e.target.value })}
-              placeholder="Masukkan alamat lengkap"
-              rows={3}
-              className="border-orange-200 focus:border-orange-500"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="notes">Catatan (Opsional)</Label>
-            <Textarea
-              id="notes"
-              value={checkoutForm.notes}
-              onChange={(e) => setCheckoutForm({ ...checkoutForm, notes: e.target.value })}
-              placeholder="Catatan tambahan untuk pesanan"
-              rows={2}
-              className="border-orange-200 focus:border-orange-500"
-            />
-          </div>
-
-          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-            <div className="flex justify-between font-bold text-lg">
-              <span>Total Pembayaran:</span>
-              <span className="text-orange-600">Rp{getCartTotal().toLocaleString('id-ID')}</span>
-            </div>
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
-          >
-            Konfirmasi Pesanan
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
-
-  return (
-    <div className="min-h-screen bg-orange-50">
-      {/* Main Content */}
-      {activeTab === 'beranda' && <BerandaSection />}
-      {activeTab === 'menu' && <MenuSection />}
-      {activeTab === 'qr-member' && <QRMemberSection />}
-      {activeTab === 'riwayat' && <RiwayatSection />}
-      {activeTab === 'tukar-point' && <TukarPointSection />}
-      {activeTab === 'profile' && <ProfileSection />}
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-orange-200 shadow-lg z-50">
