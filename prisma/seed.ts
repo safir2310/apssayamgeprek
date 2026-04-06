@@ -217,6 +217,33 @@ async function main() {
 
   console.log('✅ Settings created:', { storeName: settings.storeName })
 
+  // 7. Create Default Payment Methods
+  console.log('Creating payment methods...')
+
+  const paymentMethods = [
+    { code: 'CASH', name: 'Tunai', description: 'Pembayaran tunai', icon: 'banknote', sortOrder: 1 },
+    { code: 'QRIS', name: 'QRIS', description: 'Scan QRIS', icon: 'qr-code', sortOrder: 2 },
+    { code: 'DEBIT', name: 'Kartu Debit', description: 'Kartu debit bank', icon: 'credit-card', sortOrder: 3 },
+    { code: 'TRANSFER', name: 'Transfer Bank', description: 'Transfer bank', icon: 'building-2', sortOrder: 4 },
+    { code: 'E_WALLET', name: 'E-Wallet', description: 'Dompet digital', icon: 'wallet', sortOrder: 5 },
+  ]
+
+  const createdPaymentMethods = []
+  for (const pm of paymentMethods) {
+    let paymentMethod = await prisma.paymentMethod.findUnique({
+      where: { code: pm.code }
+    })
+
+    if (!paymentMethod) {
+      paymentMethod = await prisma.paymentMethod.create({
+        data: pm
+      })
+    }
+    createdPaymentMethods.push(paymentMethod)
+  }
+
+  console.log('✅ Payment methods created:', createdPaymentMethods.map((pm) => pm.name))
+
   console.log('\n🎉 Database seeding completed successfully!')
   console.log('\n📋 Default Accounts:')
   console.log('═══════════════════════════════════════════════')

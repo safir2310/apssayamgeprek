@@ -82,11 +82,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Generate username from phone number
+    const username = phone
+    // Generate default password (can be changed later)
+    const defaultPassword = phone.slice(-6) // Last 6 digits of phone
+
+    // Check if email exists and is already used
+    if (email) {
+      const existingEmail = await prisma.member.findUnique({
+        where: { email }
+      })
+
+      if (existingEmail) {
+        return NextResponse.json(
+          { error: 'Email already registered' },
+          { status: 400 }
+        )
+      }
+    }
+
     const member = await prisma.member.create({
       data: {
+        username,
+        password: defaultPassword,
         name,
         phone,
-        email: email || null,
+        email: email || `${username}@temp.local`, // Temporary email if not provided
         address: address || null,
         points: 0,
         isActive
@@ -95,7 +116,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: member
+      data: {
+        ...member,
+        tempPassword: defaultPassword // Return temp password so admin can inform the member
+      }
     })
   } catch (error) {
     console.error('Error creating member:', error)
