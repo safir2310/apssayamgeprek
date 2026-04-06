@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -16,9 +17,15 @@ import { Separator } from '@/components/ui/separator'
 import {
   ShoppingCart, Minus, Plus, X, Phone, MapPin, Clock, Award, Flame,
   Home as HomeIcon, QrCode, History, Gift, User, Store, LayoutDashboard,
-  Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut, Share2, Copy
+  Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut, Share2, Copy, Scan
 } from 'lucide-react'
 import Link from 'next/link'
+
+// Dynamic import for Barcode to avoid SSR issues
+const Barcode = dynamic(() => import('react-barcode').then(mod => mod.default), {
+  ssr: false,
+  loading: () => <div className="h-24 bg-gray-200 rounded animate-pulse" />
+})
 
 // Store Information
 const STORE_INFO = {
@@ -427,23 +434,6 @@ export default function Home() {
     ...navItems.slice(2), // qr-member, riwayat, tukar-point, profile
   ]
 
-
-
-  // Generate QR code pattern
-  const generateQRPattern = (phone: string) => {
-    // Simple visual pattern based on phone number
-    const gridSize = 25
-    const cells: string[] = []
-    const phoneHash = phone.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-    
-    for (let i = 0; i < gridSize * gridSize; i++) {
-      const isBlack = ((i * 17) + phoneHash) % 3 === 0 || 
-                      ((i % gridSize) === 0 || (i % gridSize) === gridSize - 1 || 
-                       Math.floor(i / gridSize) === 0 || Math.floor(i / gridSize) === gridSize - 1)
-      cells.push(isBlack ? '#000' : '#fff')
-    }
-    return cells
-  }
 
   // Handle member logout
   const handleMemberLogout = useCallback(() => {
@@ -1008,10 +998,10 @@ export default function Home() {
       <header className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 text-white py-6 px-4 shadow-lg">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-3 mb-1">
-            <QrCode className="w-6 h-6" />
-            <h1 className="text-2xl font-bold">QR Member</h1>
+            <Scan className="w-6 h-6" />
+            <h1 className="text-2xl font-bold">Kode Batang Member</h1>
           </div>
-          <p className="text-orange-100 text-sm">Scan QR code ini di kasir untuk mendapatkan poin</p>
+          <p className="text-orange-100 text-sm">Scan kode batang ini di kasir untuk mendapatkan poin</p>
         </div>
       </header>
       <main className="py-6 px-4">
@@ -1023,7 +1013,7 @@ export default function Home() {
                   <User className="w-14 h-14 text-orange-600" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Belum Login</h2>
-                <p className="text-gray-600 mb-6">Login sebagai member untuk melihat QR code Anda dan mulai mengumpulkan poin</p>
+                <p className="text-gray-600 mb-6">Login sebagai member untuk melihat kode batang Anda dan mulai mengumpulkan poin</p>
                 <Link href="/login" className="block mb-3">
                   <Button
                     className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-semibold py-6 text-lg shadow-lg"
@@ -1095,15 +1085,15 @@ export default function Home() {
                 </CardContent>
               </Card>
 
-              {/* QR Code Card - Enhanced Design */}
+              {/* QR Code Card - Now with Barcode */}
               <Card className="border-0 shadow-xl overflow-hidden">
                 <CardContent className="p-6">
                   <div className="text-center mb-5">
-                    <h3 className="text-lg font-bold text-gray-800 mb-1">QR Code Member</h3>
-                    <p className="text-sm text-gray-500">Tunjukkan QR code ini saat bertransaksi</p>
+                    <h3 className="text-lg font-bold text-gray-800 mb-1">Kode Batang Member</h3>
+                    <p className="text-sm text-gray-500">Tunjukkan kode batang ini saat bertransaksi</p>
                   </div>
 
-                  {/* QR Code with Frame */}
+                  {/* Barcode Container */}
                   <div className="relative mx-auto mb-5">
                     {/* Decorative corners */}
                     <div className="absolute -top-2 -left-2 w-8 h-8 border-t-4 border-l-4 border-orange-500 rounded-tl-lg"></div>
@@ -1111,25 +1101,27 @@ export default function Home() {
                     <div className="absolute -bottom-2 -left-2 w-8 h-8 border-b-4 border-l-4 border-orange-500 rounded-bl-lg"></div>
                     <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-orange-500 rounded-br-lg"></div>
 
-                    {/* QR Code Container */}
-                    <div className="bg-white p-5 rounded-xl border-2 border-orange-200 shadow-lg">
-                      <svg width={240} height={240} viewBox="0 0 25 25" className="w-60 h-60">
-                        {generateQRPattern(currentMember.phone).map((color, index) => (
-                          <rect
-                            key={index}
-                            x={index % 25}
-                            y={Math.floor(index / 25)}
-                            width={1}
-                            height={1}
-                            fill={color}
-                          />
-                        ))}
-                      </svg>
+                    {/* Barcode Container */}
+                    <div className="bg-white p-6 rounded-xl border-2 border-orange-200 shadow-lg">
+                      <div className="flex flex-col items-center justify-center">
+                        <Barcode
+                          value={currentMember.phone}
+                          width={2}
+                          height={100}
+                          format="CODE128"
+                          displayValue={false}
+                          margin={0}
+                          className="w-full max-w-xs"
+                        />
+                        <p className="text-sm font-mono font-bold text-gray-800 mt-2 tracking-wider">
+                          {currentMember.phone}
+                        </p>
+                      </div>
                     </div>
 
-                    {/* Scan animation */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-full h-1 bg-gradient-to-r from-transparent via-orange-500 to-transparent animate-pulse opacity-30"></div>
+                    {/* Scan line animation */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden rounded-xl">
+                      <div className="w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse opacity-50"></div>
                     </div>
                   </div>
 
@@ -1158,7 +1150,7 @@ export default function Home() {
                       variant="outline"
                       className="flex-1 border-orange-300 text-orange-600 hover:bg-orange-50"
                       onClick={() => {
-                        alert('Fitur share QR akan segera tersedia!')
+                        alert('Fitur share akan segera tersedia!')
                       }}
                     >
                       <Share2 className="h-4 w-4 mr-1" />
