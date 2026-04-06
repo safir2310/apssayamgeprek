@@ -2748,6 +2748,9 @@ export default function Home() {
       {/* Welcome Popup Dialog */}
       <Dialog open={showWelcomePopup} onOpenChange={setShowWelcomePopup}>
         <DialogContent className="max-w-md" key="welcome-popup-modal">
+          <DialogHeader>
+            <DialogTitle className="sr-only">Selamat Datang Kembali</DialogTitle>
+          </DialogHeader>
           <div className="space-y-4">
             {/* Animated Welcome Icon */}
             <div className="flex items-center justify-center py-4">
