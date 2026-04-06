@@ -2668,14 +2668,15 @@ export default function Home() {
 
       {/* Contact Us Modal */}
       <Dialog open={showContactModal} onOpenChange={setShowContactModal}>
-        <DialogContent className="max-w-md" key="contact-modal">
+        <DialogContent className="max-w-md max-h-[80vh]" key="contact-modal">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Phone className="w-5 h-5 text-orange-600" />
               Hubungi Kami
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="space-y-4">
             {/* Store Information */}
             <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
               <div className="text-center mb-4">
@@ -2738,6 +2739,7 @@ export default function Home() {
               </div>
             </div>
           </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
 

@@ -266,3 +266,27 @@ Stage Summary:
 - All features styled consistently with orange gradient theme
 - All modals properly accessible with DialogTitle
 - All features working correctly and ready for use
+
+---
+Task ID: 20-a
+Agent: Z.ai Code
+Task: Add scroll mode to Contact Us modal
+
+Work Log:
+- Added ScrollArea component to Contact Us modal
+- Set modal max-height to [80vh] for responsive design
+- Set ScrollArea max-height to [60vh] for scrollable content area
+- Added pr-4 padding for proper scrollbar spacing
+- All content in Contact Us modal is now scrollable:
+  - Store Information
+  - Contact Options (WhatsApp, Phone)
+  - Address
+  - Business Hours
+- Code compiled successfully in 142ms
+- Lint check passed with no errors
+
+Stage Summary:
+- Successfully added scroll functionality to Contact Us modal
+- Modal now handles content overflow gracefully
+- Improves user experience on smaller screens
+- Maintains consistent design with Point History modal
