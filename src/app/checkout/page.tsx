@@ -256,8 +256,20 @@ export default function CheckoutPage() {
         body: JSON.stringify(orderData)
       })
 
-      const result = await response.json()
-      console.log('Order response:', result)
+      console.log('Response status:', response.status)
+      console.log('Response ok:', response.ok)
+      console.log('Response status text:', response.statusText)
+
+      let result
+      try {
+        result = await response.json()
+        console.log('Order response:', result)
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError)
+        const responseText = await response.text()
+        console.error('Response text:', responseText)
+        result = { error: `Invalid response (${response.status}): ${responseText || 'No content'}` }
+      }
 
       if (response.ok) {
         // Mark redeem code as used if applicable
@@ -286,11 +298,12 @@ export default function CheckoutPage() {
         router.push('/?tab=riwayat')
       } else {
         console.error('Order creation error:', result)
-        alert(result.error || 'Gagal membuat pesanan. Silakan coba lagi.')
+        const errorMessage = result?.error || `Gagal membuat pesanan (Status: ${response.status})`
+        alert(errorMessage)
       }
     } catch (error) {
       console.error('Error creating order:', error)
-      alert('Terjadi kesalahan. Silakan coba lagi.')
+      alert(`Terjadi kesalahan: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setSubmitting(false)
     }

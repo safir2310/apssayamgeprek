@@ -44,11 +44,34 @@ export async function GET(request: NextRequest) {
 
 // POST /api/orders - Create a new order
 export async function POST(request: NextRequest) {
+  console.log('=== POST /api/orders START ===')
+
   try {
-    const body = await request.json()
+    console.log('Parsing request body...')
+    let body
+    try {
+      body = await request.json()
+    } catch (parseError) {
+      console.error('Error parsing request body:', parseError)
+      const textBody = await request.text()
+      console.error('Request body as text:', textBody)
+      return NextResponse.json(
+        { error: 'Invalid request body format' },
+        { status: 400 }
+      )
+    }
+
     const { customerName, customerPhone, customerAddress, notes, totalAmount, discount, redeemCode, paymentMethod, items } = body
 
-    console.log('Received order request:', { customerName, customerPhone, customerAddress, totalAmount, discount, items })
+    console.log('Received order request:', JSON.stringify({
+      customerName,
+      customerPhone,
+      customerAddress,
+      totalAmount,
+      discount,
+      itemsCount: items?.length,
+      items: items
+    }, null, 2))
 
     if (!customerName || !customerPhone || !customerAddress || !items || items.length === 0) {
       console.log('Validation failed:', { customerName, customerPhone, customerAddress, itemsLength: items?.length })
@@ -59,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate that all products exist
-    console.log('Validating products...', items.map(i => i.productId))
+    console.log('Validating products...', items.map((i: any) => i.productId))
     for (const item of items) {
       const product = await db.product.findUnique({
         where: { id: item.productId }
@@ -130,7 +153,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    console.log('Order created successfully:', order.id)
+    console.log('Order created successfully:', JSON.stringify({ id: order.id, orderNumber: order.orderNumber }))
 
     // Update product stock
     for (const item of items) {
@@ -160,8 +183,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log('=== POST /api/orders SUCCESS ===')
     return NextResponse.json(order, { status: 201 })
   } catch (error) {
+    console.error('=== POST /api/orders ERROR ===')
     console.error('Error creating order:', error)
     if (error instanceof Error) {
       console.error('Error message:', error.message)
