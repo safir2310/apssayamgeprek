@@ -268,8 +268,18 @@ export default function LoginPage() {
               </Button>
             </form>
 
+            {/* Forgot Password Link */}
+            <div className="text-center mt-4">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-orange-600 hover:text-orange-700 hover:underline"
+              >
+                Lupa Password?
+              </Link>
+            </div>
+
             {/* Register Link */}
-            <div className="text-center mt-6">
+            <div className="text-center mt-2">
               <button
                 type="button"
                 onClick={() => setShowRegister(!showRegister)}
