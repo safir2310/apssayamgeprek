@@ -213,17 +213,21 @@ model VoidLog {
 
 // Member Loyalty System
 model Member {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  password  String
-  phone     String   @unique
-  name      String
-  email     String   @unique
-  address   String?
-  points    Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  username              String   @unique
+  password              String
+  phone                 String   @unique
+  name                  String
+  email                 String   @unique
+  address               String?
+  photo                 String?  // Profile photo URL
+  points                Int      @default(0)
+  isActive              Boolean  @default(true)
+  notificationOrders    Boolean  @default(true)   // Notifikasi pesanan
+  notificationPromo     Boolean  @default(true)   // Notifikasi promo
+  notificationPoints    Boolean  @default(true)   // Notifikasi poin
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   pointHistory PointHistory[]
 

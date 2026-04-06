@@ -10,9 +10,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { 
+import { Switch } from '@/components/ui/switch'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Separator } from '@/components/ui/separator'
+import {
   ShoppingCart, Minus, Plus, X, Phone, MapPin, Clock, Award, Flame,
-  Home as HomeIcon, QrCode, History, Gift, User, Store, LayoutDashboard
+  Home as HomeIcon, QrCode, History, Gift, User, Store, LayoutDashboard,
+  Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -82,6 +86,33 @@ export default function Home() {
   // Member state
   const [currentMember, setCurrentMember] = useState<any>(null)
 
+  // Profile modals state
+  const [showEditProfile, setShowEditProfile] = useState(false)
+  const [showSecuritySettings, setShowSecuritySettings] = useState(false)
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false)
+  const [showPrivacySettings, setShowPrivacySettings] = useState(false)
+  const [showPolicy, setShowPolicy] = useState(false)
+  const [showAddressModal, setShowAddressModal] = useState(false)
+
+  // Profile forms state
+  const [editProfileForm, setEditProfileForm] = useState({
+    name: '',
+    phone: '',
+    address: ''
+  })
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+  const [notificationSettings, setNotificationSettings] = useState({
+    notificationOrders: true,
+    notificationPromo: true,
+    notificationPoints: true
+  })
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null)
+  const [showPhotoUpload, setShowPhotoUpload] = useState(false)
+
   // Fetch products and categories and load member from localStorage
   useEffect(() => {
     fetchProducts()
@@ -96,6 +127,12 @@ export default function Home() {
         const member = JSON.parse(savedMember)
         setCurrentMember(member)
         setMemberPoints(member.points || 0)
+        setProfilePhoto(member.photo || null)
+        setNotificationSettings({
+          notificationOrders: member.notificationOrders ?? true,
+          notificationPromo: member.notificationPromo ?? true,
+          notificationPoints: member.notificationPoints ?? true
+        })
       } catch (error) {
         console.error('Error parsing member data:', error)
         localStorage.removeItem('member')
@@ -260,6 +297,156 @@ export default function Home() {
     setCurrentMember(null)
     setMemberPoints(0)
     localStorage.removeItem('member')
+  }
+
+  // Handle edit profile
+  const handleEditProfile = async () => {
+    try {
+      const response = await fetch('/api/members/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memberId: currentMember.id,
+          ...editProfileForm
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const updatedMember = { ...currentMember, ...data.member }
+        setCurrentMember(updatedMember)
+        localStorage.setItem('member', JSON.stringify(updatedMember))
+        setShowEditProfile(false)
+        alert('Profil berhasil diperbarui!')
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Gagal memperbarui profil')
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      alert('Terjadi kesalahan. Silakan coba lagi.')
+    }
+  }
+
+  // Handle photo upload
+  const handlePhotoUpload = async (file: File) => {
+    try {
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const photoData = e.target?.result as string
+
+        const response = await fetch('/api/members/photo', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            memberId: currentMember.id,
+            photo: photoData
+          })
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setProfilePhoto(data.photo)
+          const updatedMember = { ...currentMember, photo: data.photo }
+          setCurrentMember(updatedMember)
+          localStorage.setItem('member', JSON.stringify(updatedMember))
+          setShowPhotoUpload(false)
+          alert('Foto profil berhasil diperbarui!')
+        } else {
+          alert('Gagal mengupload foto')
+        }
+      }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error('Error uploading photo:', error)
+      alert('Terjadi kesalahan. Silakan coba lagi.')
+    }
+  }
+
+  // Handle photo removal
+  const handlePhotoRemove = async () => {
+    try {
+      const response = await fetch(`/api/members/photo?id=${currentMember.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setProfilePhoto(null)
+        const updatedMember = { ...currentMember, photo: null }
+        setCurrentMember(updatedMember)
+        localStorage.setItem('member', JSON.stringify(updatedMember))
+        alert('Foto profil berhasil dihapus!')
+      } else {
+        alert('Gagal menghapus foto')
+      }
+    } catch (error) {
+      console.error('Error removing photo:', error)
+      alert('Terjadi kesalahan. Silakan coba lagi.')
+    }
+  }
+
+  // Handle password change
+  const handlePasswordChange = async () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      alert('Password baru dan konfirmasi tidak cocok')
+      return
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      alert('Password baru minimal 6 karakter')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/members/security', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memberId: currentMember.id,
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword
+        })
+      })
+
+      if (response.ok) {
+        setShowSecuritySettings(false)
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+        alert('Password berhasil diubah!')
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Gagal mengubah password')
+      }
+    } catch (error) {
+      console.error('Error changing password:', error)
+      alert('Terjadi kesalahan. Silakan coba lagi.')
+    }
+  }
+
+  // Handle notification settings update
+  const handleNotificationUpdate = async () => {
+    try {
+      const response = await fetch('/api/members/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memberId: currentMember.id,
+          ...notificationSettings
+        })
+      })
+
+      if (response.ok) {
+        const updatedMember = { ...currentMember, ...notificationSettings }
+        setCurrentMember(updatedMember)
+        localStorage.setItem('member', JSON.stringify(updatedMember))
+        setShowNotificationSettings(false)
+        alert('Pengaturan notifikasi berhasil diperbarui!')
+      } else {
+        alert('Gagal memperbarui pengaturan notifikasi')
+      }
+    } catch (error) {
+      console.error('Error updating notifications:', error)
+      alert('Terjadi kesalahan. Silakan coba lagi.')
+    }
   }
 
   // Handle navigation tab click
@@ -770,66 +957,193 @@ export default function Home() {
           )}
         </div>
       </header>
-      <main className="py-4 px-4">
-        <div className="max-w-2xl mx-auto">
-          {currentMember && (
-            <Card className="border-orange-200 mb-4">
-              <CardContent className="p-6 text-center">
-                <div className="w-24 h-24 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <User className="w-12 h-12 text-white" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-1">{currentMember.name}</h2>
-                <p className="text-gray-500 mb-2">{currentMember.phone}</p>
-                <div className="flex items-center justify-center gap-2">
-                  <Badge className="bg-orange-500 text-white">
-                    <Award className="w-3 h-3 mr-1" />
-                    {memberPoints} Point
-                  </Badge>
-                  <Badge className="bg-green-500 text-white">
-                    Active Member
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
+      <main className="py-4 px-4">
+        <div className="max-w-2xl mx-auto space-y-4">
+          {/* Profile Card */}
           {currentMember && (
             <Card className="border-orange-200">
-              <CardContent className="p-4">
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
-                    <User className="w-5 h-5 mr-3 text-orange-600" />
-                    Edit Profile
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
-                    <MapPin className="w-5 h-5 mr-3 text-orange-600" />
-                    Alamat Pengiriman
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
-                    <Gift className="w-5 h-5 mr-3 text-orange-600" />
-                    Riwayat Point
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
-                    <Phone className="w-5 h-5 mr-3 text-orange-600" />
-                    Pengaturan Notifikasi
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
-                    <Store className="w-5 h-5 mr-3 text-orange-600" />
-                    Hubungi Kami
-                  </Button>
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center">
+                  {/* Profile Photo */}
+                  <div className="relative mb-4 group">
+                    <Avatar className="w-24 h-24 border-4 border-orange-200">
+                      {profilePhoto ? (
+                        <AvatarImage src={profilePhoto} alt={currentMember.name} />
+                      ) : null}
+                      <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-2xl">
+                        {currentMember.name?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <button
+                      onClick={() => setShowPhotoUpload(true)}
+                      className="absolute bottom-0 right-0 bg-orange-500 text-white p-2 rounded-full shadow-lg hover:bg-orange-600 transition-colors"
+                    >
+                      <Camera className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <h2 className="text-2xl font-bold text-gray-800 mb-1">{currentMember.name}</h2>
+                  <p className="text-gray-500 mb-3">{currentMember.phone}</p>
+
+                  <div className="flex items-center gap-2 flex-wrap justify-center">
+                    <Badge className="bg-orange-500 text-white">
+                      <Award className="w-3 h-3 mr-1" />
+                      {memberPoints} Point
+                    </Badge>
+                    <Badge className="bg-green-500 text-white">
+                      Active Member
+                    </Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
+          {/* Account Settings */}
+          <Card className="border-orange-200">
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-gray-800 mb-3 flex items-center">
+                <Settings className="w-5 h-5 mr-2 text-orange-600" />
+                Pengaturan Akun
+              </h3>
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start border-orange-300 hover:bg-orange-50"
+                  onClick={() => {
+                    setEditProfileForm({
+                      name: currentMember.name,
+                      phone: currentMember.phone,
+                      address: currentMember.address || ''
+                    })
+                    setShowEditProfile(true)
+                  }}
+                >
+                  <User className="w-5 h-5 mr-3 text-orange-600" />
+                  Edit Profile
+                  <ChevronRight className="w-5 h-5 ml-auto text-gray-400" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start border-orange-300 hover:bg-orange-50"
+                  onClick={() => {
+                    setEditProfileForm({
+                      name: currentMember.name,
+                      phone: currentMember.phone,
+                      address: currentMember.address || ''
+                    })
+                    setShowAddressModal(true)
+                  }}
+                >
+                  <MapPin className="w-5 h-5 mr-3 text-orange-600" />
+                  Alamat Pengiriman
+                  <ChevronRight className="w-5 h-5 ml-auto text-gray-400" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Security */}
+          <Card className="border-orange-200">
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-gray-800 mb-3 flex items-center">
+                <Shield className="w-5 h-5 mr-2 text-orange-600" />
+                Keamanan
+              </h3>
+              <Button
+                variant="outline"
+                className="w-full justify-start border-orange-300 hover:bg-orange-50"
+                onClick={() => setShowSecuritySettings(true)}
+              >
+                <Lock className="w-5 h-5 mr-3 text-orange-600" />
+                Ubah Password
+                <ChevronRight className="w-5 h-5 ml-auto text-gray-400" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Notifications */}
+          <Card className="border-orange-200">
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-gray-800 mb-3 flex items-center">
+                <Bell className="w-5 h-5 mr-2 text-orange-600" />
+                Notifikasi
+              </h3>
+              <Button
+                variant="outline"
+                className="w-full justify-start border-orange-300 hover:bg-orange-50"
+                onClick={() => setShowNotificationSettings(true)}
+              >
+                <Settings className="w-5 h-5 mr-3 text-orange-600" />
+                Pengaturan Notifikasi
+                <ChevronRight className="w-5 h-5 ml-auto text-gray-400" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Privacy & Policy */}
+          <Card className="border-orange-200">
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-gray-800 mb-3 flex items-center">
+                <FileText className="w-5 h-5 mr-2 text-orange-600" />
+                Privasi & Kebijakan
+              </h3>
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start border-orange-300 hover:bg-orange-50"
+                  onClick={() => setShowPrivacySettings(true)}
+                >
+                  <Shield className="w-5 h-5 mr-3 text-orange-600" />
+                  Pengaturan Privasi
+                  <ChevronRight className="w-5 h-5 ml-auto text-gray-400" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start border-orange-300 hover:bg-orange-50"
+                  onClick={() => setShowPolicy(true)}
+                >
+                  <FileText className="w-5 h-5 mr-3 text-orange-600" />
+                  Kebijakan Layanan
+                  <ChevronRight className="w-5 h-5 ml-auto text-gray-400" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Support */}
+          <Card className="border-orange-200">
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-gray-800 mb-3 flex items-center">
+                <Store className="w-5 h-5 mr-2 text-orange-600" />
+                Bantuan
+              </h3>
+              <div className="space-y-2">
+                <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
+                  <Phone className="w-5 h-5 mr-3 text-orange-600" />
+                  Hubungi Kami
+                  <ChevronRight className="w-5 h-5 ml-auto text-gray-400" />
+                </Button>
+                <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
+                  <Gift className="w-5 h-5 mr-3 text-orange-600" />
+                  Riwayat Point
+                  <ChevronRight className="w-5 h-5 ml-auto text-gray-400" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Logout */}
           {currentMember && (
-            <Card className="border-orange-200 mt-4">
+            <Card className="border-orange-200">
               <CardContent className="p-4">
                 <Button
                   variant="outline"
                   className="w-full border-red-300 text-red-600 hover:bg-red-50"
                   onClick={handleMemberLogout}
                 >
+                  <LogOut className="w-5 h-5 mr-2" />
                   Keluar
                 </Button>
               </CardContent>
@@ -837,6 +1151,358 @@ export default function Home() {
           )}
         </div>
       </main>
+
+      {/* Edit Profile Modal */}
+      <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Nama Lengkap</Label>
+              <Input
+                id="name"
+                value={editProfileForm.name}
+                onChange={(e) => setEditProfileForm({ ...editProfileForm, name: e.target.value })}
+                placeholder="Masukkan nama lengkap"
+              />
+            </div>
+            <div>
+              <Label htmlFor="phone">Nomor Telepon</Label>
+              <Input
+                id="phone"
+                value={editProfileForm.phone}
+                onChange={(e) => setEditProfileForm({ ...editProfileForm, phone: e.target.value })}
+                placeholder="Masukkan nomor telepon"
+              />
+            </div>
+            <Button
+              onClick={handleEditProfile}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Simpan Perubahan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Address Modal */}
+      <Dialog open={showAddressModal} onOpenChange={setShowAddressModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Alamat Pengiriman</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="address">Alamat Lengkap</Label>
+              <Textarea
+                id="address"
+                value={editProfileForm.address}
+                onChange={(e) => setEditProfileForm({ ...editProfileForm, address: e.target.value })}
+                placeholder="Masukkan alamat lengkap"
+                rows={4}
+              />
+            </div>
+            <Button
+              onClick={handleEditProfile}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Simpan Perubahan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Security Settings Modal */}
+      <Dialog open={showSecuritySettings} onOpenChange={setShowSecuritySettings}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ubah Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="currentPassword">Password Saat Ini</Label>
+              <Input
+                id="currentPassword"
+                type="password"
+                value={passwordForm.currentPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                placeholder="Masukkan password saat ini"
+              />
+            </div>
+            <div>
+              <Label htmlFor="newPassword">Password Baru</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                placeholder="Masukkan password baru (minimal 6 karakter)"
+              />
+            </div>
+            <div>
+              <Label htmlFor="confirmPassword">Konfirmasi Password Baru</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                placeholder="Ulangi password baru"
+              />
+            </div>
+            <Button
+              onClick={handlePasswordChange}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Ubah Password
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Notification Settings Modal */}
+      <Dialog open={showNotificationSettings} onOpenChange={setShowNotificationSettings}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pengaturan Notifikasi</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base">Notifikasi Pesanan</Label>
+                <p className="text-sm text-gray-500">Dapatkan notifikasi status pesanan</p>
+              </div>
+              <Switch
+                checked={notificationSettings.notificationOrders}
+                onCheckedChange={(checked) =>
+                  setNotificationSettings({ ...notificationSettings, notificationOrders: checked })
+                }
+              />
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base">Notifikasi Promo</Label>
+                <p className="text-sm text-gray-500">Dapatkan info promo dan diskon</p>
+              </div>
+              <Switch
+                checked={notificationSettings.notificationPromo}
+                onCheckedChange={(checked) =>
+                  setNotificationSettings({ ...notificationSettings, notificationPromo: checked })
+                }
+              />
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base">Notifikasi Poin</Label>
+                <p className="text-sm text-gray-500">Dapatkan notifikasi perubahan poin</p>
+              </div>
+              <Switch
+                checked={notificationSettings.notificationPoints}
+                onCheckedChange={(checked) =>
+                  setNotificationSettings({ ...notificationSettings, notificationPoints: checked })
+                }
+              />
+            </div>
+            <Button
+              onClick={handleNotificationUpdate}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white mt-4"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Simpan Perubahan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Privacy Settings Modal */}
+      <Dialog open={showPrivacySettings} onOpenChange={setShowPrivacySettings}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pengaturan Privasi</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 mb-4">
+              Kelola privasi data Anda. Semua perubahan akan disinkronisasi dengan sistem admin.
+            </p>
+            <div className="space-y-3">
+              <Card className="border-orange-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">Profil Publik</p>
+                      <p className="text-xs text-gray-500">Tampilkan profil Anda</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-orange-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">Bagikan Data</p>
+                      <p className="text-xs text-gray-500">Izinkan analisis data</p>
+                    </div>
+                    <Switch defaultChecked={false} />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-orange-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">Riwayat Pesanan</p>
+                      <p className="text-xs text-gray-500">Simpan riwayat pesanan</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            <Button
+              onClick={() => {
+                setShowPrivacySettings(false)
+                alert('Pengaturan privasi berhasil diperbarui!')
+              }}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Simpan Perubahan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Policy Modal */}
+      <Dialog open={showPolicy} onOpenChange={setShowPolicy}>
+        <DialogContent className="max-w-lg max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Kebijakan Layanan</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="space-y-4 text-sm">
+              <section>
+                <h4 className="font-semibold text-base mb-2">1. Pendaftaran Member</h4>
+                <p className="text-gray-600">
+                  Pendaftaran member gratis dan terbuka untuk semua pelanggan. Anda dapat mendaftar
+                  melalui aplikasi atau di outlet kami.
+                </p>
+              </section>
+              <Separator />
+              <section>
+                <h4 className="font-semibold text-base mb-2">2. Sistem Poin</h4>
+                <p className="text-gray-600">
+                  Setiap pembelian Rp10.000 akan mendapatkan 1 poin. Poin dapat ditukar dengan diskon
+                  atau menu gratis sesuai ketentuan yang berlaku.
+                </p>
+              </section>
+              <Separator />
+              <section>
+                <h4 className="font-semibold text-base mb-2">3. Penggunaan Poin</h4>
+                <p className="text-gray-600">
+                  - 100 Poin = Diskon Rp10.000<br />
+                  - 250 Poin = Diskon Rp25.000<br />
+                  - 500 Poin = 1 Menu Gratis
+                </p>
+              </section>
+              <Separator />
+              <section>
+                <h4 className="font-semibold text-base mb-2">4. Privasi Data</h4>
+                <p className="text-gray-600">
+                  Data pribadi Anda akan kami jaga kerahasiaannya dan hanya digunakan untuk keperluan
+                  layanan dan komunikasi terkait.
+                </p>
+              </section>
+              <Separator />
+              <section>
+                <h4 className="font-semibold text-base mb-2">5. Pembatalan Pesanan</h4>
+                <p className="text-gray-600">
+                  Pesanan dapat dibatalkan maksimal 10 menit setelah pemesanan. Setelah itu,
+                  pembatalan dikenakan biaya administrasi 20% dari total pesanan.
+                </p>
+              </section>
+              <Separator />
+              <section>
+                <h4 className="font-semibold text-base mb-2">6. Layanan Mandiri</h4>
+                <p className="text-gray-600">
+                  Anda dapat mengelola akun, memperbarui profil, mengubah password, dan mengatur
+                  preferensi notifikasi secara mandiri. Semua perubahan akan tersinkronisasi dengan
+                  sistem admin secara real-time.
+                </p>
+              </section>
+              <Separator />
+              <section>
+                <h4 className="font-semibold text-base mb-2">7. Syarat & Ketentuan Lainnya</h4>
+                <p className="text-gray-600">
+                  Dengan menggunakan layanan ini, Anda menyetujui semua syarat dan ketentuan yang
+                  berlaku. Kami berhak mengubah kebijakan sewaktu-waktu dengan pemberitahuan
+                  sebelumnya.
+                </p>
+              </section>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Photo Upload Modal */}
+      <Dialog open={showPhotoUpload} onOpenChange={setShowPhotoUpload}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Foto Profil</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex flex-col items-center">
+              <Avatar className="w-32 h-32 mb-4">
+                {profilePhoto ? (
+                  <AvatarImage src={profilePhoto} alt={currentMember?.name} />
+                ) : null}
+                <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-3xl">
+                  {currentMember?.name?.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <input
+                type="file"
+                id="photoInput"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handlePhotoUpload(file)
+                }}
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => document.getElementById('photoInput')?.click()}
+                  variant="outline"
+                  className="border-orange-300 hover:bg-orange-50"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Foto
+                </Button>
+                {profilePhoto && (
+                  <Button
+                    onClick={handlePhotoRemove}
+                    variant="outline"
+                    className="border-red-300 text-red-600 hover:bg-red-50"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Hapus
+                  </Button>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-center text-gray-500">
+              Format: JPG, PNG. Maksimal 5MB. Rasio persegi disarankan.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 
