@@ -197,69 +197,89 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="staff" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="staff">Staff</TabsTrigger>
-                <TabsTrigger value="member">Member</TabsTrigger>
-                <TabsTrigger value="register">Daftar</TabsTrigger>
-              </TabsList>
+            {/* Login Type Tabs */}
+            <div className="flex gap-2 mb-6">
+              <button
+                onClick={() => setLoginType('staff')}
+                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                  loginType === 'staff'
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <Shield className="w-4 h-4 inline mr-1" />
+                Staff
+              </button>
+              <button
+                onClick={() => setLoginType('member')}
+                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                  loginType === 'member'
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <Users className="w-4 h-4 inline mr-1" />
+                Member
+              </button>
+            </div>
 
-              {/* Staff Login Tab */}
-              <TabsContent value="staff">
-                <form onSubmit={handleStaffLogin} className="space-y-4">
-                  <div>
-                    <Label htmlFor="staff-email" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-orange-600" />
-                      Email Staff
-                    </Label>
-                    <Input
-                      id="staff-email"
-                      type="email"
-                      placeholder="admin@geprek.com"
-                      value={staffForm.email}
-                      onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
-                      required
-                      className="border-orange-200 focus:border-orange-500"
-                    />
-                  </div>
+            {/* Unified Login Form */}
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <Label htmlFor="login-email" className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-orange-600" />
+                  Email {loginType === 'staff' ? 'Staff' : 'Member'}
+                </Label>
+                <Input
+                  id="login-email"
+                  type="email"
+                  placeholder={loginType === 'staff' ? 'admin@geprek.com' : 'member@example.com'}
+                  value={loginForm.email}
+                  onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                  required
+                  className="border-orange-200 focus:border-orange-500"
+                />
+              </div>
 
-                  <div>
-                    <Label htmlFor="staff-password" className="flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-orange-600" />
-                      Password
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="staff-password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Masukkan password"
-                        value={staffForm.password}
-                        onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })}
-                        required
-                        className="border-orange-200 focus:border-orange-500 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
+              <div>
+                <Label htmlFor="login-password" className="flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-orange-600" />
+                  Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="login-password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Masukkan password"
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                    required
+                    className="border-orange-200 focus:border-orange-500 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {loading ? 'Memproses...' : 'Login sebagai Staff'}
-                  </Button>
-                </form>
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
 
-                {/* Staff Accounts Info */}
-                <Card className="mt-6 border-orange-200 bg-orange-50">
-                  <CardContent className="p-4">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
+              >
+                {loading ? 'Memproses...' : `Login sebagai ${loginType === 'staff' ? 'Staff' : 'Member'}`}
+              </Button>
+            </form>
+
+            {/* Account Info */}
+            <Card className="mt-6 border-orange-200 bg-orange-50">
+              <CardContent className="p-4">
+                {loginType === 'staff' ? (
+                  <>
                     <h3 className="font-bold text-sm text-orange-800 mb-3">📋 Akun Staff:</h3>
                     <div className="space-y-2 text-xs">
                       <div className="flex justify-between items-center bg-white p-2 rounded border border-orange-200">
@@ -275,208 +295,185 @@ export default function LoginPage() {
                         <Store className="w-4 h-4 text-blue-600" />
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Member Login Tab */}
-              <TabsContent value="member">
-                <form onSubmit={handleMemberLogin} className="space-y-4">
-                  <div>
-                    <Label htmlFor="member-email" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-orange-600" />
-                      Email Member
-                    </Label>
-                    <Input
-                      id="member-email"
-                      type="email"
-                      placeholder="member@example.com"
-                      value={memberLoginForm.email}
-                      onChange={(e) => setMemberLoginForm({ ...memberLoginForm, email: e.target.value })}
-                      required
-                      className="border-orange-200 focus:border-orange-500"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="member-password" className="flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-orange-600" />
-                      Password
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="member-password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Masukkan password"
-                        value={memberLoginForm.password}
-                        onChange={(e) => setMemberLoginForm({ ...memberLoginForm, password: e.target.value })}
-                        required
-                        className="border-orange-200 focus:border-orange-500 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
-                  >
-                    {loading ? 'Memproses...' : 'Login sebagai Member'}
-                  </Button>
-                </form>
-
-                {/* Member Account Info */}
-                <Card className="mt-6 border-orange-200 bg-orange-50">
-                  <CardContent className="p-4">
+                  </>
+                ) : (
+                  <>
                     <h3 className="font-bold text-sm text-orange-800 mb-2">👤 Akun Member Demo:</h3>
                     <p className="text-xs text-gray-600">
                       Email: member@geprek.com / Password: member123
                     </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </CardContent>
+        </Card>
 
-              {/* Register Tab */}
-              <TabsContent value="register">
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div>
-                    <Label htmlFor="reg-name" className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-orange-600" />
-                      Nama Lengkap *
-                    </Label>
+        {/* Register Section - Below Login Card */}
+        {!showRegister && (
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600 mb-3">Belum punya akun member?</p>
+            <Button
+              onClick={() => setShowRegister(true)}
+              variant="outline"
+              className="border-orange-300 text-orange-600 hover:bg-orange-50"
+            >
+              Daftar Member Baru
+            </Button>
+          </div>
+        )}
+
+        {/* Register Form Card */}
+        {showRegister && (
+          <Card className="mt-6 border-orange-200 shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-xl text-center">Daftar Member Baru</CardTitle>
+              <CardDescription className="text-center">
+                Isi formulir di bawah untuk mendaftar
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div>
+                  <Label htmlFor="reg-name" className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-orange-600" />
+                    Nama Lengkap *
+                  </Label>
+                  <Input
+                    id="reg-name"
+                    placeholder="Masukkan nama lengkap"
+                    value={registerForm.name}
+                    onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                    required
+                    className="border-orange-200 focus:border-orange-500"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="reg-username" className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-orange-600" />
+                    Username *
+                  </Label>
+                  <Input
+                    id="reg-username"
+                    type="text"
+                    placeholder="Minimal 3 karakter"
+                    value={registerForm.username}
+                    onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
+                    required
+                    className="border-orange-200 focus:border-orange-500"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="reg-phone" className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-orange-600" />
+                    Nomor Telepon *
+                  </Label>
+                  <Input
+                    id="reg-phone"
+                    type="tel"
+                    placeholder="08xxxxxxxxxx"
+                    value={registerForm.phone}
+                    onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
+                    required
+                    className="border-orange-200 focus:border-orange-500"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="reg-email" className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-orange-600" />
+                    Email *
+                  </Label>
+                  <Input
+                    id="reg-email"
+                    type="email"
+                    placeholder="email@example.com"
+                    value={registerForm.email}
+                    onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                    required
+                    className="border-orange-200 focus:border-orange-500"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="reg-address" className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-orange-600" />
+                    Alamat
+                  </Label>
+                  <textarea
+                    id="reg-address"
+                    placeholder="Alamat lengkap (opsional)"
+                    rows={2}
+                    value={registerForm.address}
+                    onChange={(e) => setRegisterForm({ ...registerForm, address: e.target.value })}
+                    className="w-full px-3 py-2 border border-orange-200 rounded-md focus:outline-none focus:border-orange-500 resize-none"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="reg-password" className="flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-orange-600" />
+                    Password *
+                  </Label>
+                  <div className="relative">
                     <Input
-                      id="reg-name"
-                      placeholder="Masukkan nama lengkap"
-                      value={registerForm.name}
-                      onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                      id="reg-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Minimal 6 karakter"
+                      value={registerForm.password}
+                      onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
                       required
-                      className="border-orange-200 focus:border-orange-500"
+                      className="border-orange-200 focus:border-orange-500 pr-10"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
+                </div>
 
-                  <div>
-                    <Label htmlFor="reg-username" className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-orange-600" />
-                      Username *
-                    </Label>
-                    <Input
-                      id="reg-username"
-                      type="text"
-                      placeholder="Minimal 3 karakter"
-                      value={registerForm.username}
-                      onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
-                      required
-                      className="border-orange-200 focus:border-orange-500"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="reg-confirm-password" className="flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-orange-600" />
+                    Konfirmasi Password *
+                  </Label>
+                  <Input
+                    id="reg-confirm-password"
+                    type="password"
+                    placeholder="Ulangi password"
+                    value={registerForm.confirmPassword}
+                    onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
+                    required
+                    className="border-orange-200 focus:border-orange-500"
+                  />
+                </div>
 
-                  <div>
-                    <Label htmlFor="reg-phone" className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-orange-600" />
-                      Nomor Telepon *
-                    </Label>
-                    <Input
-                      id="reg-phone"
-                      type="tel"
-                      placeholder="08xxxxxxxxxx"
-                      value={registerForm.phone}
-                      onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
-                      required
-                      className="border-orange-200 focus:border-orange-500"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="reg-email" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-orange-600" />
-                      Email *
-                    </Label>
-                    <Input
-                      id="reg-email"
-                      type="email"
-                      placeholder="email@example.com"
-                      value={registerForm.email}
-                      onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
-                      required
-                      className="border-orange-200 focus:border-orange-500"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="reg-address" className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-orange-600" />
-                      Alamat
-                    </Label>
-                    <textarea
-                      id="reg-address"
-                      placeholder="Alamat lengkap (opsional)"
-                      rows={2}
-                      value={registerForm.address}
-                      onChange={(e) => setRegisterForm({ ...registerForm, address: e.target.value })}
-                      className="w-full px-3 py-2 border border-orange-200 rounded-md focus:outline-none focus:border-orange-500 resize-none"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="reg-password" className="flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-orange-600" />
-                      Password *
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="reg-password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Minimal 6 karakter"
-                        value={registerForm.password}
-                        onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                        required
-                        className="border-orange-200 focus:border-orange-500 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="reg-confirm-password" className="flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-orange-600" />
-                      Konfirmasi Password *
-                    </Label>
-                    <Input
-                      id="reg-confirm-password"
-                      type="password"
-                      placeholder="Ulangi password"
-                      value={registerForm.confirmPassword}
-                      onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
-                      required
-                      className="border-orange-200 focus:border-orange-500"
-                    />
-                  </div>
-
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => setShowRegister(false)}
+                    variant="outline"
+                    className="flex-1 border-gray-300"
+                  >
+                    Batal
+                  </Button>
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
                   >
-                    {loading ? 'Mendaftar...' : 'Daftar Member Baru'}
+                    {loading ? 'Mendaftar...' : 'Daftar'}
                   </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Need help? Contact us at{' '}
