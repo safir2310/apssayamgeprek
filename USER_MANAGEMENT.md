@@ -11,7 +11,18 @@
 | Role | Admin |
 | Phone | 081234567890 |
 
-### Cashier Account (Optional)
+### Cashier Accounts
+
+#### Cashier: Deaflud
+| Field | Value |
+|-------|-------|
+| Email | `deaflud@kasir.com` |
+| Password | `kasir123` |
+| Name | Deaflud Kasir |
+| Role | Kasir |
+| Phone | 081234567892 |
+
+#### Cashier: Demo (Optional)
 | Field | Value |
 |-------|-------|
 | Email | `kasir@apssayamgeprek.com` |
@@ -32,7 +43,7 @@ This will create an admin user with the following default credentials:
 - Password: `admin123`
 - Name: Deaflud Admin
 
-**Note**: You can modify `scripts/create-admin.ts` to create admin users with different credentials.
+**Note**: You can modify `scripts/create-admin.js` to create admin users with different credentials.
 
 ### Create Cashier User
 ```bash
@@ -44,7 +55,18 @@ This will create a cashier user with the following default credentials:
 - Password: `kasir123`
 - Name: Kasir Demo
 
-**Note**: You can modify `scripts/create-cashier.ts` to create cashier users with different credentials.
+### Create Cashier User "Deaflud"
+```bash
+bun run create:cashier-deaflud
+```
+
+This will create a cashier user named "Deaflud" with the following credentials:
+- Email: `deaflud@kasir.com`
+- Password: `kasir123`
+- Name: Deaflud Kasir
+- Phone: 081234567892
+
+**Note**: You can modify `scripts/create-cashier-deaflud.js` to create cashier users with different credentials.
 
 ## 🔐 User Roles
 
