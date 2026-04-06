@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { customerName, customerPhone, customerAddress, notes, totalAmount, paymentMethod, items } = body
+    const { customerName, customerPhone, customerAddress, notes, totalAmount, discount, redeemCode, paymentMethod, items } = body
 
     if (!customerName || !customerPhone || !customerAddress || !items || items.length === 0) {
       return NextResponse.json(
@@ -70,6 +70,8 @@ export async function POST(request: NextRequest) {
         customerAddress,
         notes,
         totalAmount: totalAmount || calculatedTotal,
+        discount: discount || 0,
+        redeemCode: redeemCode || null,
         paymentMethod: paymentMethod || 'CASH',
         paymentStatus: 'PENDING',
         status: 'PENDING',

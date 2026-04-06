@@ -79,6 +79,8 @@ model Order {
   customerPhone String
   customerAddress String
   totalAmount Float
+  discount    Float    @default(0)
+  redeemCode  String?
   status      String   // PENDING, PROCESSING, READY, COMPLETED, CANCELLED
   paymentMethod String // CASH, QRIS, DEBIT, TRANSFER, E_WALLET
   paymentStatus String // PENDING, PAID, FAILED
@@ -325,4 +327,45 @@ model PaymentMethod {
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Point Exchange Products
+model PointExchangeProduct {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  image       String?
+  points      Int      // Points required to exchange
+  type        String   // DISCOUNT_FIXED, DISCOUNT_PERCENT, FREE_PRODUCT
+  value       Float?   // Discount value (for discount types)
+  productId   String?  // Product ID (for free product type)
+  stock       Int      @default(0)  // Available stock for exchange
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  redeemCodes RedeemCode[]
+
+  @@index([isActive])
+}
+
+// Redeem Codes (generated when points are exchanged)
+model RedeemCode {
+  id                   String   @id @default(cuid())
+  code                 String   @unique
+  pointExchangeProductId String
+  memberId             String
+  isUsed               Boolean  @default(false)
+  usedInOrderId        String?  // Order ID where it was used
+  usedInTransactionId  String?  // Transaction ID where it was used
+  expiresAt            DateTime // Expiration date
+  createdAt            DateTime @default(now())
+  usedAt               DateTime?
+
+  pointExchangeProduct PointExchangeProduct @relation(fields: [pointExchangeProductId], references: [id])
+
+  @@index([code])
+  @@index([memberId])
+  @@index([isUsed])
+  @@index([expiresAt])
 }

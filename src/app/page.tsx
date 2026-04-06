@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator'
 import {
   ShoppingCart, Minus, Plus, X, Phone, MapPin, Clock, Award, Flame,
   Home as HomeIcon, QrCode, History, Gift, User, Store, LayoutDashboard,
-  Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut, Share2
+  Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut, Share2, Copy
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -118,6 +118,16 @@ export default function Home() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null)
   const [showPhotoUpload, setShowPhotoUpload] = useState(false)
 
+  // Point exchange products state
+  const [pointExchangeProducts, setPointExchangeProducts] = useState<any[]>([])
+  const [showRedeemCodeDialog, setShowRedeemCodeDialog] = useState(false)
+  const [redeemCodeInfo, setRedeemCodeInfo] = useState<any>(null)
+
+  // Redeem code in cart
+  const [redeemCode, setRedeemCode] = useState('')
+  const [appliedDiscount, setAppliedDiscount] = useState<any>(null)
+  const [validatingRedeemCode, setValidatingRedeemCode] = useState(false)
+
   const fetchProducts = async () => {
     try {
       const response = await fetch('/api/products')
@@ -143,6 +153,18 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error fetching orders:', error)
+    }
+  }
+
+  const fetchPointExchangeProducts = async () => {
+    try {
+      const response = await fetch('/api/admin/point-exchange-products')
+      if (response.ok) {
+        const data = await response.json()
+        setPointExchangeProducts(data.filter((p: any) => p.isActive && p.stock > 0))
+      }
+    } catch (error) {
+      console.error('Error fetching point exchange products:', error)
     }
   }
 
@@ -179,6 +201,13 @@ export default function Home() {
   useEffect(() => {
     if (activeTab === 'riwayat') {
       fetchOrders()
+    }
+  }, [activeTab])
+
+  // Fetch point exchange products when on tukar-point tab
+  useEffect(() => {
+    if (activeTab === 'tukar-point') {
+      fetchPointExchangeProducts()
     }
   }, [activeTab])
 
@@ -234,12 +263,17 @@ export default function Home() {
       return
     }
 
+    const finalTotal = getCartTotalWithDiscount()
+    const discount = appliedDiscount ? appliedDiscount.discountAmount : 0
+
     const orderData = {
       customerName: checkoutForm.name,
       customerPhone: checkoutForm.phone,
       customerAddress: checkoutForm.address,
       notes: checkoutForm.notes,
-      totalAmount: getCartTotal(),
+      totalAmount: finalTotal,
+      discount: discount,
+      redeemCode: appliedDiscount ? appliedDiscount.code : null,
       paymentMethod: 'CASH',
       items: cart.map(item => ({
         productId: item.product.id,
@@ -260,11 +294,30 @@ export default function Home() {
 
       if (response.ok) {
         const result = await response.json()
+
+        // Mark redeem code as used if applicable
+        if (appliedDiscount) {
+          try {
+            await fetch('/api/redeem-codes/use', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                code: appliedDiscount.code,
+                orderId: result.id
+              })
+            })
+          } catch (error) {
+            console.error('Error marking redeem code as used:', error)
+          }
+        }
+
         alert(`Pesanan berhasil dibuat! Order #${result.orderNumber}`)
         setCart([])
         setCheckoutForm({ name: '', phone: '', address: DEFAULT_ADDRESS, notes: '' })
         setShowCheckout(false)
         setShowCart(false)
+        setRedeemCode('')
+        setAppliedDiscount(null)
       } else {
         alert('Gagal membuat pesanan. Silakan coba lagi.')
       }
@@ -515,6 +568,123 @@ export default function Home() {
       alert('Terjadi kesalahan. Silakan coba lagi.')
     }
   }, [currentMember?.email, privacySettings, currentMember])
+
+  // Handle exchange points
+  const handleExchangePoints = useCallback(async (product: any) => {
+    if (!currentMember) {
+      alert('Silakan login terlebih dahulu!')
+      router.push('/login')
+      return
+    }
+
+    if (memberPoints < product.points) {
+      alert(`Poin tidak cukup. Diperlukan ${product.points} poin.`)
+      return
+    }
+
+    if (!confirm(`Tukar ${product.points} poin untuk ${product.name}?`)) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/members/exchange-points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memberId: currentMember.id,
+          pointExchangeProductId: product.id
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        alert(error.error || 'Gagal menukar poin!')
+        return
+      }
+
+      const result = await response.json()
+      setRedeemCodeInfo(result)
+      setShowRedeemCodeDialog(true)
+
+      // Update member points
+      const updatedMember = { ...currentMember, points: memberPoints - product.points }
+      setCurrentMember(updatedMember)
+      setMemberPoints(memberPoints - product.points)
+      localStorage.setItem('member', JSON.stringify(updatedMember))
+
+      // Refresh products to update stock
+      fetchPointExchangeProducts()
+    } catch (error) {
+      console.error('Error exchanging points:', error)
+      alert('Terjadi kesalahan. Silakan coba lagi.')
+    }
+  }, [currentMember, memberPoints])
+
+  // Handle redeem code validation
+  const handleValidateRedeemCode = async () => {
+    if (!redeemCode.trim()) {
+      alert('Silakan masukkan kode redeem')
+      return
+    }
+
+    setValidatingRedeemCode(true)
+    try {
+      const response = await fetch(`/api/redeem-codes?code=${encodeURIComponent(redeemCode.trim())}`)
+
+      if (!response.ok) {
+        const error = await response.json()
+        alert(error.error || 'Kode redeem tidak valid')
+        return
+      }
+
+      const result = await response.json()
+
+      if (result.valid) {
+        let discountAmount = 0
+
+        // Calculate discount based on type
+        if (result.type === 'DISCOUNT_FIXED') {
+          discountAmount = result.value
+        } else if (result.type === 'DISCOUNT_PERCENT') {
+          discountAmount = (getCartTotal() * result.value) / 100
+        } else if (result.type === 'FREE_PRODUCT') {
+          // For free product, we'll apply the discount as the product value
+          // In a real implementation, you'd need to fetch the actual product price
+          discountAmount = getCartTotal() * 0.5 // 50% discount as example
+        }
+
+        setAppliedDiscount({
+          code: result.code,
+          productName: result.productName,
+          type: result.type,
+          value: result.value,
+          discountAmount
+        })
+
+        alert(`Kode redeem berhasil diterapkan! Diskon: Rp${discountAmount.toLocaleString('id-ID')}`)
+      }
+    } catch (error) {
+      console.error('Error validating redeem code:', error)
+      alert('Terjadi kesalahan saat memvalidasi kode redeem')
+    } finally {
+      setValidatingRedeemCode(false)
+    }
+  }
+
+  // Handle remove redeem code
+  const handleRemoveRedeemCode = () => {
+    setRedeemCode('')
+    setAppliedDiscount(null)
+  }
+
+  // Get final cart total with discount
+  const getCartTotalWithDiscount = () => {
+    const total = getCartTotal()
+    if (appliedDiscount && appliedDiscount.discountAmount) {
+      return Math.max(0, total - appliedDiscount.discountAmount)
+    }
+    return total
+  }
 
   // Handle navigation tab click
   const handleTabClick = (tabId: string) => {
@@ -942,70 +1112,120 @@ export default function Home() {
   )
 
   // Tukar Point Section
-  const TukarPointSection = () => (
-    <div className="pb-24 bg-orange-50 min-h-screen">
-      <header className="bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300 text-white py-4 px-4 shadow-lg">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">Tukar Point</h1>
-            <p className="text-orange-100 text-xs">Tukarkan point Anda dengan hadiah</p>
+  const TukarPointSection = () => {
+    const getTypeLabel = (type: string) => {
+      switch (type) {
+        case 'DISCOUNT_FIXED':
+          return 'Diskon Tetap'
+        case 'DISCOUNT_PERCENT':
+          return 'Diskon Persen'
+        case 'FREE_PRODUCT':
+          return 'Produk Gratis'
+        default:
+          return type
+      }
+    }
+
+    const getValueDisplay = (product: any) => {
+      switch (product.type) {
+        case 'DISCOUNT_PERCENT':
+          return `${product.value}%`
+        case 'DISCOUNT_FIXED':
+          return `Rp${product.value?.toLocaleString('id-ID')}`
+        case 'FREE_PRODUCT':
+          return '1 Menu Gratis'
+        default:
+          return '-'
+      }
+    }
+
+    return (
+      <div className="pb-24 bg-orange-50 min-h-screen">
+        <header className="bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300 text-white py-4 px-4 shadow-lg">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold">Tukar Point</h1>
+              <p className="text-orange-100 text-xs">Tukarkan point Anda dengan hadiah</p>
+            </div>
+            <Badge className="bg-white/20 text-white">
+              <Gift className="w-4 h-4 mr-1" />
+              {memberPoints} Point
+            </Badge>
           </div>
-          <Badge className="bg-white/20 text-white">
-            <Gift className="w-4 h-4 mr-1" />
-            {memberPoints} Point
-          </Badge>
-        </div>
-      </header>
-      <main className="py-4 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="border-orange-200">
-              <CardContent className="p-6 text-center">
-                <Gift className="w-16 h-16 mx-auto mb-4 text-orange-500" />
-                <h3 className="font-bold text-lg mb-2">Diskon Rp10.000</h3>
-                <p className="text-orange-600 font-bold text-2xl mb-2">100 Point</p>
-                <p className="text-sm text-gray-500 mb-4">Diskon Rp10.000 untuk pembayaran</p>
-                <Button
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
-                  disabled={memberPoints < 100}
-                >
-                  Tukar
-                </Button>
-              </CardContent>
-            </Card>
-            <Card className="border-orange-200">
-              <CardContent className="p-6 text-center">
-                <Gift className="w-16 h-16 mx-auto mb-4 text-orange-500" />
-                <h3 className="font-bold text-lg mb-2">Diskon Rp25.000</h3>
-                <p className="text-orange-600 font-bold text-2xl mb-2">250 Point</p>
-                <p className="text-sm text-gray-500 mb-4">Diskon Rp25.000 untuk pembayaran</p>
-                <Button
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
-                  disabled={memberPoints < 250}
-                >
-                  Tukar
-                </Button>
-              </CardContent>
-            </Card>
-            <Card className="border-orange-200">
-              <CardContent className="p-6 text-center">
-                <Gift className="w-16 h-16 mx-auto mb-4 text-orange-500" />
-                <h3 className="font-bold text-lg mb-2">Menu Gratis</h3>
-                <p className="text-orange-600 font-bold text-2xl mb-2">500 Point</p>
-                <p className="text-sm text-gray-500 mb-4">Dapatkan 1 menu gratis pilihan</p>
-                <Button
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
-                  disabled={memberPoints < 500}
-                >
-                  Tukar
-                </Button>
-              </CardContent>
-            </Card>
+        </header>
+        <main className="py-4 px-4">
+          <div className="max-w-7xl mx-auto">
+            {!currentMember ? (
+              <Card className="border-orange-200">
+                <CardContent className="p-12 text-center">
+                  <Gift className="w-24 h-24 mx-auto mb-6 text-orange-300" />
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Belum Login</h2>
+                  <p className="text-gray-600 mb-6">Login sebagai member untuk menukar poin</p>
+                  <Button
+                    onClick={() => router.push('/login')}
+                    className="bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+                  >
+                    Login Member
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : pointExchangeProducts.length === 0 ? (
+              <Card className="border-orange-200">
+                <CardContent className="p-12 text-center">
+                  <Gift className="w-16 h-16 mx-auto mb-4 text-orange-300" />
+                  <h2 className="text-xl font-semibold text-gray-700 mb-2">Tidak Ada Produk</h2>
+                  <p className="text-gray-500">Belum ada produk tukar poin yang tersedia saat ini</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pointExchangeProducts.map((product) => (
+                  <Card key={product.id} className="border-orange-200 hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6 text-center">
+                      {product.image ? (
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-32 object-cover rounded-lg mb-4"
+                        />
+                      ) : (
+                        <div className="w-full h-32 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center mb-4">
+                          <Gift className="w-12 h-12 text-orange-400" />
+                        </div>
+                      )}
+                      <h3 className="font-bold text-lg mb-2">{product.name}</h3>
+                      {product.description && (
+                        <p className="text-sm text-gray-500 mb-2">{product.description}</p>
+                      )}
+                      <Badge variant="secondary" className="mb-2 bg-blue-100 text-blue-700">
+                        {getTypeLabel(product.type)}
+                      </Badge>
+                      <p className="text-orange-600 font-bold text-2xl mb-2">
+                        {product.points.toLocaleString()} Point
+                      </p>
+                      <p className="text-sm text-gray-600 mb-1">{getValueDisplay(product)}</p>
+                      <p className="text-xs text-gray-500 mb-4">Stok tersedia: {product.stock}</p>
+                      <Button
+                        onClick={() => handleExchangePoints(product)}
+                        className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+                        disabled={memberPoints < product.points || product.stock <= 0}
+                      >
+                        {memberPoints < product.points
+                          ? `Kurang ${product.points - memberPoints} Poin`
+                          : product.stock <= 0
+                          ? 'Stok Habis'
+                          : 'Tukar Sekarang'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      </main>
-    </div>
-  )
+        </main>
+      </div>
+    )
+  }
 
   // Profile Section
   const ProfileSection = () => (
@@ -1300,10 +1520,69 @@ export default function Home() {
               </div>
             </ScrollArea>
 
-            <div className="border-t border-orange-200 pt-4">
-              <div className="flex justify-between font-bold text-lg text-orange-800 mb-4">
-                <span>Total</span>
+            {/* Redeem Code Section */}
+            <div className="border-t border-orange-200 pt-4 space-y-3">
+              {!appliedDiscount ? (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Masukkan kode redeem"
+                    value={redeemCode}
+                    onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+                    className="border-orange-200 focus:border-orange-500 uppercase font-mono"
+                    disabled={validatingRedeemCode}
+                  />
+                  <Button
+                    onClick={handleValidateRedeemCode}
+                    disabled={validatingRedeemCode || !redeemCode.trim()}
+                    variant="outline"
+                    className="border-orange-300 hover:bg-orange-50 text-orange-600"
+                  >
+                    {validatingRedeemCode ? 'Memeriksa...' : 'Terapkan'}
+                  </Button>
+                </div>
+              ) : (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Gift className="w-4 h-4 text-green-600" />
+                      <span className="font-semibold text-green-800 text-sm">
+                        {appliedDiscount.productName}
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleRemoveRedeemCode}
+                      className="h-6 w-6 p-0 text-red-600 hover:bg-red-50"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-700">Diskon diterapkan:</span>
+                    <span className="font-bold text-green-700">
+                      -Rp{appliedDiscount.discountAmount.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-orange-200 pt-4 space-y-2">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Subtotal</span>
                 <span>Rp{getCartTotal().toLocaleString('id-ID')}</span>
+              </div>
+              {appliedDiscount && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Diskon ({appliedDiscount.productName})</span>
+                  <span>-Rp{appliedDiscount.discountAmount.toLocaleString('id-ID')}</span>
+                </div>
+              )}
+              <Separator className="my-2" />
+              <div className="flex justify-between font-bold text-lg text-orange-800">
+                <span>Total</span>
+                <span>Rp{getCartTotalWithDiscount().toLocaleString('id-ID')}</span>
               </div>
               <Button
                 onClick={() => { setShowCheckout(true); setShowCart(false); }}
@@ -1376,10 +1655,16 @@ export default function Home() {
             />
           </div>
 
-          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200 space-y-2">
+            {appliedDiscount && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>Diskon ({appliedDiscount.productName})</span>
+                <span>-Rp{appliedDiscount.discountAmount.toLocaleString('id-ID')}</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold text-lg">
               <span>Total Pembayaran:</span>
-              <span className="text-orange-600">Rp{getCartTotal().toLocaleString('id-ID')}</span>
+              <span className="text-orange-600">Rp{getCartTotalWithDiscount().toLocaleString('id-ID')}</span>
             </div>
           </div>
 
@@ -1804,6 +2089,65 @@ export default function Home() {
             </div>
             <p className="text-xs text-center text-gray-500">
               Format: JPG, PNG. Maksimal 5MB. Rasio persegi disarankan.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Redeem Code Dialog */}
+      <Dialog open={showRedeemCodeDialog} onOpenChange={setShowRedeemCodeDialog}>
+        <DialogContent className="max-w-md" key="redeem-code-modal">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Gift className="w-5 h-5 text-orange-600" />
+              Kode Redeem Anda
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-orange-50 p-4 rounded-lg border border-orange-200 text-center">
+              <p className="text-sm text-gray-600 mb-2">Salin kode redeem ini:</p>
+              <div className="bg-white border-2 border-orange-400 rounded-lg p-3 mb-3">
+                <p className="text-2xl font-bold text-orange-600 tracking-wider font-mono">
+                  {redeemCodeInfo?.redeemCode}
+                </p>
+              </div>
+              <Button
+                onClick={() => {
+                  navigator.clipboard.writeText(redeemCodeInfo?.redeemCode)
+                  alert('Kode redeem berhasil disalin!')
+                }}
+                variant="outline"
+                className="border-orange-300 hover:bg-orange-50 text-orange-600"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Salin Kode
+              </Button>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Produk:</span>
+                <span className="font-semibold">{redeemCodeInfo?.productName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Poin digunakan:</span>
+                <span className="font-semibold text-orange-600">{redeemCodeInfo?.pointsUsed} Poin</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Berlaku hingga:</span>
+                <span className="font-semibold">
+                  {redeemCodeInfo?.expiresAt
+                    ? new Date(redeemCodeInfo.expiresAt).toLocaleDateString('id-ID', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                      })
+                    : '-'}
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 text-center">
+              Gunakan kode ini di keranjang belanja untuk mendapatkan diskon.
+              Kode hanya bisa digunakan satu kali dan akan kadaluarsa 30 hari dari penukaran.
             </p>
           </div>
         </DialogContent>

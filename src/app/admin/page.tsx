@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Link from 'next/link'
-import { Flame, TrendingUp, ShoppingBag, Package, Users, BarChart3, LayoutDashboard, Settings, Menu, X, DollarSign, Calendar, Clock, ArrowUpRight, ArrowDownRight, Store, Printer, FileText, LogOut, Home, CreditCard } from 'lucide-react'
+import { Flame, TrendingUp, ShoppingBag, Package, Users, BarChart3, LayoutDashboard, Settings, Menu, X, DollarSign, Calendar, Clock, ArrowUpRight, ArrowDownRight, Store, Printer, FileText, LogOut, Home, CreditCard, Gift } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 // Store Information
@@ -215,6 +215,7 @@ export default function AdminDashboard() {
     { id: 'overview', label: 'Dashboard Overview', icon: LayoutDashboard, href: '/admin' },
     { id: 'products', label: 'Product Management', icon: Package, href: '/admin/products' },
     { id: 'categories', label: 'Category Management', icon: ShoppingBag, href: '/admin/categories' },
+    { id: 'point-exchange', label: 'Produk Tukar Point', icon: Gift, href: '/admin/point-exchange-products' },
     { id: 'orders', label: 'Order Management', icon: FileText, href: '/admin/orders' },
     { id: 'members', label: 'Member Management', icon: Users, href: '/admin/members' },
     { id: 'transactions', label: 'Transaction History', icon: BarChart3, href: '/admin/transactions' },
