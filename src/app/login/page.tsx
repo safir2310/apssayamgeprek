@@ -14,15 +14,11 @@ export default function LoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  
-  // Staff Login Form
-  const [staffForm, setStaffForm] = useState({
-    email: '',
-    password: ''
-  })
+  const [loginType, setLoginType] = useState<'staff' | 'member'>('staff')
+  const [showRegister, setShowRegister] = useState(false)
 
-  // Member Login Form
-  const [memberLoginForm, setMemberLoginForm] = useState({
+  // Login Form (Unified)
+  const [loginForm, setLoginForm] = useState({
     email: '',
     password: ''
   })
@@ -38,88 +34,57 @@ export default function LoginPage() {
     confirmPassword: ''
   })
 
-  // Forgot Password Form
-  const [forgotPasswordForm, setForgotPasswordForm] = useState({
-    email: ''
-  })
-
-  const handleStaffLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      console.log('Attempting staff login with email:', staffForm.email)
+      console.log(`Attempting ${loginType} login with email:`, loginForm.email)
 
-      const response = await fetch('/api/auth/login', {
+      // Determine which API to call based on login type
+      const apiUrl = loginType === 'staff' ? '/api/auth/login' : '/api/members/login'
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          email: staffForm.email,
-          password: staffForm.password
+          email: loginForm.email,
+          password: loginForm.password
         })
       })
 
       const data = await response.json()
 
       if (response.ok && data.success) {
-        // Store user data in localStorage
-        localStorage.setItem('admin-user', JSON.stringify(data.user))
-        localStorage.setItem('admin-session', Date.now().toString())
+        if (loginType === 'staff') {
+          // Store user data in localStorage
+          localStorage.setItem('admin-user', JSON.stringify(data.user))
+          localStorage.setItem('admin-session', Date.now().toString())
 
-        // Redirect based on role (case-insensitive)
-        const userRole = data.user.role?.toLowerCase()
-        if (userRole === 'admin') {
-          alert(`Selamat datang, ${data.user.name}! Mengalihkan ke Admin Dashboard...`)
-          router.push('/admin')
-        } else if (userRole === 'kasir' || userRole === 'cashier') {
-          alert(`Selamat datang, ${data.user.name}! Mengalihkan ke POS...`)
-          router.push('/pos')
+          // Redirect based on role (case-insensitive)
+          const userRole = data.user.role?.toLowerCase()
+          if (userRole === 'admin') {
+            alert(`Selamat datang, ${data.user.name}! Mengalihkan ke Admin Dashboard...`)
+            router.push('/admin')
+          } else if (userRole === 'kasir' || userRole === 'cashier') {
+            alert(`Selamat datang, ${data.user.name}! Mengalihkan ke POS...`)
+            router.push('/pos')
+          } else {
+            alert('Role tidak dikenali. Hubungi administrator.')
+          }
         } else {
-          alert('Role tidak dikenali. Hubungi administrator.')
+          // Member login
+          localStorage.setItem('member', JSON.stringify(data.member))
+          alert(`Selamat datang kembali, ${data.member.name}!`)
+          router.push('/')
         }
       } else {
         alert(data.error || 'Email atau password salah')
       }
     } catch (error) {
-      console.error('Staff login error:', error)
-      alert('Terjadi kesalahan koneksi. Silakan coba lagi.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleMemberLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-
-    try {
-      console.log('Attempting member login with email:', memberLoginForm.email)
-
-      const response = await fetch('/api/members/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: memberLoginForm.email,
-          password: memberLoginForm.password
-        })
-      })
-
-      const data = await response.json()
-
-      if (response.ok && data.success) {
-        // Store member info in localStorage
-        localStorage.setItem('member', JSON.stringify(data.member))
-        alert(`Selamat datang kembali, ${data.member.name}!`)
-        router.push('/')
-      } else {
-        alert(data.error || 'Email atau password salah')
-      }
-    } catch (error) {
-      console.error('Member login error:', error)
+      console.error('Login error:', error)
       alert('Terjadi kesalahan koneksi. Silakan coba lagi.')
     } finally {
       setLoading(false)
@@ -176,9 +141,9 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        // Show success notification and switch to member login tab
+        // Show success notification and switch to login
         alert('Pendaftaran berhasil! Silakan login dengan email Anda.')
-        setMemberLoginForm({
+        setLoginForm({
           email: registerForm.email,
           password: ''
         })
@@ -191,6 +156,7 @@ export default function LoginPage() {
           password: '',
           confirmPassword: ''
         })
+        setShowRegister(false)
       } else {
         // Show specific error message
         alert(data.error || 'Terjadi kesalahan saat mendaftar. Silakan coba lagi.')
@@ -198,27 +164,6 @@ export default function LoginPage() {
     } catch (error) {
       console.error('Registration error:', error)
       alert('Terjadi kesalahan koneksi. Silakan coba lagi.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!forgotPasswordForm.email) {
-      alert('Mohon masukkan email!')
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      // TODO: Implement forgot password logic
-      alert('Fitur reset password akan dikirim ke email Anda. (Fitur ini akan segera tersedia)')
-    } catch (error) {
-      console.error('Forgot password error:', error)
-      alert('Terjadi kesalahan. Silakan coba lagi.')
     } finally {
       setLoading(false)
     }
