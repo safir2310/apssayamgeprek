@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -48,8 +48,15 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
 
-  // Checkout form state
-  const [checkoutForm, setCheckoutForm] = useState({
+  // Use refs to avoid re-renders when typing
+  const nameRef = useRef('')
+  const phoneRef = useRef('')
+  const addressRef = useRef(DEFAULT_ADDRESS)
+  const notesRef = useRef('')
+  const paymentMethodRef = useRef('CASH')
+
+  // State for UI display only (updated via ref values)
+  const [formData, setFormData] = useState({
     name: '',
     phone: '',
     address: DEFAULT_ADDRESS,
@@ -75,12 +82,16 @@ export default function CheckoutPage() {
           try {
             const parsedData = JSON.parse(savedFormData)
             console.log('Parsed form data:', parsedData)
-            // Merge with default state, keeping DEFAULT_ADDRESS if not in saved data
-            setCheckoutForm({
-              name: parsedData.name || '',
-              phone: parsedData.phone || '',
-              address: parsedData.address || DEFAULT_ADDRESS,
-              notes: parsedData.notes || ''
+            // Update refs and state
+            nameRef.current = parsedData.name || ''
+            phoneRef.current = parsedData.phone || ''
+            addressRef.current = parsedData.address || DEFAULT_ADDRESS
+            notesRef.current = parsedData.notes || ''
+            setFormData({
+              name: nameRef.current,
+              phone: phoneRef.current,
+              address: addressRef.current,
+              notes: notesRef.current
             })
           } catch (error) {
             console.error('Error parsing saved form data:', error)
@@ -90,6 +101,7 @@ export default function CheckoutPage() {
         // Load saved payment method from localStorage
         const savedPaymentMethod = localStorage.getItem(PAYMENT_METHOD_KEY)
         if (savedPaymentMethod) {
+          paymentMethodRef.current = savedPaymentMethod
           setSelectedPaymentMethod(savedPaymentMethod)
         }
 
@@ -146,40 +158,69 @@ export default function CheckoutPage() {
     loadProductsAndCart()
   }, [])
 
-  // Handle input changes without causing form submission
+  // Handle input changes without causing re-renders
   const handleInputChange = useCallback((field: string, value: string) => {
     console.log('Input change:', { field, value })
-    setCheckoutForm(prev => ({
-      ...prev,
-      [field]: value
-    }))
+    // Update ref directly (no re-render)
+    switch (field) {
+      case 'name':
+        nameRef.current = value
+        break
+      case 'phone':
+        phoneRef.current = value
+        break
+      case 'address':
+        addressRef.current = value
+        break
+      case 'notes':
+        notesRef.current = value
+        break
+    }
   }, [])
 
   // Save payment method to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem(PAYMENT_METHOD_KEY, selectedPaymentMethod)
-  }, [selectedPaymentMethod])
+  const handlePaymentMethodChange = useCallback((value: string) => {
+    paymentMethodRef.current = value
+    setSelectedPaymentMethod(value)
+  }, [])
 
-  // Save form data to localStorage whenever it changes
+  // Auto-save form data to localStorage with debounce (doesn't cause re-render)
   useEffect(() => {
     const timer = setTimeout(() => {
-      console.log('Auto-saving form data to storage:', checkoutForm)
-      localStorage.setItem(FORM_DATA_KEY, JSON.stringify(checkoutForm))
-    }, 500) // 500ms debounce
+      const dataToSave = {
+        name: nameRef.current,
+        phone: phoneRef.current,
+        address: addressRef.current,
+        notes: notesRef.current
+      }
+      console.log('Auto-saving form data to storage:', dataToSave)
+      localStorage.setItem(FORM_DATA_KEY, JSON.stringify(dataToSave))
+    }, 1000) // 1 second debounce
 
     return () => clearTimeout(timer)
-  }, [checkoutForm])
+  }, []) // Empty dependency array - only runs once
+
+  // Save payment method to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(PAYMENT_METHOD_KEY, paymentMethodRef.current)
+  }, [selectedPaymentMethod])
 
   // Save form data before page unload
   useEffect(() => {
     const handleBeforeUnload = () => {
-      console.log('Saving form data before unload:', checkoutForm)
-      localStorage.setItem(FORM_DATA_KEY, JSON.stringify(checkoutForm))
+      const dataToSave = {
+        name: nameRef.current,
+        phone: phoneRef.current,
+        address: addressRef.current,
+        notes: notesRef.current
+      }
+      console.log('Saving form data before unload:', dataToSave)
+      localStorage.setItem(FORM_DATA_KEY, JSON.stringify(dataToSave))
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [checkoutForm])
+  }, [])
 
   const saveCartToLocalStorage = (newCart: CartItem[]) => {
     const cartData = newCart.map(item => ({
@@ -299,6 +340,14 @@ export default function CheckoutPage() {
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Sync state with refs before validation
+    const currentFormData = {
+      name: nameRef.current,
+      phone: phoneRef.current,
+      address: addressRef.current,
+      notes: notesRef.current
+    }
+
     // Validate cart
     if (cart.length === 0) {
       alert('Keranjang belanja masih kosong!')
@@ -306,17 +355,17 @@ export default function CheckoutPage() {
     }
 
     // Validate form fields
-    if (!checkoutForm.name.trim()) {
+    if (!currentFormData.name.trim()) {
       alert('Silakan masukkan nama lengkap!')
       return
     }
 
-    if (!checkoutForm.phone.trim()) {
+    if (!currentFormData.phone.trim()) {
       alert('Silakan masukkan nomor WhatsApp!')
       return
     }
 
-    if (!checkoutForm.address.trim()) {
+    if (!currentFormData.address.trim()) {
       alert('Silakan masukkan alamat pengiriman!')
       return
     }
@@ -333,10 +382,10 @@ export default function CheckoutPage() {
     const discount = appliedDiscount ? appliedDiscount.discountAmount : 0
 
     const orderData = {
-      customerName: checkoutForm.name.trim(),
-      customerPhone: checkoutForm.phone.trim(),
-      customerAddress: checkoutForm.address.trim(),
-      notes: checkoutForm.notes.trim(),
+      customerName: currentFormData.name.trim(),
+      customerPhone: currentFormData.phone.trim(),
+      customerAddress: currentFormData.address.trim(),
+      notes: currentFormData.notes.trim(),
       totalAmount: finalTotal,
       discount: discount,
       redeemCode: appliedDiscount ? appliedDiscount.code : null,
@@ -543,7 +592,7 @@ export default function CheckoutPage() {
                   <Input
                     id="name"
                     required
-                    value={checkoutForm.name}
+                    defaultValue={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="Masukkan nama lengkap"
                     className="border-orange-200 focus:border-orange-500"
@@ -557,7 +606,7 @@ export default function CheckoutPage() {
                     id="phone"
                     type="tel"
                     required
-                    value={checkoutForm.phone}
+                    defaultValue={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     placeholder="08xxxxxxxxxx"
                     className="border-orange-200 focus:border-orange-500"
@@ -570,7 +619,7 @@ export default function CheckoutPage() {
                   <Textarea
                     id="address"
                     required
-                    value={checkoutForm.address}
+                    defaultValue={formData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
                     placeholder="Masukkan alamat lengkap"
                     rows={3}
@@ -582,7 +631,7 @@ export default function CheckoutPage() {
                   <Label htmlFor="notes">Catatan (Opsional)</Label>
                   <Textarea
                     id="notes"
-                    value={checkoutForm.notes}
+                    defaultValue={formData.notes}
                     onChange={(e) => handleInputChange('notes', e.target.value)}
                     placeholder="Catatan tambahan untuk pesanan"
                     rows={2}
@@ -647,7 +696,7 @@ export default function CheckoutPage() {
                   <Label>Metode Pembayaran *</Label>
                   <div className="mt-3 space-y-3">
                     {paymentMethods.length > 0 ? (
-                      <RadioGroup value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+                      <RadioGroup value={selectedPaymentMethod} onValueChange={handlePaymentMethodChange}>
                         {paymentMethods
                           .filter(pm => pm.isActive !== false)
                           .sort((a, b) => {
@@ -663,7 +712,7 @@ export default function CheckoutPage() {
                                   ? 'border-orange-500 bg-orange-50'
                                   : 'border-gray-200 hover:border-orange-300'
                               }`}
-                              onClick={() => setSelectedPaymentMethod(method.code)}
+                              onClick={() => handlePaymentMethodChange(method.code)}
                             >
                               <RadioGroupItem value={method.code} className="sr-only" />
                               <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center text-orange-600 mr-3">
