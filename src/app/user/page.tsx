@@ -102,6 +102,9 @@ export default function UserDashboard() {
   const [member, setMember] = useState<Member | null>(null)
   const [showMemberDialog, setShowMemberDialog] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState('')
+  const [memberPhoneInput, setMemberPhoneInput] = useState('')
+  const [searchingMember, setSearchingMember] = useState(false)
+  const [orderSubTab, setOrderSubTab] = useState<'list' | 'receipt'>('list')
 
   // Order Form
   const [orderForm, setOrderForm] = useState({
@@ -828,66 +831,206 @@ export default function UserDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="max-h-[calc(100vh-300px)]">
-                  {orders.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <ShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                      <p>Belum ada pesanan</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {orders.map((order) => (
-                        <Card key={order.id} className="border border-gray-200">
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between mb-3">
-                              <div>
-                                <p className="font-semibold text-gray-900">{order.orderNumber}</p>
-                                <p className="text-xs text-gray-500">
-                                  {new Date(order.createdAt).toLocaleString('id-ID')}
-                                </p>
-                              </div>
-                              <div className="flex gap-2">
-                                <Badge className={getStatusColor(order.status)}>
-                                  {order.status}
-                                </Badge>
-                                <Badge className={getPaymentStatusColor(order.paymentStatus)}>
-                                  {order.paymentStatus}
-                                </Badge>
-                              </div>
-                            </div>
-                            <Separator className="my-3" />
-                            <div className="space-y-2 mb-3">
-                              {order.items.map((item: any, index: number) => (
-                                <div key={index} className="flex justify-between text-sm">
-                                  <span className="text-gray-600">{item.product?.name || item.productName || 'Unknown Product'} x{item.quantity}</span>
-                                  <span className="font-medium">Rp{item.subtotal.toLocaleString('id-ID')}</span>
+                {/* Sub-tabs for Orders */}
+                <Tabs value={orderSubTab} onValueChange={(v) => setOrderSubTab(v as 'list' | 'receipt')} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="list">Daftar Pesanan</TabsTrigger>
+                    <TabsTrigger value="receipt" disabled={!selectedOrderForPrint}>
+                      Cetak Struk
+                    </TabsTrigger>
+                  </TabsList>
+
+                  {/* Order List Tab */}
+                  <TabsContent value="list">
+                    <ScrollArea className="max-h-[calc(100vh-400px)]">
+                      {orders.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <ShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                          <p>Belum ada pesanan</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {orders.map((order) => (
+                            <Card 
+                              key={order.id} 
+                              className={`border transition-all hover:shadow-md cursor-pointer ${
+                                selectedOrderForPrint?.id === order.id 
+                                  ? 'border-orange-400 ring-2 ring-orange-200' 
+                                  : 'border-gray-200'
+                              }`}
+                              onClick={() => {
+                                setSelectedOrderForPrint(order)
+                                setOrderSubTab('receipt')
+                              }}
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between mb-3">
+                                  <div>
+                                    <p className="font-semibold text-gray-900">{order.orderNumber}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {new Date(order.createdAt).toLocaleString('id-ID')}
+                                    </p>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Badge className={getStatusColor(order.status)}>
+                                      {order.status}
+                                    </Badge>
+                                    <Badge className={getPaymentStatusColor(order.paymentStatus)}>
+                                      {order.paymentStatus}
+                                    </Badge>
+                                  </div>
                                 </div>
-                              ))}
+                                <Separator className="my-3" />
+                                <div className="space-y-2 mb-3">
+                                  {order.items.slice(0, 3).map((item: any, index: number) => (
+                                    <div key={index} className="flex justify-between text-sm">
+                                      <span className="text-gray-600">{item.product?.name || item.productName || 'Unknown Product'} x{item.quantity}</span>
+                                      <span className="font-medium">Rp{item.subtotal.toLocaleString('id-ID')}</span>
+                                    </div>
+                                  ))}
+                                  {order.items.length > 3 && (
+                                    <p className="text-xs text-gray-500 text-center">
+                                      +{order.items.length - 3} item lainnya
+                                    </p>
+                                  )}
+                                </div>
+                                <Separator className="my-3" />
+                                <div className="flex justify-between items-center">
+                                  <span className="font-bold text-gray-800">Total</span>
+                                  <span className="font-bold text-orange-600">
+                                    Rp{order.totalAmount.toLocaleString('id-ID')}
+                                  </span>
+                                </div>
+                                <div className="mt-3 pt-3 border-t border-gray-200">
+                                  <Button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setSelectedOrderForPrint(order)
+                                      setOrderSubTab('receipt')
+                                    }}
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full text-orange-600 border-orange-300 hover:bg-orange-50 hover:text-orange-700"
+                                  >
+                                    <Printer className="w-4 h-4 mr-2" />
+                                    Lihat Struk
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </TabsContent>
+
+                  {/* Receipt/Print Tab */}
+                  <TabsContent value="receipt">
+                    {selectedOrderForPrint ? (
+                      <div className="space-y-4">
+                        <div className="bg-white border-2 border-gray-200 rounded-lg p-6 max-w-md mx-auto">
+                          <div className="text-center mb-6">
+                            <div className="text-2xl font-bold text-orange-600 mb-1">AYAM GEPREK</div>
+                            <div className="text-lg font-bold text-gray-800">SAMBAL IJO</div>
+                            <div className="text-xs text-gray-500 mt-2">STRUK PEMBELIAN</div>
+                          </div>
+                          
+                          <div className="border-t-2 border-b-2 border-dashed border-gray-300 py-4 my-4">
+                            <div className="text-left text-sm space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">No. Pesanan:</span>
+                                <span className="font-semibold text-gray-800">{selectedOrderForPrint.orderNumber}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Tanggal:</span>
+                                <span className="font-semibold text-gray-800">
+                                  {new Date(selectedOrderForPrint.createdAt).toLocaleString('id-ID')}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Metode Bayar:</span>
+                                <span className="font-semibold text-gray-800">{selectedOrderForPrint.paymentMethod}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Status:</span>
+                                <Badge className={getStatusColor(selectedOrderForPrint.status)}>
+                                  {selectedOrderForPrint.status}
+                                </Badge>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Pembayaran:</span>
+                                <Badge className={getPaymentStatusColor(selectedOrderForPrint.paymentStatus)}>
+                                  {selectedOrderForPrint.paymentStatus}
+                                </Badge>
+                              </div>
                             </div>
-                            <Separator className="my-3" />
-                            <div className="flex justify-between items-center">
-                              <span className="font-bold text-gray-800">Total</span>
-                              <span className="font-bold text-orange-600">
-                                Rp{order.totalAmount.toLocaleString('id-ID')}
+                          </div>
+
+                          <div className="border-b border-dashed border-gray-300 pb-4 mb-4">
+                            <table className="w-full text-left text-sm">
+                              <thead>
+                                <tr className="text-gray-600 border-b border-gray-200">
+                                  <th className="pb-2">Item</th>
+                                  <th className="pb-2 text-center">Qty</th>
+                                  <th className="pb-2 text-right">Total</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {selectedOrderForPrint.items.map((item: any, index: number) => (
+                                  <tr key={index} className="border-b border-gray-100">
+                                    <td className="py-2">{item.product?.name || item.productName || 'Unknown Product'}</td>
+                                    <td className="py-2 text-center">x{item.quantity}</td>
+                                    <td className="py-2 text-right">Rp{item.subtotal.toLocaleString('id-ID')}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="border-t-2 border-dashed border-gray-300 pt-4">
+                            <div className="flex justify-between items-center text-xl font-bold">
+                              <span className="text-gray-800">TOTAL</span>
+                              <span className="text-orange-600">
+                                Rp{selectedOrderForPrint.totalAmount.toLocaleString('id-ID')}
                               </span>
                             </div>
-                            <div className="mt-3 pt-3 border-t border-gray-200">
-                              <Button
-                                onClick={() => handlePrintReceipt(order)}
-                                variant="outline"
-                                size="sm"
-                                className="w-full text-orange-600 border-orange-300 hover:bg-orange-50 hover:text-orange-700"
-                              >
-                                <Printer className="w-4 h-4 mr-2" />
-                                Cetak Struk
-                              </Button>
+                          </div>
+
+                          <div className="mt-6 pt-4 border-t border-gray-200">
+                            <div className="text-xs text-gray-500 text-center space-y-1">
+                              <p>Terima kasih atas pesanan Anda!</p>
+                              <p>Simpan struk ini sebagai bukti pembayaran.</p>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 justify-center">
+                          <Button
+                            onClick={() => setOrderSubTab('list')}
+                            variant="outline"
+                            className="border-gray-300 hover:bg-gray-50"
+                          >
+                            <Clock className="w-4 h-4 mr-2" />
+                            Kembali ke Daftar
+                          </Button>
+                          <Button
+                            onClick={() => handlePrintReceipt(selectedOrderForPrint)}
+                            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                          >
+                            <Printer className="w-4 h-4 mr-2" />
+                            Cetak Struk
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 text-gray-500">
+                        <Printer className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <p className="text-lg mb-2">Pilih pesanan untuk melihat struk</p>
+                        <p className="text-sm">Klik pada salah satu pesanan di tab "Daftar Pesanan"</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </TabsContent>
