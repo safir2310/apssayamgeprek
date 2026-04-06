@@ -961,143 +961,202 @@ export default function Home() {
   // Beranda Section Component
   const BerandaSection = () => (
     <div className="pb-20">
-      {/* Hero Section with Dark Orange Gradient */}
-      <section className="relative bg-gradient-to-br from-orange-700 via-orange-600 to-orange-500 text-white py-16 px-4 md:py-24 md:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="mb-6">
-            <Flame className="w-16 h-16 mx-auto mb-4 text-white" />
-          </div>
-          <h1 className="text-4xl md:text-6xl font-bold mb-4 text-center justify-center">
-            {STORE_INFO.name}
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 text-orange-100 text-center justify-center font-medium">
-            {STORE_INFO.tagline}
-          </p>
-          <Button
-            size="lg"
-            className="bg-white text-orange-600 hover:bg-orange-100 font-bold text-lg px-8 py-6 rounded-full shadow-lg hover:shadow-xl transition-all"
-            onClick={() => setActiveTab('menu')}
-          >
-            <ShoppingCart className="mr-2 h-5 w-5" />
-            Pesan Sekarang
-          </Button>
-
-          {/* Latest Products & Promos Cards */}
-          <div className="mt-12 max-w-6xl mx-auto">
-            {/* Latest Products - Horizontal Scroll */}
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Star className="w-5 h-5 text-yellow-300" />
-                <h3 className="text-lg font-semibold">Produk Terbaru</h3>
-              </div>
-              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                {products.slice(0, 6).map((product) => (
-                  <Card
-                    key={product.id}
-                    className="min-w-[160px] md:min-w-[200px] bg-white/10 backdrop-blur-sm border-white/20 text-white cursor-pointer hover:bg-white/20 transition-all hover:scale-105"
-                    onClick={() => {
-                      addToCart(product)
-                      setActiveTab('menu')
-                    }}
-                  >
-                    <CardContent className="p-3">
-                      <div className="aspect-square bg-white/20 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                        {product.image ? (
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Flame className="w-8 h-8 text-white/60" />
-                        )}
-                      </div>
-                      <h4 className="font-semibold text-sm mb-1 line-clamp-2 min-h-[2.5rem]">
-                        {product.name}
-                      </h4>
-                      <p className="text-orange-100 text-xs font-bold">
-                        Rp{product.price.toLocaleString('id-ID')}
-                      </p>
-                      {product.stock > 0 ? (
-                        <Badge className="mt-2 bg-green-500/80 text-white text-xs">
-                          Tersedia
-                        </Badge>
-                      ) : (
-                        <Badge className="mt-2 bg-gray-500/80 text-white text-xs">
-                          Habis
-                        </Badge>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+      {/* Mini Hero Section */}
+      <section className="relative bg-gradient-to-br from-orange-600 to-orange-500 text-white py-8 px-4 md:px-8 shadow-md">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Flame className="w-10 h-10 text-white" />
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold">
+                  {STORE_INFO.name}
+                </h1>
+                <p className="text-sm md:text-base text-orange-100">
+                  {STORE_INFO.tagline}
+                </p>
               </div>
             </div>
-
-            {/* Promos - Horizontal Scroll */}
-            {promos.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Percent className="w-5 h-5 text-yellow-300" />
-                  <h3 className="text-lg font-semibold">Promo Spesial</h3>
-                </div>
-                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                  {promos.slice(0, 4).map((promo) => (
-                    <Card
-                      key={promo.id}
-                      className="min-w-[200px] md:min-w-[250px] bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-sm border-yellow-400/30 text-white cursor-pointer hover:scale-105 transition-all"
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <Percent className="w-8 h-8 text-yellow-300" />
-                          <Badge className="bg-yellow-500/80 text-white text-xs">
-                            {promo.type === 'PERCENTAGE' ? `${promo.value}%` :
-                             promo.type === 'FIXED' ? 'Diskon' :
-                             promo.type === 'FREE_PRODUCT' ? 'Gratis' :
-                             promo.type === 'BOGO' ? 'BOGO' : 'Promo'}
-                          </Badge>
-                        </div>
-                        <h4 className="font-bold text-lg mb-2">{promo.name}</h4>
-                        <p className="text-orange-100 text-xs mb-3 line-clamp-2">
-                          {promo.description || 'Gunakan kode ini untuk mendapatkan promo spesial'}
-                        </p>
-                        <div className="bg-white/20 rounded-lg px-3 py-2 text-center">
-                          <p className="text-xs text-orange-100 mb-1">Kode Promo</p>
-                          <p className="font-bold text-lg">{promo.code}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
+            <Button
+              size="default"
+              className="bg-white text-orange-600 hover:bg-orange-100 font-semibold px-6 py-2 rounded-full shadow-md hover:shadow-lg transition-all"
+              onClick={() => setActiveTab('menu')}
+            >
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Pesan Sekarang
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-12 px-4 md:px-8 bg-orange-50">
+      {/* Latest Products Section */}
+      <section className="py-6 px-4 md:px-8 bg-gradient-to-b from-orange-50 to-white">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-8 text-orange-800">Kenapa Memilih Kami?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="border-orange-200">
-              <CardContent className="p-6 text-center">
-                <Flame className="w-12 h-12 mx-auto mb-4 text-orange-500" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Star className="w-6 h-6 text-orange-500" />
+              <h2 className="text-xl md:text-2xl font-bold text-orange-800">Produk Terbaru</h2>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-orange-600 hover:text-orange-700 hover:bg-orange-100"
+              onClick={() => setActiveTab('menu')}
+            >
+              Lihat Semua
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+            {products.slice(0, 6).map((product) => (
+              <Card
+                key={product.id}
+                className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-orange-200 hover:border-orange-400 overflow-hidden"
+                onClick={() => {
+                  addToCart(product)
+                  setActiveTab('menu')
+                }}
+              >
+                <CardContent className="p-0">
+                  <div className="relative aspect-square bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center overflow-hidden">
+                    {product.image ? (
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <Flame className="w-12 h-12 text-orange-300 group-hover:scale-110 transition-transform" />
+                    )}
+                    {product.stock > 0 ? (
+                      <Badge className="absolute top-2 right-2 bg-green-500 text-white text-xs shadow-sm">
+                        Tersedia
+                      </Badge>
+                    ) : (
+                      <Badge className="absolute top-2 right-2 bg-gray-500 text-white text-xs shadow-sm">
+                        Habis
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <h4 className="font-semibold text-sm text-gray-800 line-clamp-2 min-h-[2.5rem] mb-1">
+                      {product.name}
+                    </h4>
+                    <div className="flex items-center justify-between">
+                      <p className="text-orange-600 font-bold text-sm">
+                        Rp{product.price.toLocaleString('id-ID')}
+                      </p>
+                      <Button
+                        size="sm"
+                        className="h-7 w-7 p-0 bg-orange-500 hover:bg-orange-600 rounded-full"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          addToCart(product)
+                        }}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Promos Section */}
+      {promos.length > 0 && (
+        <section className="py-6 px-4 md:px-8 bg-white">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Percent className="w-6 h-6 text-orange-500" />
+                <h2 className="text-xl md:text-2xl font-bold text-orange-800">Promo Spesial</h2>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-orange-600 hover:text-orange-700 hover:bg-orange-100"
+              >
+                Lihat Semua
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+              {promos.slice(0, 4).map((promo) => (
+                <Card
+                  key={promo.id}
+                  className="min-w-[280px] md:min-w-[320px] bg-gradient-to-br from-orange-500 to-orange-600 text-white border-orange-400 shadow-lg hover:shadow-xl transition-all"
+                >
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="bg-white/20 rounded-lg p-2">
+                          <Percent className="w-6 h-6 text-white" />
+                        </div>
+                        <Badge className="bg-white text-orange-600 font-semibold text-xs">
+                          {promo.type === 'PERCENTAGE' ? `${promo.value}% OFF` :
+                           promo.type === 'FIXED' ? 'DISKON' :
+                           promo.type === 'FREE_PRODUCT' ? 'GRATIS' :
+                           promo.type === 'BOGO' ? 'BOGO' : 'PROMO'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <h4 className="font-bold text-xl mb-2">{promo.name}</h4>
+                    <p className="text-orange-100 text-sm mb-4 line-clamp-2">
+                      {promo.description || 'Gunakan kode ini untuk mendapatkan promo spesial'}
+                    </p>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-3">
+                      <p className="text-xs text-orange-100 mb-1">Kode Promo</p>
+                      <div className="flex items-center justify-between">
+                        <p className="font-bold text-2xl tracking-wider">{promo.code}</p>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="bg-white text-orange-600 hover:bg-orange-100 font-semibold"
+                          onClick={() => {
+                            navigator.clipboard.writeText(promo.code)
+                            alert('Kode promo berhasil disalin!')
+                          }}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Features Section */}
+      <section className="py-10 px-4 md:px-8 bg-orange-50">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-orange-800">Kenapa Memilih Kami?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <Card className="border-orange-200 hover:shadow-lg transition-shadow">
+              <CardContent className="p-5 text-center">
+                <Flame className="w-10 h-10 mx-auto mb-3 text-orange-500" />
                 <h3 className="font-bold mb-2 text-orange-800">Rasa Autentik</h3>
-                <p className="text-sm text-gray-600 text-justify">Sambal ijo dengan resep asli yang bikin ketagihan</p>
+                <p className="text-sm text-gray-600">Sambal ijo dengan resep asli yang bikin ketagihan</p>
               </CardContent>
             </Card>
-            <Card className="border-orange-200">
-              <CardContent className="p-6 text-center">
-                <Award className="w-12 h-12 mx-auto mb-4 text-orange-500" />
+            <Card className="border-orange-200 hover:shadow-lg transition-shadow">
+              <CardContent className="p-5 text-center">
+                <Award className="w-10 h-10 mx-auto mb-3 text-orange-500" />
                 <h3 className="font-bold mb-2 text-orange-800">Kualitas Terjamin</h3>
-                <p className="text-sm text-gray-600 text-justify">Bahan baku segar dan higienis setiap hari</p>
+                <p className="text-sm text-gray-600">Bahan baku segar dan higienis setiap hari</p>
               </CardContent>
             </Card>
-            <Card className="border-orange-200">
-              <CardContent className="p-6 text-center">
-                <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-orange-500" />
+            <Card className="border-orange-200 hover:shadow-lg transition-shadow">
+              <CardContent className="p-5 text-center">
+                <ShoppingCart className="w-10 h-10 mx-auto mb-3 text-orange-500" />
                 <h3 className="font-bold mb-2 text-orange-800">Pesan Online</h3>
-                <p className="text-sm text-gray-600 text-justify">Mudah dan cepat, pesan dari rumah saja</p>
+                <p className="text-sm text-gray-600">Mudah dan cepat, pesan dari rumah saja</p>
               </CardContent>
             </Card>
           </div>
