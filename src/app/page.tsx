@@ -526,6 +526,7 @@ export default function Home() {
         // Clear cart and form
         setCart([])
         setCheckoutForm({ name: '', phone: '', address: DEFAULT_ADDRESS, notes: '' })
+        setCurrentMember(null) // Reset member setelah transaksi selesai
         setShowCheckout(false)
         setShowCart(false)
         setRedeemCode('')

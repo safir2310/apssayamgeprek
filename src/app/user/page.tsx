@@ -342,6 +342,7 @@ export default function UserDashboard() {
         customerAddress: '',
         notes: ''
       })
+      setMember(null) // Reset member setelah transaksi selesai
       setShowOrderDialog(false)
       setShowCartDialog(false)
       fetchOrders()

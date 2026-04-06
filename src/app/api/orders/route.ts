@@ -191,6 +191,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Add points to member if they exist (1 point per Rp 1.000)
+    logToDevServer('Checking for member...', { customerPhone })
+    try {
+      const member = await db.member.findUnique({
+        where: { phone: customerPhone }
+      })
+
+      if (member) {
+        const pointsToAdd = Math.floor((totalAmount || calculatedTotal) / 1000)
+        if (pointsToAdd > 0) {
+          const newPoints = member.points + pointsToAdd
+          await db.member.update({
+            where: { id: member.id },
+            data: { points: newPoints }
+          })
+          logToDevServer('Points added to member', {
+            memberId: member.id,
+            memberName: member.name,
+            pointsToAdd,
+            oldPoints: member.points,
+            newPoints
+          })
+        }
+      }
+    } catch (error) {
+      logToDevServer('Error adding points to member', error)
+      // Don't fail the order if points addition fails
+    }
+
     logToDevServer('=== POST /api/orders SUCCESS ===')
     return NextResponse.json(order, { status: 201 })
   } catch (error) {
