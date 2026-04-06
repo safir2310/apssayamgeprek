@@ -107,6 +107,14 @@ export default function Home() {
   // Notification Hero state
   const [showNotification, setShowNotification] = useState(false)
 
+  // Welcome Popup state
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false)
+  const [welcomePopupShown, setWelcomePopupShown] = useState(false)
+
+  // Page notification state
+  const [showPageNotification, setShowPageNotification] = useState(false)
+  const [pageNotificationMessage, setPageNotificationMessage] = useState('')
+
   // Member state
   const [currentMember, setCurrentMember] = useState<any>(null)
 
@@ -235,6 +243,12 @@ export default function Home() {
           shareData: member.shareData ?? true,
           orderHistory: member.orderHistory ?? true
         })
+
+        // Show welcome popup if member is logged in
+        const welcomeShown = localStorage.getItem(`welcomePopupShown_${member.phone}`)
+        if (!welcomeShown) {
+          setShowWelcomePopup(true)
+        }
       } catch (error) {
         console.error('Error parsing member data:', error)
         localStorage.removeItem('member')
@@ -272,6 +286,26 @@ export default function Home() {
     }
   }, [])
 
+  // Show page notifications based on active tab
+  useEffect(() => {
+    const lastTab = localStorage.getItem('lastActiveTab')
+    if (lastTab && lastTab !== activeTab) {
+      // Show notification based on the new tab
+      const notifications: Record<string, string> = {
+        'beranda': '🏠 Selamat datang di Beranda!',
+        'menu': '🍽️ Jelajahi menu favorit kami!',
+        'qr-member': '📱 Scan QR Anda untuk mengumpulkan poin!',
+        'riwayat': '📋 Lihat riwayat pesanan Anda!',
+        'tukar-point': '🎁 Tukarkan poin Anda dengan hadiah!',
+        'profile': '👤 Kelola profil dan pengaturan Anda!'
+      }
+      if (notifications[activeTab]) {
+        handleShowPageNotification(notifications[activeTab])
+      }
+    }
+    localStorage.setItem('lastActiveTab', activeTab)
+  }, [activeTab])
+
   // Save cart to localStorage whenever it changes
   useEffect(() => {
     if (cart.length > 0) {
@@ -295,6 +329,32 @@ export default function Home() {
   const handleShowNotification = () => {
     localStorage.removeItem('notificationHeroDismissed')
     setShowNotification(true)
+  }
+
+  // Handle welcome popup close
+  const handleCloseWelcomePopup = () => {
+    if (currentMember) {
+      localStorage.setItem(`welcomePopupShown_${currentMember.phone}`, 'true')
+    }
+    setShowWelcomePopup(false)
+  }
+
+  // Handle show welcome popup again (for testing)
+  const handleShowWelcomePopup = () => {
+    if (currentMember) {
+      localStorage.removeItem(`welcomePopupShown_${currentMember.phone}`)
+      setShowWelcomePopup(true)
+    }
+  }
+
+  // Handle page notification
+  const handleShowPageNotification = (message: string) => {
+    setPageNotificationMessage(message)
+    setShowPageNotification(true)
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+      setShowPageNotification(false)
+    }, 3000)
   }
 
   const saveCartToLocalStorage = (newCart: CartItem[]) => {
@@ -1737,7 +1797,16 @@ export default function Home() {
                   onClick={handleShowNotification}
                 >
                   <Megaphone className="w-5 h-5 mr-3 text-orange-600" />
-                  Tampilkan Notifikasi
+                  Tampilkan Notifikasi Promo
+                  <ChevronRight className="w-5 h-5 ml-auto text-gray-400" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start border-orange-300 hover:bg-orange-50"
+                  onClick={handleShowWelcomePopup}
+                >
+                  <User className="w-5 h-5 mr-3 text-orange-600" />
+                  Tampilkan Welcome Popup
                   <ChevronRight className="w-5 h-5 ml-auto text-gray-400" />
                 </Button>
               </div>
@@ -2675,6 +2744,101 @@ export default function Home() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Welcome Popup Dialog */}
+      <Dialog open={showWelcomePopup} onOpenChange={setShowWelcomePopup}>
+        <DialogContent className="max-w-md" key="welcome-popup-modal">
+          <div className="space-y-4">
+            {/* Animated Welcome Icon */}
+            <div className="flex items-center justify-center py-4">
+              <div className="relative">
+                <div className="w-24 h-24 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                  <User className="w-12 h-12 text-white" />
+                </div>
+                {/* Decorative circles */}
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full opacity-60 animate-pulse"></div>
+                <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-orange-300 rounded-full opacity-60 animate-pulse delay-100"></div>
+              </div>
+            </div>
+
+            {/* Welcome Message */}
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-400 bg-clip-text text-transparent">
+                Selamat Datang Kembali, {currentMember?.name?.split(' ')[0] || 'Member'}!
+              </h2>
+              <p className="text-gray-600">
+                Kami senang melihat Anda kembali. Nikmati promo dan penawaran spesial hari ini!
+              </p>
+            </div>
+
+            {/* Member Info Card */}
+            <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
+                    <Award className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Poin Anda</p>
+                    <p className="text-lg font-bold text-orange-600">{memberPoints.toLocaleString()} Poin</p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-orange-300 text-orange-600 hover:bg-orange-50"
+                  onClick={() => {
+                    handleCloseWelcomePopup()
+                    setActiveTab('tukar-point')
+                  }}
+                >
+                  Tukar Poin
+                </Button>
+              </div>
+              {promos.length > 0 && (
+                <div className="pt-3 border-t border-orange-200">
+                  <p className="text-sm text-gray-600 mb-2">🎉 Promo Aktif Hari Ini:</p>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-orange-500 text-white">{promos[0].code}</Badge>
+                    <span className="text-sm font-semibold text-orange-700">{promos[0].name}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1 border-gray-300 hover:bg-gray-50"
+                onClick={handleCloseWelcomePopup}
+              >
+                Tutup
+              </Button>
+              <Button
+                className="flex-1 bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
+                onClick={() => {
+                  handleCloseWelcomePopup()
+                  setActiveTab('menu')
+                }}
+              >
+                <Flame className="w-4 h-4 mr-2" />
+                Pesan Sekarang
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Page Notification (Toast) */}
+      {showPageNotification && (
+        <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top-2">
+          <div className="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3">
+            <Megaphone className="w-5 h-5 animate-pulse" />
+            <span className="font-medium">{pageNotificationMessage}</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
