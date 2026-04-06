@@ -802,7 +802,7 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          {currentMember ? (
+          {currentMember && (
             <Card className="border-orange-200">
               <CardContent className="p-4">
                 <div className="space-y-2">
