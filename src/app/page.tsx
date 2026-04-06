@@ -77,6 +77,12 @@ export default function Home() {
   const [orders, setOrders] = useState<Order[]>([])
   const [memberPoints, setMemberPoints] = useState(0)
 
+  // Member state
+  const [currentMember, setCurrentMember] = useState<any>(null)
+  const [showMemberLogin, setShowMemberLogin] = useState(false)
+  const [memberPhone, setMemberPhone] = useState('')
+  const [memberLoading, setMemberLoading] = useState(false)
+
   // Fetch products and categories
   useEffect(() => {
     fetchProducts()
@@ -218,6 +224,60 @@ export default function Home() {
     { id: 'tukar-point' as const, label: 'Tukar Point', icon: Gift },
     { id: 'profile' as const, label: 'Profile', icon: User },
   ]
+
+  // Fetch member by phone
+  const handleMemberLogin = async () => {
+    if (!memberPhone || memberPhone.length < 10) {
+      alert('Masukkan nomor telepon yang valid!')
+      return
+    }
+
+    setMemberLoading(true)
+    try {
+      const response = await fetch(`/api/members/lookup?phone=${memberPhone}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.found && data.member) {
+          setCurrentMember(data.member)
+          setMemberPoints(data.member.points)
+          setShowMemberLogin(false)
+          setMemberPhone('')
+          alert(`Selamat datang, ${data.member.name}!`)
+        } else {
+          alert('Member tidak ditemukan. Silakan daftar di kasir.')
+        }
+      } else {
+        alert('Terjadi kesalahan. Silakan coba lagi.')
+      }
+    } catch (error) {
+      console.error('Error looking up member:', error)
+      alert('Terjadi kesalahan. Silakan coba lagi.')
+    } finally {
+      setMemberLoading(false)
+    }
+  }
+
+  // Generate QR code pattern
+  const generateQRPattern = (phone: string) => {
+    // Simple visual pattern based on phone number
+    const gridSize = 25
+    const cells: string[] = []
+    const phoneHash = phone.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+    
+    for (let i = 0; i < gridSize * gridSize; i++) {
+      const isBlack = ((i * 17) + phoneHash) % 3 === 0 || 
+                      ((i % gridSize) === 0 || (i % gridSize) === gridSize - 1 || 
+                       Math.floor(i / gridSize) === 0 || Math.floor(i / gridSize) === gridSize - 1)
+      cells.push(isBlack ? '#000' : '#fff')
+    }
+    return cells
+  }
+
+  // Handle member logout
+  const handleMemberLogout = () => {
+    setCurrentMember(null)
+    setMemberPoints(0)
+  }
 
   // Beranda Section Component
   const BerandaSection = () => (
@@ -463,18 +523,84 @@ export default function Home() {
       </header>
       <main className="py-8 px-4">
         <div className="max-w-md mx-auto">
-          <Card className="border-orange-200">
-            <CardContent className="p-8 text-center">
-              <QrCode className="w-32 h-32 mx-auto mb-6 text-orange-500" />
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Member Points</h2>
-              <p className="text-4xl font-bold text-orange-600 mb-4">{memberPoints}</p>
-              <p className="text-gray-600 mb-6">Point tersedia</p>
-              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                <p className="text-sm text-gray-600">Rp10.000 = 1 Point</p>
-                <p className="text-sm text-gray-600 mt-2">Tukarkan point di menu Tukar Point</p>
-              </div>
-            </CardContent>
-          </Card>
+          {!currentMember ? (
+            <Card className="border-orange-200">
+              <CardContent className="p-8 text-center">
+                <User className="w-24 h-24 mx-auto mb-6 text-orange-300" />
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Belum Login</h2>
+                <p className="text-gray-600 mb-6">Login sebagai member untuk melihat QR code Anda</p>
+                <Button
+                  onClick={() => setShowMemberLogin(true)}
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+                >
+                  Login Member
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {/* Member Info Card */}
+              <Card className="border-orange-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
+                      <User className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-bold text-gray-800">{currentMember.name}</h2>
+                      <p className="text-sm text-gray-500">{currentMember.phone}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleMemberLogout}
+                      className="border-red-300 text-red-600 hover:bg-red-50"
+                    >
+                      Logout
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* QR Code Card */}
+              <Card className="border-orange-200">
+                <CardContent className="p-8 text-center">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">QR Code Member</h3>
+                  <div className="bg-white p-4 rounded-lg border-4 border-orange-200 inline-block mb-4">
+                    <svg width={200} height={200} viewBox="0 0 25 25" className="w-48 h-48">
+                      {generateQRPattern(currentMember.phone).map((color, index) => (
+                        <rect
+                          key={index}
+                          x={index % 25}
+                          y={Math.floor(index / 25)}
+                          width={1}
+                          height={1}
+                          fill={color}
+                        />
+                      ))}
+                    </svg>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">Scan QR code ini saat melakukan transaksi</p>
+                  <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <p className="text-xs text-gray-600 font-mono">ID: {currentMember.phone}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Points Card */}
+              <Card className="border-orange-200">
+                <CardContent className="p-6 text-center">
+                  <Award className="w-12 h-12 mx-auto mb-4 text-orange-500" />
+                  <h2 className="text-3xl font-bold text-orange-600 mb-2">{memberPoints}</h2>
+                  <p className="text-gray-600">Point Tersedia</p>
+                  <div className="mt-4 bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <p className="text-sm text-gray-600">Rp1.000 = 1 Point</p>
+                    <p className="text-sm text-gray-600 mt-2">Tukarkan point di menu Tukar Point</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </main>
     </div>
@@ -625,9 +751,17 @@ export default function Home() {
   const ProfileSection = () => (
     <div className="pb-24 bg-orange-50 min-h-screen">
       <header className="bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300 text-white py-4 px-4 shadow-lg">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-xl font-bold">Profile</h1>
-          <p className="text-orange-100 text-xs">Kelola akun Anda</p>
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">Profile</h1>
+            <p className="text-orange-100 text-xs">Kelola akun Anda</p>
+          </div>
+          {currentMember && (
+            <Badge className="bg-white/20 text-white">
+              <Award className="w-4 h-4 mr-1" />
+              {memberPoints} Point
+            </Badge>
+          )}
         </div>
       </header>
       <main className="py-4 px-4">
@@ -637,45 +771,91 @@ export default function Home() {
               <div className="w-24 h-24 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <User className="w-12 h-12 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-1">Guest User</h2>
-              <p className="text-gray-500">Belum login</p>
+              {currentMember ? (
+                <>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-1">{currentMember.name}</h2>
+                  <p className="text-gray-500 mb-2">{currentMember.phone}</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <Badge className="bg-orange-500 text-white">
+                      <Award className="w-3 h-3 mr-1" />
+                      {memberPoints} Point
+                    </Badge>
+                    <Badge className="bg-green-500 text-white">
+                      Active Member
+                    </Badge>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-1">Guest User</h2>
+                  <p className="text-gray-500 mb-4">Belum login</p>
+                  <Button
+                    onClick={() => setShowMemberLogin(true)}
+                    className="bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+                  >
+                    Login Member
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="border-orange-200">
-            <CardContent className="p-4">
-              <div className="space-y-2">
-                <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
-                  <User className="w-5 h-5 mr-3 text-orange-600" />
-                  Edit Profile
+          {currentMember ? (
+            <Card className="border-orange-200">
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
+                    <User className="w-5 h-5 mr-3 text-orange-600" />
+                    Edit Profile
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
+                    <MapPin className="w-5 h-5 mr-3 text-orange-600" />
+                    Alamat Pengiriman
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
+                    <Gift className="w-5 h-5 mr-3 text-orange-600" />
+                    Riwayat Point
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
+                    <Phone className="w-5 h-5 mr-3 text-orange-600" />
+                    Pengaturan Notifikasi
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
+                    <Store className="w-5 h-5 mr-3 text-orange-600" />
+                    Hubungi Kami
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-orange-200">
+              <CardContent className="p-6 text-center">
+                <Award className="w-16 h-16 mx-auto mb-4 text-orange-300" />
+                <h3 className="font-bold text-gray-800 mb-2">Login untuk Akses Fitur</h3>
+                <p className="text-gray-600 mb-4">Login sebagai member untuk mengakses fitur profile lengkap</p>
+                <Button
+                  onClick={() => setShowMemberLogin(true)}
+                  className="bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+                >
+                  Login Member
                 </Button>
-                <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
-                  <MapPin className="w-5 h-5 mr-3 text-orange-600" />
-                  Alamat Pengiriman
-                </Button>
-                <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
-                  <Gift className="w-5 h-5 mr-3 text-orange-600" />
-                  Riwayat Point
-                </Button>
-                <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
-                  <Phone className="w-5 h-5 mr-3 text-orange-600" />
-                  Pengaturan Notifikasi
-                </Button>
-                <Button variant="outline" className="w-full justify-start border-orange-300 hover:bg-orange-50">
-                  <Store className="w-5 h-5 mr-3 text-orange-600" />
-                  Hubungi Kami
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
-          <Card className="border-orange-200 mt-4">
-            <CardContent className="p-4">
-              <Button variant="outline" className="w-full border-red-300 text-red-600 hover:bg-red-50">
-                Keluar
-              </Button>
-            </CardContent>
-          </Card>
+          {currentMember && (
+            <Card className="border-orange-200 mt-4">
+              <CardContent className="p-4">
+                <Button
+                  variant="outline"
+                  className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                  onClick={handleMemberLogout}
+                >
+                  Keluar
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </main>
     </div>
@@ -875,18 +1055,60 @@ export default function Home() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex flex-col items-center justify-center py-2 px-3 min-w-[60px] transition-colors ${
+                  className={`flex flex-col items-center justify-center py-2 px-3 min-w-[60px] transition-colors relative ${
                     isActive ? 'text-orange-600' : 'text-gray-500 hover:text-orange-500'
                   }`}
                 >
                   <Icon className={`w-5 h-5 ${isActive ? 'text-orange-600' : 'text-gray-500'}`} />
                   <span className="text-xs mt-1 font-medium">{item.label}</span>
+                  {/* Show points badge on Tukar Point */}
+                  {item.id === 'tukar-point' && memberPoints > 0 && (
+                    <Badge className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center">
+                      {memberPoints}
+                    </Badge>
+                  )}
                 </button>
-              )
-            })}
+              )}
+            )}
           </div>
         </div>
       </nav>
+
+      {/* Member Login Dialog */}
+      <Dialog open={showMemberLogin} onOpenChange={setShowMemberLogin}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-orange-600" />
+              Login Member
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="memberPhone">Nomor Telepon</Label>
+              <Input
+                id="memberPhone"
+                type="tel"
+                value={memberPhone}
+                onChange={(e) => setMemberPhone(e.target.value)}
+                placeholder="08xxxxxxxxxx"
+                className="border-orange-200 focus:border-orange-500"
+                onKeyPress={(e) => e.key === 'Enter' && handleMemberLogin()}
+              />
+            </div>
+            <Button
+              onClick={handleMemberLogin}
+              disabled={memberLoading}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
+            >
+              {memberLoading ? 'Memproses...' : 'Login'}
+            </Button>
+            <p className="text-xs text-center text-gray-500">
+              Masukkan nomor telepon yang terdaftar sebagai member
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialogs */}
       <CartDialog />

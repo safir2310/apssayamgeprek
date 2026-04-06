@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ShoppingCart, Package, Search, Plus, Minus, X, Clock, CheckCircle, Flame, User, Phone, MapPin, Printer } from 'lucide-react'
+import { ShoppingCart, Package, Search, Plus, Minus, X, Clock, CheckCircle, Flame, User, Phone, MapPin, Printer, QrCode, Star } from 'lucide-react'
 
 interface Product {
   id: string
@@ -26,6 +26,18 @@ interface Product {
 interface CartItem {
   product: Product
   quantity: number
+}
+
+interface Member {
+  id: string
+  name: string
+  phone: string
+  email: string | null
+  address: string | null
+  points: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 interface Order {
@@ -51,6 +63,30 @@ interface Order {
   }[]
 }
 
+interface Member {
+  id: string
+  name: string
+  phone: string
+  email: string | null
+  address: string | null
+  points: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+interface Member {
+  id: string
+  name: string
+  phone: string
+  email: string | null
+  address: string | null
+  points: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 export default function UserDashboard() {
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<string[]>([])
@@ -62,6 +98,8 @@ export default function UserDashboard() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<Order | null>(null)
+  const [member, setMember] = useState<Member | null>(null)
+  const [showMemberDialog, setShowMemberDialog] = useState(false)
 
   // Order Form
   const [orderForm, setOrderForm] = useState({
@@ -75,7 +113,16 @@ export default function UserDashboard() {
   useEffect(() => {
     fetchProducts()
     fetchOrders()
-  }, [])
+  }, [orderForm.customerPhone])
+
+  // Fetch member info when phone changes
+  useEffect(() => {
+    if (orderForm.customerPhone && orderForm.customerPhone.length >= 10) {
+      fetchMemberInfo(orderForm.customerPhone)
+    } else {
+      setMember(null)
+    }
+  }, [orderForm.customerPhone])
 
   const fetchProducts = async () => {
     try {
@@ -102,6 +149,81 @@ export default function UserDashboard() {
       }
     } catch (error) {
       console.error('Error fetching orders:', error)
+    }
+  }
+
+  const fetchMemberByPhone = async (phone: string) => {
+    if (!phone) {
+      alert('Masukkan nomor telepon!')
+      return
+    }
+
+    setSearchingMember(true)
+    try {
+      const response = await fetch(`/api/members/lookup?phone=${encodeURIComponent(phone)}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.data) {
+          setMember(data.data)
+          setMemberPhoneInput('')
+          alert('Member ditemukan!')
+        } else {
+          alert('Member tidak ditemukan dengan nomor telepon ini!')
+        }
+      } else {
+        alert('Gagal mencari member!')
+      }
+    } catch (error) {
+      console.error('Error fetching member:', error)
+      alert('Terjadi kesalahan saat mencari member!')
+    } finally {
+      setSearchingMember(false)
+    }
+  }
+
+  // Generate simple barcode pattern based on phone number
+  const generateBarcodePattern = (phone: string) => {
+    const bars = phone.split('').map((char, index) => {
+      const charCode = char.charCodeAt(0)
+      const barWidth = (charCode % 5) + 2
+      const isBlack = index % 2 === 0
+      return {
+        width: barWidth,
+        color: isBlack ? '#000' : '#fff'
+      }
+    })
+    return bars
+  }
+
+  const fetchMemberInfo = async (phone: string) => {
+    try {
+      const response = await fetch(`/api/members/lookup?phone=${phone}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          setMember(data.data)
+        } else {
+          setMember(null)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching member info:', error)
+      setMember(null)
+    }
+  }
+
+  const fetchMember = async (phone: string) => {
+    if (!phone) return
+    try {
+      const response = await fetch(`/api/members/lookup?phone=${encodeURIComponent(phone)}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.data) {
+          setMember(data.data)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching member:', error)
     }
   }
 
@@ -252,6 +374,48 @@ export default function UserDashboard() {
     }, 100)
   }
 
+  // Generate QR code pattern based on phone number
+  const generateQRPattern = (phone: string) => {
+    const size = 200
+    const modules = 25
+    const cellSize = size / modules
+    
+    // Create a simple pattern based on phone number
+    const pattern: boolean[][] = []
+    for (let i = 0; i < modules; i++) {
+      pattern[i] = []
+      for (let j = 0; j < modules; j++) {
+        // Create deterministic pattern from phone
+        const charIndex = (i * modules + j) % phone.length
+        const charCode = phone.charCodeAt(charIndex)
+        const isBlack = (charCode + i + j) % 2 === 0
+        
+        // Add positioning patterns (corners)
+        const isPositionPattern = 
+          (i < 7 && j < 7) || 
+          (i < 7 && j >= modules - 7) || 
+          (i >= modules - 7 && j < 7)
+        
+        pattern[i][j] = isPositionPattern ? true : isBlack
+      }
+    }
+    return { pattern, modules, cellSize }
+  }
+
+  // Generate simple barcode pattern based on phone number
+  const generateBarcodePattern = (phone: string) => {
+    const bars = phone.split('').map((char, index) => {
+      const charCode = char.charCodeAt(0)
+      const barWidth = (charCode % 5) + 2
+      const isBlack = index % 2 === 0
+      return {
+        width: barWidth,
+        color: isBlack ? '#000' : '#fff'
+      }
+    })
+    return bars
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center">
@@ -368,26 +532,49 @@ export default function UserDashboard() {
               <p className="text-xs text-gray-500">Order Online</p>
             </div>
           </div>
-          <Button
-            onClick={() => setShowCartDialog(true)}
-            className="relative bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-          >
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            Keranjang
-            {cart.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {cart.reduce((count, item) => count + item.quantity, 0)}
-              </span>
+          <div className="flex items-center gap-2">
+            {member && (
+              <Button
+                onClick={() => setShowMemberDialog(true)}
+                variant="outline"
+                className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-white border-0 hover:from-yellow-500 hover:to-yellow-600"
+              >
+                <Star className="w-4 h-4 mr-2" />
+                {member.points} Poin
+              </Button>
             )}
-          </Button>
+            <Button
+              onClick={() => setShowCartDialog(true)}
+              className="relative bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Keranjang
+              {cart.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {cart.reduce((count, item) => count + item.quantity, 0)}
+                </span>
+              )}
+            </Button>
+          </div>
+          {member && (
+            <Button
+              onClick={() => setShowMemberDialog(true)}
+              variant="outline"
+              className="border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+            >
+              <Star className="w-4 h-4 mr-2" />
+              {member.points} Poin
+            </Button>
+          )}
         </div>
       </header>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-4">
         <Tabs defaultValue="menu" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="menu">Menu</TabsTrigger>
+            <TabsTrigger value="member">Member</TabsTrigger>
             <TabsTrigger value="orders">Pesanan Saya</TabsTrigger>
           </TabsList>
 
@@ -478,6 +665,139 @@ export default function UserDashboard() {
             )}
           </TabsContent>
 
+          {/* Member Tab */}
+          <TabsContent value="member" className="space-y-6">
+            <Card className="border-orange-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5 text-orange-600" />
+                  Member Card
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {member ? (
+                  <div className="space-y-6">
+                    {/* Member Info Card */}
+                    <div className="bg-gradient-to-br from-orange-50 to-yellow-50 p-6 rounded-xl border-2 border-orange-200">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-full flex items-center justify-center">
+                          <User className="w-8 h-8 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-2xl font-bold text-gray-800">{member.name}</h3>
+                          <p className="text-gray-600">{member.phone}</p>
+                          {member.email && (
+                            <p className="text-sm text-gray-500">{member.email}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Points Display */}
+                      <div className="bg-white rounded-lg p-4 shadow-md">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Star className="w-6 h-6 text-yellow-500" />
+                            <span className="text-lg font-semibold text-gray-700">Poin Anda</span>
+                          </div>
+                          <div className="text-3xl font-bold text-orange-600">
+                            {member.points}
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-2">
+                          1 poin = Rp 1.000 pembelian
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Barcode Section */}
+                    <div className="bg-white p-6 rounded-xl border-2 border-gray-200">
+                      <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <Scan className="w-5 h-5 text-purple-600" />
+                        Barcode Member
+                      </h4>
+                      <div className="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300">
+                        <div className="text-center mb-4">
+                          <p className="text-xs text-gray-500 mb-4">SCAN BARCODE INI</p>
+                          <div className="flex justify-center">
+                            {(() => {
+                              const pattern = generateBarcodePattern(member.phone)
+                              const totalWidth = pattern.reduce((sum, bar) => sum + bar.width, 0)
+                              return (
+                                <svg width={totalWidth} height={80} className="border-2 border-gray-800 rounded">
+                                  {pattern.map((bar, index) => (
+                                    <rect
+                                      key={index}
+                                      x={pattern.slice(0, index).reduce((sum, b) => sum + b.width, 0)}
+                                      y={0}
+                                      width={bar.width}
+                                      height={80}
+                                      fill={bar.color}
+                                    />
+                                  ))}
+                                </svg>
+                              )
+                            })()}
+                          </div>
+                        </div>
+                        <div className="text-center mt-6">
+                          <p className="text-lg font-mono font-bold text-gray-800 bg-gray-100 py-3 px-6 rounded-lg">
+                            {member.phone}
+                          </p>
+                          <p className="text-sm text-gray-500 mt-2">
+                            Gunakan nomor telepon untuk scan di kasir
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-800">
+                          <strong>Cara Menggunakan:</strong> Tampilkan barcode ini kepada kasir saat melakukan pembelian untuk mengumpulkan poin.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Points Info */}
+                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200">
+                      <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <Gift className="w-5 h-5 text-yellow-600" />
+                        Keuntungan Member
+                      </h4>
+                      <ul className="space-y-2 text-sm text-gray-700">
+                        <li className="flex items-start gap-2">
+                          <Star className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <span>Dapatkan <strong>1 poin</strong> untuk setiap Rp 1.000 pembelian</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Gift className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                          <span>Poin otomatis masuk setelah pesanan selesai</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                          <span>Cek poin Anda kapan saja di menu Member</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Belum Terdaftar sebagai Member</h3>
+                    <p className="text-gray-600 mb-6">
+                      Daftar sebagai member untuk mendapatkan poin dan keuntungan eksklusif!
+                    </p>
+                    <div className="bg-orange-50 p-6 rounded-lg max-w-md mx-auto">
+                      <p className="text-sm text-orange-800 mb-2">
+                        <strong>Cara Mendaftar:</strong>
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Lakukan pemesanan dengan mengisi nomor telepon Anda. Anda akan otomatis terdaftar sebagai member!
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-4">
             <Card>
@@ -550,6 +870,172 @@ export default function UserDashboard() {
                 </ScrollArea>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Member Tab */}
+          <TabsContent value="member" className="space-y-4">
+            <Card className="border-orange-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5 text-orange-600" />
+                  Cari Member
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Masukkan nomor telepon..."
+                      value={memberPhoneInput}
+                      onChange={(e) => setMemberPhoneInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && fetchMemberByPhone(memberPhoneInput)}
+                      className="pl-10 border-orange-200 focus:border-orange-500"
+                    />
+                  </div>
+                  <Button
+                    onClick={() => fetchMemberByPhone(memberPhoneInput)}
+                    disabled={searchingMember}
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                  >
+                    {searchingMember ? 'Mencari...' : 'Cari'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {member ? (
+              <Card className="border-orange-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="w-5 h-5 text-orange-600" />
+                    Informasi Member
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Member Info Card */}
+                  <div className="bg-gradient-to-br from-purple-50 to-orange-50 p-6 rounded-lg">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-orange-500 rounded-full flex items-center justify-center">
+                        <User className="w-8 h-8 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-800">{member.name}</h3>
+                        <p className="text-gray-600">{member.phone}</p>
+                        {member.email && (
+                          <p className="text-sm text-gray-500">{member.email}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center bg-white p-4 rounded-lg shadow-sm">
+                      <div className="text-center">
+                        <p className="text-sm text-gray-600 mb-1">Poin Kamu</p>
+                        <div className="flex items-center justify-center gap-2">
+                          <Star className="w-8 h-8 text-yellow-500" />
+                          <span className="text-4xl font-bold text-orange-600">{member.points}</span>
+                          <span className="text-xl text-gray-600">poin</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          1 poin = Rp1.000
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* QR/Barcode Section */}
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <Scan className="w-5 h-5 text-purple-600" />
+                      QR Code Member
+                    </h4>
+                    <div className="bg-white p-6 rounded-lg border-2 border-gray-200 text-center">
+                      <p className="text-xs text-gray-500 mb-3">SCAN QR CODE INI</p>
+                      <div className="flex justify-center mb-4">
+                        {(() => {
+                          const pattern = generateBarcodePattern(member.phone)
+                          const totalWidth = pattern.reduce((sum, bar) => sum + bar.width, 0)
+                          return (
+                            <svg width={totalWidth} height={80} className="border border-gray-300 rounded">
+                              {pattern.map((bar, index) => (
+                                <rect
+                                  key={index}
+                                  x={pattern.slice(0, index).reduce((sum, b) => sum + b.width, 0)}
+                                  y={0}
+                                  width={bar.width}
+                                  height={80}
+                                  fill={bar.color}
+                                />
+                              ))}
+                            </svg>
+                          )
+                        })()}
+                      </div>
+                      <div className="bg-gray-100 py-3 px-4 rounded inline-block">
+                        <p className="text-lg font-mono font-bold text-gray-800">{member.phone}</p>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-3">
+                        Gunakan QR code ini untuk mendapatkan poin saat berbelanja
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Member Details */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-gray-800 mb-3">Detail Member</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Nama:</span>
+                        <span className="font-medium">{member.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Telepon:</span>
+                        <span className="font-medium">{member.phone}</span>
+                      </div>
+                      {member.email && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Email:</span>
+                          <span className="font-medium">{member.email}</span>
+                        </div>
+                      )}
+                      {member.address && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Alamat:</span>
+                          <span className="font-medium text-right max-w-[60%]">{member.address}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Terdaftar sejak:</span>
+                        <span className="font-medium">
+                          {new Date(member.createdAt).toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={() => setMember(null)}
+                    variant="outline"
+                    className="w-full border-gray-300 hover:bg-gray-50"
+                  >
+                    Keluar dari Akun Member
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-gray-200">
+                <CardContent className="p-12 text-center">
+                  <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">Belum Login Member</h3>
+                  <p className="text-gray-500 mb-4">Masukkan nomor telepon untuk melihat QR code dan poin Anda</p>
+                  <Award className="w-12 h-12 text-orange-200 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400">Dapatkan poin dari setiap pembelian!</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
@@ -686,7 +1172,10 @@ export default function UserDashboard() {
                   id="customerPhone"
                   type="tel"
                   value={orderForm.customerPhone}
-                  onChange={(e) => setOrderForm({ ...orderForm, customerPhone: e.target.value })}
+                  onChange={(e) => {
+                    setOrderForm({ ...orderForm, customerPhone: e.target.value })
+                    fetchMember(e.target.value)
+                  }}
                   placeholder="081234567890"
                   required
                   className="border-orange-200 focus:border-orange-500"
@@ -737,6 +1226,73 @@ export default function UserDashboard() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Member Dialog */}
+      <Dialog open={showMemberDialog} onOpenChange={setShowMemberDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Star className="w-5 h-5 text-yellow-600" />
+              Member QR Code
+            </DialogTitle>
+          </DialogHeader>
+          {member && (
+            <div className="space-y-6">
+              {/* Member Info */}
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-full flex items-center justify-center">
+                    <User className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800">{member.name}</h3>
+                    <p className="text-sm text-gray-600">{member.phone}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Poin:</span>
+                  <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white">
+                    <Star className="w-3 h-3 mr-1" />
+                    {member.points}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Barcode */}
+              <div className="bg-white p-6 rounded-lg border-2 border-gray-200">
+                <div className="text-center mb-4">
+                  <p className="text-xs text-gray-500 mb-4">SCAN BARCODE INI</p>
+                  <div className="flex justify-center">
+                    {(() => {
+                      const pattern = generateBarcodePattern(member.phone)
+                      const totalWidth = pattern.reduce((sum, bar) => sum + bar.width, 0)
+                      return (
+                        <svg width={totalWidth} height={80} className="border-2 border-gray-800 rounded">
+                          {pattern.map((bar, index) => (
+                            <rect
+                              key={index}
+                              x={pattern.slice(0, index).reduce((sum, b) => sum + b.width, 0)}
+                              y={0}
+                              width={bar.width}
+                              height={80}
+                              fill={bar.color}
+                            />
+                          ))}
+                        </svg>
+                      )
+                    })()}
+                  </div>
+                </div>
+                <div className="text-center mt-4">
+                  <p className="text-lg font-mono font-bold text-gray-800 bg-gray-100 py-3 px-6 rounded-lg">
+                    {member.phone}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
