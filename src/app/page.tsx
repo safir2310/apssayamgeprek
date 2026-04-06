@@ -2309,7 +2309,15 @@ export default function Home() {
                 <span>Rp{getCartTotalWithDiscount().toLocaleString('id-ID')}</span>
               </div>
               <Button
-                onClick={() => { setShowCheckout(true); setShowCart(false); }}
+                onClick={() => {
+                  // Check if user is logged in before showing checkout
+                  if (!currentMember) {
+                    router.push('/login')
+                    return
+                  }
+                  setShowCheckout(true)
+                  setShowCart(false)
+                }}
                 className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
               >
                 Lanjut ke Pembayaran

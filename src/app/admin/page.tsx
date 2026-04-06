@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Link from 'next/link'
-import { Flame, TrendingUp, ShoppingBag, Package, Users, BarChart3, LayoutDashboard, Settings, Menu, X, DollarSign, Calendar, Clock, ArrowUpRight, ArrowDownRight, Store, Printer, FileText, LogOut, Home, CreditCard, Gift } from 'lucide-react'
+import { Flame, TrendingUp, ShoppingBag, Package, Users, BarChart3, LayoutDashboard, Settings, Menu, X, DollarSign, Calendar, Clock, ArrowUpRight, ArrowDownRight, Store, Printer, FileText, LogOut, Home, CreditCard, Gift, Cpu } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 // Store Information
@@ -223,7 +223,8 @@ export default function AdminDashboard() {
     { id: 'void-logs', label: 'Void Logs', icon: LogOut, href: '/admin/void-logs' },
     { id: 'cashiers', label: 'Cashier Management', icon: Users, href: '/admin/cashiers' },
     { id: 'shifts', label: 'Shift Reports', icon: Calendar, href: '/admin/shifts' },
-    { id: 'settings', label: 'Settings', icon: Settings, href: '/admin/settings' }
+    { id: 'settings', label: 'Settings', icon: Settings, href: '/admin/settings' },
+    { id: 'development', label: 'Pengembangan', icon: Cpu, href: '/admin/development' }
   ]
 
   if (loading) {
