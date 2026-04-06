@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, ShoppingCart, Flame, Gift, X, Minus, Plus } from 'lucide-react'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { ArrowLeft, ShoppingCart, Flame, Gift, X, Minus, Plus, CreditCard, QrCode, Smartphone, Wallet, Landmark, DollarSign } from 'lucide-react'
 
 interface Product {
   id: string
@@ -26,8 +27,18 @@ interface CartItem {
   quantity: number
 }
 
+interface PaymentMethod {
+  code: string
+  name: string
+  icon: string | null
+}
+
 // Default address for checkout
 const DEFAULT_ADDRESS = 'Jl. Medan – Banda Aceh, Simpang Camat, Gampong Tijue, 24151'
+
+// Form data key for localStorage
+const FORM_DATA_KEY = 'checkout_form_data'
+const PAYMENT_METHOD_KEY = 'checkout_payment_method'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -35,6 +46,7 @@ export default function CheckoutPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
 
   // Checkout form state
   const [checkoutForm, setCheckoutForm] = useState({
@@ -43,6 +55,9 @@ export default function CheckoutPage() {
     address: DEFAULT_ADDRESS,
     notes: ''
   })
+
+  // Payment method state
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('CASH')
 
   // Redeem code state
   const [redeemCode, setRedeemCode] = useState('')
@@ -53,6 +68,27 @@ export default function CheckoutPage() {
   useEffect(() => {
     const loadProductsAndCart = async () => {
       try {
+        // Load saved form data from localStorage
+        const savedFormData = localStorage.getItem(FORM_DATA_KEY)
+        if (savedFormData) {
+          try {
+            const parsedData = JSON.parse(savedFormData)
+            setCheckoutForm(prev => ({
+              ...prev,
+              ...parsedData
+            }))
+          } catch (error) {
+            console.error('Error parsing saved form data:', error)
+          }
+        }
+
+        // Load saved payment method from localStorage
+        const savedPaymentMethod = localStorage.getItem(PAYMENT_METHOD_KEY)
+        if (savedPaymentMethod) {
+          setSelectedPaymentMethod(savedPaymentMethod)
+        }
+
+        // Fetch products
         const response = await fetch('/api/products')
         if (response.ok) {
           const data = await response.json()
@@ -84,6 +120,17 @@ export default function CheckoutPage() {
             }
           }
         }
+
+        // Fetch payment methods
+        try {
+          const paymentResponse = await fetch('/api/payment-methods')
+          if (paymentResponse.ok) {
+            const paymentData = await paymentResponse.json()
+            setPaymentMethods(paymentData)
+          }
+        } catch (error) {
+          console.error('Error fetching payment methods:', error)
+        }
       } catch (error) {
         console.error('Error fetching products:', error)
       } finally {
@@ -93,6 +140,19 @@ export default function CheckoutPage() {
 
     loadProductsAndCart()
   }, [])
+
+  // Save form data to localStorage whenever it changes (debounced to avoid excessive writes)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem(FORM_DATA_KEY, JSON.stringify(checkoutForm))
+    }, 500)
+    return () => clearTimeout(timeoutId)
+  }, [checkoutForm])
+
+  // Save payment method to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(PAYMENT_METHOD_KEY, selectedPaymentMethod)
+  }, [selectedPaymentMethod])
 
   const saveCartToLocalStorage = (newCart: CartItem[]) => {
     const cartData = newCart.map(item => ({
@@ -191,6 +251,24 @@ export default function CheckoutPage() {
     return total
   }
 
+  const getPaymentIcon = (iconName: string) => {
+    const icons: Record<string, any> = {
+      DollarSign,
+      CreditCard,
+      QrCode,
+      Smartphone,
+      Wallet,
+      Landmark
+    }
+    const Icon = icons[iconName] || DollarSign
+    return <Icon className="w-5 h-5" />
+  }
+
+  const clearCheckoutData = () => {
+    localStorage.removeItem(FORM_DATA_KEY)
+    localStorage.removeItem(PAYMENT_METHOD_KEY)
+  }
+
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -235,7 +313,7 @@ export default function CheckoutPage() {
       totalAmount: finalTotal,
       discount: discount,
       redeemCode: appliedDiscount ? appliedDiscount.code : null,
-      paymentMethod: 'CASH',
+      paymentMethod: selectedPaymentMethod,
       items: cart.map(item => ({
         productId: item.product.id,
         quantity: item.quantity,
@@ -288,8 +366,9 @@ export default function CheckoutPage() {
           }
         }
 
-        // Clear cart from localStorage
+        // Clear cart and checkout data from localStorage
         localStorage.removeItem('cart')
+        clearCheckoutData()
 
         // Show success message before redirect
         alert(`Pesanan berhasil dibuat! Order #${result.orderNumber}`)
@@ -523,6 +602,57 @@ export default function CheckoutPage() {
                             -Rp{appliedDiscount.discountAmount.toLocaleString('id-ID')}
                           </span>
                         </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Payment Method Section */}
+                <div>
+                  <Label>Metode Pembayaran *</Label>
+                  <div className="mt-3 space-y-3">
+                    {paymentMethods.length > 0 ? (
+                      <RadioGroup value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+                        {paymentMethods
+                          .filter(pm => pm.isActive !== false)
+                          .sort((a, b) => {
+                            const orderA = paymentMethods.findIndex(pm => pm.code === a.code)
+                            const orderB = paymentMethods.findIndex(pm => pm.code === b.code)
+                            return orderA - orderB
+                          })
+                          .map((method) => (
+                            <div
+                              key={method.code}
+                              className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                selectedPaymentMethod === method.code
+                                  ? 'border-orange-500 bg-orange-50'
+                                  : 'border-gray-200 hover:border-orange-300'
+                              }`}
+                              onClick={() => setSelectedPaymentMethod(method.code)}
+                            >
+                              <RadioGroupItem value={method.code} className="sr-only" />
+                              <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center text-orange-600 mr-3">
+                                {method.icon ? getPaymentIcon(method.icon) : <CreditCard className="w-5 h-5" />}
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-semibold text-gray-800">{method.name}</p>
+                                <p className="text-xs text-gray-500">{method.code}</p>
+                              </div>
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                selectedPaymentMethod === method.code
+                                  ? 'border-orange-500 bg-orange-500'
+                                  : 'border-gray-300'
+                              }`}>
+                                {selectedPaymentMethod === method.code && (
+                                  <div className="w-2.5 h-2.5 bg-white rounded-full" />
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </RadioGroup>
+                    ) : (
+                      <div className="text-center py-4 text-gray-500">
+                        <p>Memuat metode pembayaran...</p>
                       </div>
                     )}
                   </div>
