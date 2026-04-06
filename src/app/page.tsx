@@ -211,39 +211,83 @@ export default function Home() {
     }
   }, [activeTab])
 
+  // Check URL query params for tab
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const tabParam = params.get('tab')
+    if (tabParam && ['beranda', 'menu', 'qr-member', 'riwayat', 'tukar-point', 'profile'].includes(tabParam)) {
+      setActiveTab(tabParam as any)
+    }
+  }, [])
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    if (cart.length > 0) {
+      const cartData = cart.map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity
+      }))
+      localStorage.setItem('cart', JSON.stringify(cartData))
+    } else {
+      localStorage.removeItem('cart')
+    }
+  }, [cart])
+
+  const saveCartToLocalStorage = (newCart: CartItem[]) => {
+    if (newCart.length > 0) {
+      const cartData = newCart.map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity
+      }))
+      localStorage.setItem('cart', JSON.stringify(cartData))
+    } else {
+      localStorage.removeItem('cart')
+    }
+  }
+
   const addToCart = (product: Product) => {
     if (product.stock === 0) return
 
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.product.id === product.id)
+      let newCart
       if (existingItem) {
         if (existingItem.quantity < product.stock) {
-          return prevCart.map(item =>
+          newCart = prevCart.map(item =>
             item.product.id === product.id
               ? { ...item, quantity: item.quantity + 1 }
               : item
           )
+        } else {
+          newCart = prevCart
         }
       } else {
-        return [...prevCart, { product, quantity: 1 }]
+        newCart = [...prevCart, { product, quantity: 1 }]
       }
-      return prevCart
+      saveCartToLocalStorage(newCart)
+      return newCart
     })
   }
 
   const removeFromCart = (productId: string) => {
-    setCart(prevCart => prevCart.filter(item => item.product.id !== productId))
+    setCart(prevCart => {
+      const newCart = prevCart.filter(item => item.product.id !== productId)
+      saveCartToLocalStorage(newCart)
+      return newCart
+    })
   }
 
   const updateQuantity = (productId: string, change: number) => {
     setCart(prevCart => {
-      return prevCart.map(item => {
+      const newCart = prevCart.map(item => {
         if (item.product.id === productId) {
           const newQuantity = Math.max(0, Math.min(item.quantity + change, item.product.stock))
           return { ...item, quantity: newQuantity }
         }
         return item
       }).filter(item => item.quantity > 0)
+      saveCartToLocalStorage(newCart)
+      return newCart
     })
   }
 
@@ -1586,7 +1630,7 @@ export default function Home() {
                 <span>Rp{getCartTotalWithDiscount().toLocaleString('id-ID')}</span>
               </div>
               <Button
-                onClick={() => { setShowCheckout(true); setShowCart(false); }}
+                onClick={() => router.push('/checkout')}
                 className="w-full bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white"
               >
                 Lanjut ke Pembayaran
@@ -2198,7 +2242,6 @@ export default function Home() {
 
       {/* Dialogs */}
       <CartDialog />
-      <CheckoutDialog />
     </div>
   )
 }
