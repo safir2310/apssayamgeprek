@@ -829,21 +829,6 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
-          ) : (
-            <Card className="border-orange-200">
-              <CardContent className="p-6 text-center">
-                <Award className="w-16 h-16 mx-auto mb-4 text-orange-300" />
-                <h3 className="font-bold text-gray-800 mb-2">Login untuk Akses Fitur</h3>
-                <p className="text-gray-600 mb-4">Login sebagai member untuk mengakses fitur profile lengkap</p>
-                <Link href="/login" className="block">
-                  <Button
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white"
-                  >
-                    Login Member
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
           )}
 
           {currentMember && (
