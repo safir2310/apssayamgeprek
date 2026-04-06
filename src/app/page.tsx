@@ -1158,27 +1158,29 @@ export default function Home() {
 
       {/* Edit Profile Modal */}
       <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" key="edit-profile-modal">
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">Nama Lengkap</Label>
+              <Label htmlFor="edit-name">Nama Lengkap</Label>
               <Input
-                id="name"
+                id="edit-name"
                 value={editProfileForm.name}
                 onChange={(e) => setEditProfileForm({ ...editProfileForm, name: e.target.value })}
                 placeholder="Masukkan nama lengkap"
+                autoComplete="off"
               />
             </div>
             <div>
-              <Label htmlFor="phone">Nomor Telepon</Label>
+              <Label htmlFor="edit-phone">Nomor Telepon</Label>
               <Input
-                id="phone"
+                id="edit-phone"
                 value={editProfileForm.phone}
                 onChange={(e) => setEditProfileForm({ ...editProfileForm, phone: e.target.value })}
                 placeholder="Masukkan nomor telepon"
+                autoComplete="off"
               />
             </div>
             <Button
@@ -1194,15 +1196,15 @@ export default function Home() {
 
       {/* Address Modal */}
       <Dialog open={showAddressModal} onOpenChange={setShowAddressModal}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" key="address-modal">
           <DialogHeader>
             <DialogTitle>Alamat Pengiriman</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="address">Alamat Lengkap</Label>
+              <Label htmlFor="edit-address">Alamat Lengkap</Label>
               <Textarea
-                id="address"
+                id="edit-address"
                 value={editProfileForm.address}
                 onChange={(e) => setEditProfileForm({ ...editProfileForm, address: e.target.value })}
                 placeholder="Masukkan alamat lengkap"
@@ -1222,39 +1224,42 @@ export default function Home() {
 
       {/* Security Settings Modal */}
       <Dialog open={showSecuritySettings} onOpenChange={setShowSecuritySettings}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" key="security-modal">
           <DialogHeader>
             <DialogTitle>Ubah Password</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="currentPassword">Password Saat Ini</Label>
+              <Label htmlFor="current-password">Password Saat Ini</Label>
               <Input
-                id="currentPassword"
+                id="current-password"
                 type="password"
                 value={passwordForm.currentPassword}
                 onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
                 placeholder="Masukkan password saat ini"
+                autoComplete="new-password"
               />
             </div>
             <div>
-              <Label htmlFor="newPassword">Password Baru</Label>
+              <Label htmlFor="new-password">Password Baru</Label>
               <Input
-                id="newPassword"
+                id="new-password"
                 type="password"
                 value={passwordForm.newPassword}
                 onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                 placeholder="Masukkan password baru (minimal 6 karakter)"
+                autoComplete="new-password"
               />
             </div>
             <div>
-              <Label htmlFor="confirmPassword">Konfirmasi Password Baru</Label>
+              <Label htmlFor="confirm-password">Konfirmasi Password Baru</Label>
               <Input
-                id="confirmPassword"
+                id="confirm-password"
                 type="password"
                 value={passwordForm.confirmPassword}
                 onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
                 placeholder="Ulangi password baru"
+                autoComplete="new-password"
               />
             </div>
             <Button
@@ -1270,7 +1275,7 @@ export default function Home() {
 
       {/* Notification Settings Modal */}
       <Dialog open={showNotificationSettings} onOpenChange={setShowNotificationSettings}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" key="notification-modal">
           <DialogHeader>
             <DialogTitle>Pengaturan Notifikasi</DialogTitle>
           </DialogHeader>
@@ -1326,7 +1331,7 @@ export default function Home() {
 
       {/* Privacy Settings Modal */}
       <Dialog open={showPrivacySettings} onOpenChange={setShowPrivacySettings}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" key="privacy-modal">
           <DialogHeader>
             <DialogTitle>Pengaturan Privasi</DialogTitle>
           </DialogHeader>
@@ -1385,7 +1390,7 @@ export default function Home() {
 
       {/* Policy Modal */}
       <Dialog open={showPolicy} onOpenChange={setShowPolicy}>
-        <DialogContent className="max-w-lg max-h-[80vh]">
+        <DialogContent className="max-w-lg max-h-[80vh]" key="policy-modal">
           <DialogHeader>
             <DialogTitle>Kebijakan Layanan</DialogTitle>
           </DialogHeader>
@@ -1456,7 +1461,7 @@ export default function Home() {
 
       {/* Photo Upload Modal */}
       <Dialog open={showPhotoUpload} onOpenChange={setShowPhotoUpload}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" key="photo-upload-modal">
           <DialogHeader>
             <DialogTitle>Foto Profil</DialogTitle>
           </DialogHeader>
