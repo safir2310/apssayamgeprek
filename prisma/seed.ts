@@ -3,235 +3,241 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('Starting database seed...')
+  console.log('🌱 Starting database seeding...')
 
-  // Create roles
-  let adminRole = await prisma.role.findFirst({ where: { name: 'Admin' } })
+  // 1. Create Default Roles
+  console.log('Creating roles...')
+
+  // Find or create admin role
+  let adminRole = await prisma.role.findFirst({
+    where: { name: 'admin' }
+  })
+
   if (!adminRole) {
-    adminRole = await prisma.role.create({ data: { name: 'Admin' } })
+    adminRole = await prisma.role.create({
+      data: { name: 'admin' }
+    })
   }
 
-  let cashierRole = await prisma.role.findFirst({ where: { name: 'Kasir' } })
+  // Find or create cashier role
+  let cashierRole = await prisma.role.findFirst({
+    where: { name: 'kasir' }
+  })
+
   if (!cashierRole) {
-    cashierRole = await prisma.role.create({ data: { name: 'Kasir' } })
-  }
-
-  let ownerRole = await prisma.role.findFirst({ where: { name: 'Owner' } })
-  if (!ownerRole) {
-    ownerRole = await prisma.role.create({ data: { name: 'Owner' } })
-  }
-
-  let userRole = await prisma.role.findFirst({ where: { name: 'User' } })
-  if (!userRole) {
-    userRole = await prisma.role.create({ data: { name: 'User' } })
-  }
-
-  console.log('Roles created:', { adminRole, cashierRole, ownerRole, userRole })
-
-  // Create admin user (password: admin123, PIN: 1234)
-  let adminUser = await prisma.user.findFirst({ where: { email: 'admin@ayamgeprek.com' } })
-  if (!adminUser) {
-    adminUser = await prisma.user.create({
-      data: {
-        email: 'admin@ayamgeprek.com',
-        password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: admin123
-        name: 'Admin',
-        phone: '085260812758',
-        pin: '1234',
-        roleId: adminRole.id
-      }
+    cashierRole = await prisma.role.create({
+      data: { name: 'kasir' }
     })
   }
 
-  console.log('Admin user created:', adminUser)
+  console.log('✅ Roles created:', { admin: adminRole.name, cashier: cashierRole.name })
 
-  // Create categories
-  let ayamGeprekCategory = await prisma.category.findFirst({ where: { name: 'Ayam Geprek' } })
-  if (!ayamGeprekCategory) {
-    ayamGeprekCategory = await prisma.category.create({ data: { name: 'Ayam Geprek' } })
-  }
+  // 2. Create Default Users
+  console.log('Creating users...')
 
-  let nasiCategory = await prisma.category.findFirst({ where: { name: 'Nasi' } })
-  if (!nasiCategory) {
-    nasiCategory = await prisma.category.create({ data: { name: 'Nasi' } })
-  }
+  // Default Admin
+  let admin = await prisma.user.findUnique({
+    where: { email: 'admin@geprek.com' }
+  })
 
-  let minumanCategory = await prisma.category.findFirst({ where: { name: 'Minuman' } })
-  if (!minumanCategory) {
-    minumanCategory = await prisma.category.create({ data: { name: 'Minuman' } })
-  }
-
-  let laukCategory = await prisma.category.findFirst({ where: { name: 'Lauk' } })
-  if (!laukCategory) {
-    laukCategory = await prisma.category.create({ data: { name: 'Lauk' } })
-  }
-
-  console.log('Categories created:', { ayamGeprekCategory, nasiCategory, minumanCategory, laukCategory })
-
-  // Create products
-  const products = [
-    {
-      name: 'Ayam Geprek Sambal Ijo',
-      barcode: '001',
-      description: 'Ayam goreng geprek dengan sambal ijo pedas',
-      price: 15000,
-      cost: 10000,
-      stock: 50,
-      categoryId: ayamGeprekCategory.id
-    },
-    {
-      name: 'Ayam Geprek Original',
-      barcode: '002',
-      description: 'Ayam goreng geprek dengan sambal merah',
-      price: 13000,
-      cost: 9000,
-      stock: 45,
-      categoryId: ayamGeprekCategory.id
-    },
-    {
-      name: 'Ayam Geprek Mozarella',
-      barcode: '003',
-      description: 'Ayam geprek dengan topping mozarella lumer',
-      price: 18000,
-      cost: 13000,
-      stock: 30,
-      categoryId: ayamGeprekCategory.id
-    },
-    {
-      name: 'Nasi Putih',
-      barcode: '004',
-      description: 'Nasi putih hangat',
-      price: 4000,
-      cost: 2000,
-      stock: 100,
-      categoryId: nasiCategory.id
-    },
-    {
-      name: 'Nasi Uduk',
-      barcode: '005',
-      description: 'Nasi uduk dengan rempah',
-      price: 6000,
-      cost: 3500,
-      stock: 50,
-      categoryId: nasiCategory.id
-    },
-    {
-      name: 'Es Teh Manis',
-      barcode: '006',
-      description: 'Es teh manis segar',
-      price: 5000,
-      cost: 2000,
-      stock: 80,
-      categoryId: minumanCategory.id
-    },
-    {
-      name: 'Es Jeruk',
-      barcode: '007',
-      description: 'Es jeruk peras segar',
-      price: 6000,
-      cost: 3000,
-      stock: 60,
-      categoryId: minumanCategory.id
-    },
-    {
-      name: 'Teh Hangat',
-      barcode: '008',
-      description: 'Teh hangat manis',
-      price: 4000,
-      cost: 1500,
-      stock: 70,
-      categoryId: minumanCategory.id
-    },
-    {
-      name: 'Jus Alpukat',
-      barcode: '009',
-      description: 'Jus alpukat segar dengan susu coklat',
-      price: 12000,
-      cost: 7000,
-      stock: 40,
-      categoryId: minumanCategory.id
-    },
-    {
-      name: 'Tempe Goreng',
-      barcode: '010',
-      description: 'Tempe goreng renyah',
-      price: 3000,
-      cost: 1500,
-      stock: 60,
-      categoryId: laukCategory.id
-    },
-    {
-      name: 'Tahu Goreng',
-      barcode: '011',
-      description: 'Tahu goreng renyah',
-      price: 3000,
-      cost: 1500,
-      stock: 60,
-      categoryId: laukCategory.id
-    },
-    {
-      name: 'Telur Dadar',
-      barcode: '012',
-      description: 'Telur dadar tebal',
-      price: 5000,
-      cost: 3000,
-      stock: 40,
-      categoryId: laukCategory.id
-    }
-  ]
-
-  for (const product of products) {
-    const existing = await prisma.product.findFirst({ where: { barcode: product.barcode } })
-    if (!existing) {
-      await prisma.product.create({ data: product })
-    }
-  }
-
-  console.log('Products created:', products.length)
-
-  // Create a sample promo
-  let promo = await prisma.promo.findFirst({ where: { code: 'HEMAT10' } })
-  if (!promo) {
-    promo = await prisma.promo.create({
+  if (!admin) {
+    admin = await prisma.user.create({
       data: {
-        code: 'HEMAT10',
-        name: 'Diskon 10%',
-        description: 'Diskon 10% untuk semua menu',
-        type: 'PERCENTAGE',
-        value: 10,
-        minPurchase: 20000,
-        maxDiscount: 10000,
-        startDate: new Date(),
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-        isActive: true
-      }
+        email: 'admin@geprek.com',
+        password: 'admin123',
+        name: 'Administrator',
+        phone: '081234567890',
+        pin: '123456',
+        roleId: adminRole.id,
+      },
     })
   }
 
-  console.log('Promo created:', promo)
+  // Default Cashier
+  let cashier = await prisma.user.findUnique({
+    where: { email: 'kasir@geprek.com' }
+  })
 
-  // Create a sample member
-  let member = await prisma.member.findFirst({ where: { phone: '081234567890' } })
+  if (!cashier) {
+    cashier = await prisma.user.create({
+      data: {
+        email: 'kasir@geprek.com',
+        password: 'kasir123',
+        name: 'Kasir Utama',
+        phone: '081234567891',
+        pin: '234567',
+        roleId: cashierRole.id,
+      },
+    })
+  }
+
+  console.log('✅ Users created:', {
+    admin: admin.email,
+    cashier: cashier.email,
+  })
+
+  // 3. Create Default Member (User/Member)
+  console.log('Creating members...')
+
+  let member = await prisma.member.findUnique({
+    where: { username: 'member' }
+  })
+
   if (!member) {
     member = await prisma.member.create({
       data: {
-        phone: '081234567890',
-        name: 'Budi Santoso',
-        email: 'budi@example.com',
-        address: 'Jl. Contoh No. 123',
-        points: 100
-      }
+        username: 'member',
+        password: 'member123',
+        name: 'Member Demo',
+        phone: '081234567892',
+        email: 'member@geprek.com',
+        address: 'Jl. Demo No. 123',
+        points: 100,
+        isActive: true,
+      },
     })
   }
 
-  console.log('Member created:', member)
+  console.log('✅ Member created:', { username: member.username, email: member.email })
 
-  console.log('Database seed completed successfully!')
+  // 4. Create Default Categories
+  console.log('Creating categories...')
+
+  const categories = [
+    { name: 'Ayam Geprek' },
+    { name: 'Minuman' },
+    { name: 'Nasi' },
+    { name: 'Tambahan' },
+  ]
+
+  const createdCategories = []
+  for (const cat of categories) {
+    let category = await prisma.category.findUnique({
+      where: { name: cat.name }
+    })
+
+    if (!category) {
+      category = await prisma.category.create({
+        data: cat
+      })
+    }
+    createdCategories.push(category)
+  }
+
+  console.log('✅ Categories created:', createdCategories.map((c) => c.name))
+
+  // 5. Create Default Products
+  console.log('Creating products...')
+
+  const products = [
+    {
+      name: 'Ayam Geprek Sambal Ijo',
+      description: 'Ayam goreng geprek dengan sambal ijo pedas',
+      price: 15000,
+      cost: 8000,
+      stock: 100,
+      barcode: 'AG001',
+      categoryId: createdCategories[0].id,
+      image: null,
+    },
+    {
+      name: 'Ayam Geprek Sambal Merah',
+      description: 'Ayam goreng geprek dengan sambal merah pedas',
+      price: 15000,
+      cost: 8000,
+      stock: 100,
+      barcode: 'AG002',
+      categoryId: createdCategories[0].id,
+      image: null,
+    },
+    {
+      name: 'Es Teh Manis',
+      description: 'Es teh manis segar',
+      price: 5000,
+      cost: 1500,
+      stock: 200,
+      barcode: 'ETM001',
+      categoryId: createdCategories[1].id,
+      image: null,
+    },
+    {
+      name: 'Es Jeruk',
+      description: 'Es jeruk segar',
+      price: 6000,
+      cost: 2000,
+      stock: 200,
+      barcode: 'EJ001',
+      categoryId: createdCategories[1].id,
+      image: null,
+    },
+    {
+      name: 'Nasi Putih',
+      description: 'Nasi putih hangat',
+      price: 5000,
+      cost: 2000,
+      stock: 300,
+      barcode: 'NP001',
+      categoryId: createdCategories[2].id,
+      image: null,
+    },
+  ]
+
+  const createdProducts = []
+  for (const product of products) {
+    let prod = await prisma.product.findUnique({
+      where: { barcode: product.barcode }
+    })
+
+    if (!prod) {
+      prod = await prisma.product.create({
+        data: product,
+      })
+    }
+    createdProducts.push(prod)
+  }
+
+  console.log('✅ Products created:', createdProducts.map((p) => p.name))
+
+  // 6. Create Default Settings
+  console.log('Creating settings...')
+
+  let settings = await prisma.settings.findFirst()
+
+  if (!settings) {
+    settings = await prisma.settings.create({
+      data: {
+        storeName: 'Ayam Geprek Sambal Ijo',
+        storeAddress: 'Jl. Contoh No. 123, Jakarta',
+        storePhone: '085260812758',
+        qrisEnabled: false,
+        qrisImage: null,
+      },
+    })
+  }
+
+  console.log('✅ Settings created:', { storeName: settings.storeName })
+
+  console.log('\n🎉 Database seeding completed successfully!')
+  console.log('\n📋 Default Accounts:')
+  console.log('═══════════════════════════════════════════════')
+  console.log('👤 Admin:')
+  console.log('   Email: admin@geprek.com')
+  console.log('   Password: admin123')
+  console.log('   PIN: 123456')
+  console.log('\n👤 Kasir:')
+  console.log('   Email: kasir@geprek.com')
+  console.log('   Password: kasir123')
+  console.log('   PIN: 234567')
+  console.log('\n👤 Member:')
+  console.log('   Username: member')
+  console.log('   Password: member123')
+  console.log('   Phone: 081234567892')
+  console.log('═══════════════════════════════════════════════\n')
 }
 
 main()
   .catch((e) => {
-    console.error('Error seeding database:', e)
+    console.error('❌ Error seeding database:', e)
     process.exit(1)
   })
   .finally(async () => {

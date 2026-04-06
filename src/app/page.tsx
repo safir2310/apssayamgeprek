@@ -356,13 +356,13 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-8 text-orange-800">Akses Cepat</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-            <Link href="/pos">
+            <Link href="/auth/login">
               <Button variant="outline" className="w-full h-20 text-lg border-orange-300 hover:bg-orange-50">
                 <Store className="w-6 h-6 mr-2" />
                 POS Kasir
               </Button>
             </Link>
-            <Link href="/admin">
+            <Link href="/auth/login">
               <Button variant="outline" className="w-full h-20 text-lg border-orange-300 hover:bg-orange-50">
                 <LayoutDashboard className="w-6 h-6 mr-2" />
                 Admin Dashboard

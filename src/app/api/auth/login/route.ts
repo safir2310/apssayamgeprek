@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find user by email
+    // Find user by email with role
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
@@ -33,30 +33,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // In a real app, verify password hash here
-    // For now, accept the hardcoded credentials
-    if (email === 'admin@ayamgeprek.com' && password === 'admin123') {
-      return NextResponse.json({
-        success: true,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          phone: user.phone,
-          role: user.role.name,
-          pin: user.pin
-        }
-      })
+    // Verify password
+    // In a real app, use bcrypt: await bcrypt.compare(password, user.password)
+    // For now, using plain text comparison
+    if (user.password !== password) {
+      return NextResponse.json(
+        { error: 'Email atau password salah' },
+        { status: 401 }
+      )
     }
 
-    return NextResponse.json(
-      { error: 'Email atau password salah' },
-      { status: 401 }
-    )
+    // Return success with user data including role
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        role: user.role.name,
+        roleId: user.roleId,
+        pin: user.pin
+      }
+    })
   } catch (error) {
     console.error('Error during login:', error)
     return NextResponse.json(
-      { error: 'Terjadi kesalahan saat login' },
+      { error: 'Terjadi kesalahan koneksi. Silakan coba lagi.' },
       { status: 500 }
     )
   }
