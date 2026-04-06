@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import {
-  ShoppingCart, Minus, Plus, X, Phone, MapPin, Clock, Award, Flame,
+  ShoppingCart, Minus, Plus, X, Phone, MapPin, Award, Flame,
   Home as HomeIcon, QrCode, History, Gift, User, Store, LayoutDashboard,
   Lock, Bell, Shield, FileText, Camera, ChevronRight, Save, Upload, Settings, LogOut, Share2, Copy, Scan
 } from 'lucide-react'
@@ -797,24 +797,13 @@ export default function Home() {
             Pesan Sekarang
           </Button>
 
-          {/* Store Info Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-4xl mx-auto">
+          {/* Latest Products Info */}
+          <div className="mt-12 max-w-4xl mx-auto">
             <Card className="bg-white/10 backdrop-blur-sm border-0 text-white">
               <CardContent className="p-6 text-center">
-                <Phone className="w-8 h-8 mx-auto mb-3" />
-                <p className="font-semibold text-sm">{STORE_INFO.phone}</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-white/10 backdrop-blur-sm border-0 text-white">
-              <CardContent className="p-6 text-center">
-                <MapPin className="w-8 h-8 mx-auto mb-3" />
-                <p className="font-semibold text-sm">{STORE_INFO.address}</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-white/10 backdrop-blur-sm border-0 text-white">
-              <CardContent className="p-6 text-center">
-                <Clock className="w-8 h-8 mx-auto mb-3" />
-                <p className="font-semibold text-sm">Buka Setiap Hari</p>
+                <ShoppingCart className="w-8 h-8 mx-auto mb-3" />
+                <p className="font-semibold text-sm">Produk Terbaru</p>
+                <p className="text-orange-100 text-xs mt-1">{products.length} menu tersedia</p>
               </CardContent>
             </Card>
           </div>
