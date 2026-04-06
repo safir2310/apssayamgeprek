@@ -226,6 +226,9 @@ model Member {
   notificationOrders    Boolean  @default(true)   // Notifikasi pesanan
   notificationPromo     Boolean  @default(true)   // Notifikasi promo
   notificationPoints    Boolean  @default(true)   // Notifikasi poin
+  publicProfile         Boolean  @default(true)   // Tampilkan profil publik
+  shareData             Boolean  @default(true)   // Izinkan berbagi data
+  orderHistory          Boolean  @default(true)   // Simpan riwayat pesanan
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

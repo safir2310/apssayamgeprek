@@ -8,14 +8,34 @@ export async function PUT(request: NextRequest) {
 
     if (!memberId) {
       return NextResponse.json(
-        { error: 'Member ID is required' },
+        { error: 'Member ID diperlukan' },
         { status: 400 }
       )
     }
 
     if (!photo) {
       return NextResponse.json(
-        { error: 'Photo data is required' },
+        { error: 'Data foto diperlukan' },
+        { status: 400 }
+      )
+    }
+
+    // Validate photo is a valid base64 image
+    if (!photo.startsWith('data:image/')) {
+      return NextResponse.json(
+        { error: 'Format foto tidak valid. Harap upload gambar.' },
+        { status: 400 }
+      )
+    }
+
+    // Check file size (base64 length * 0.75 ≈ bytes, max 5MB)
+    const base64Data = photo.split(',')[1] || ''
+    const fileSizeInBytes = Math.floor((base64Data.length * 3) / 4)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+
+    if (fileSizeInBytes > maxSize) {
+      return NextResponse.json(
+        { error: 'Ukuran foto terlalu besar. Maksimal 5MB.' },
         { status: 400 }
       )
     }
@@ -33,7 +53,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('Error updating member photo:', error)
     return NextResponse.json(
-      { error: 'Gagal memperbarui foto profil' },
+      { error: 'Gagal memperbarui foto profil. Silakan coba lagi.' },
       { status: 500 }
     )
   }
@@ -46,7 +66,7 @@ export async function DELETE(request: NextRequest) {
 
     if (!memberId) {
       return NextResponse.json(
-        { error: 'Member ID is required' },
+        { error: 'Member ID diperlukan' },
         { status: 400 }
       )
     }
@@ -63,7 +83,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error('Error removing member photo:', error)
     return NextResponse.json(
-      { error: 'Gagal menghapus foto profil' },
+      { error: 'Gagal menghapus foto profil. Silakan coba lagi.' },
       { status: 500 }
     )
   }

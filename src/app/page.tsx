@@ -345,31 +345,57 @@ export default function Home() {
   // Handle photo upload
   const handlePhotoUpload = useCallback(async (file: File) => {
     try {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+      if (!validTypes.includes(file.type)) {
+        alert('Format file tidak valid. Harap upload file gambar (JPG, PNG, GIF, atau WebP).')
+        return
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024 // 5MB
+      if (file.size > maxSize) {
+        alert('Ukuran file terlalu besar. Maksimal 5MB.')
+        return
+      }
+
+      // Read and convert to base64
       const reader = new FileReader()
       reader.onload = async (e) => {
-        const photoData = e.target?.result as string
+        try {
+          const photoData = e.target?.result as string
 
-        const response = await fetch('/api/members/photo', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            memberId: currentMember.id,
-            photo: photoData
+          const response = await fetch('/api/members/photo', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              memberId: currentMember.id,
+              photo: photoData
+            })
           })
-        })
 
-        if (response.ok) {
-          const data = await response.json()
-          setProfilePhoto(data.photo)
-          const updatedMember = { ...currentMember, photo: data.photo }
-          setCurrentMember(updatedMember)
-          localStorage.setItem('member', JSON.stringify(updatedMember))
-          setShowPhotoUpload(false)
-          alert('Foto profil berhasil diperbarui!')
-        } else {
-          alert('Gagal mengupload foto')
+          if (response.ok) {
+            const data = await response.json()
+            setProfilePhoto(data.photo)
+            const updatedMember = { ...currentMember, photo: data.photo }
+            setCurrentMember(updatedMember)
+            localStorage.setItem('member', JSON.stringify(updatedMember))
+            setShowPhotoUpload(false)
+            alert('Foto profil berhasil diperbarui!')
+          } else {
+            const errorData = await response.json()
+            alert(errorData.error || 'Gagal mengupload foto')
+          }
+        } catch (error) {
+          console.error('Error processing photo upload:', error)
+          alert('Terjadi kesalahan saat memproses foto. Silakan coba lagi.')
         }
       }
+
+      reader.onerror = () => {
+        alert('Gagal membaca file. Silakan coba lagi.')
+      }
+
       reader.readAsDataURL(file)
     } catch (error) {
       console.error('Error uploading photo:', error)
