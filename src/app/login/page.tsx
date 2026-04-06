@@ -68,11 +68,12 @@ export default function LoginPage() {
         localStorage.setItem('admin-user', JSON.stringify(data.user))
         localStorage.setItem('admin-session', Date.now().toString())
 
-        // Redirect based on role
-        if (data.user.role === 'admin') {
+        // Redirect based on role (case-insensitive)
+        const userRole = data.user.role?.toLowerCase()
+        if (userRole === 'admin') {
           alert(`Selamat datang, ${data.user.name}! Mengalihkan ke Admin Dashboard...`)
           router.push('/admin')
-        } else if (data.user.role === 'kasir') {
+        } else if (userRole === 'kasir' || userRole === 'cashier') {
           alert(`Selamat datang, ${data.user.name}! Mengalihkan ke POS...`)
           router.push('/pos')
         } else {
@@ -375,15 +376,6 @@ export default function LoginPage() {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    {/* Lupa Password Link */}
-                    <button
-                      type="button"
-                      onClick={() => router.push('/forgot-password')}
-                      className="text-sm text-orange-600 hover:text-orange-700 hover:underline mt-2 block text-right"
-                    >
-                      Lupa Password?
-                    </button>
-                  </div>
 
                   <Button
                     type="submit"
