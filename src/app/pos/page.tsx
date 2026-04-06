@@ -112,6 +112,9 @@ export default function POSPage() {
   // Store settings
   const [storeSettings, setStoreSettings] = useState<any>(null)
 
+  // Mobile cart visibility
+  const [showMobileCart, setShowMobileCart] = useState(false)
+
   const barcodeInputRef = useRef<HTMLInputElement>(null)
 
   const fetchProducts = async () => {
@@ -833,20 +836,20 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-4">
+      <header className="bg-white border-b border-gray-200 px-3 md:px-4 py-2 md:py-3 flex items-center justify-between shadow-sm sticky top-0 z-50">
+        <div className="flex items-center gap-2 md:gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
-              <Flame className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+              <Flame className="w-4 h-4 md:w-5 md:h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-gray-800">POS Kasir</h1>
-              <p className="text-xs text-gray-500">Shift Aktif: {currentShift?.id}</p>
+              <h1 className="font-bold text-sm md:text-base text-gray-800">POS Kasir</h1>
+              <p className="text-[10px] md:text-xs text-gray-500 hidden sm:block">Shift Aktif: {currentShift?.id?.slice(-6)}</p>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="text-right hidden md:block">
             <p className="text-sm font-semibold text-gray-800">{cashier?.name}</p>
             <p className="text-xs text-gray-500">{new Date().toLocaleString('id-ID')}</p>
           </div>
@@ -854,28 +857,29 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
             variant="outline"
             size="sm"
             onClick={() => setShowCloseShift(true)}
-            className="border-orange-300 text-orange-700 hover:bg-orange-50"
+            className="border-orange-300 text-orange-700 hover:bg-orange-50 px-2 md:px-3 h-8 md:h-9 text-xs md:text-sm"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Tutup Shift
+            <LogOut className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Tutup Shift</span>
+            <span className="sm:hidden">Tutup</span>
           </Button>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Left Side - Products Panel */}
-        <div className="flex-1 flex flex-col overflow-hidden sticky top-0 h-screen">
+        <div className="flex-1 flex flex-col overflow-hidden pb-20 md:pb-0">
           {/* Member Lookup & Search Bar */}
-          <div className="bg-white p-4 border-b border-gray-200">
-            <div className="flex gap-3">
+          <div className="bg-white p-3 md:p-4 border-b border-gray-200">
+            <div className="flex flex-col md:flex-row gap-3">
               {/* Member Lookup */}
-              <div className="w-1/3">
+              <div className="w-full md:w-1/3">
                 {selectedMember ? (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <User className="w-5 h-5 text-green-700" />
-                      <span className="font-semibold text-green-800">Member Aktif</span>
+                      <User className="w-4 h-4 md:w-5 md:h-5 text-green-700" />
+                      <span className="font-semibold text-green-800 text-xs md:text-sm">Member Aktif</span>
                       <Button
                         size="sm"
                         variant="ghost"
@@ -887,10 +891,10 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-green-800 text-sm">{selectedMember.name}</p>
-                        <p className="text-green-700 text-xs">{selectedMember.phone}</p>
+                        <p className="font-bold text-green-800 text-xs md:text-sm">{selectedMember.name}</p>
+                        <p className="text-green-700 text-[10px] md:text-xs">{selectedMember.phone}</p>
                       </div>
-                      <Badge className="bg-green-600 text-white text-xs">
+                      <Badge className="bg-green-600 text-white text-[10px] md:text-xs">
                         {selectedMember.points} poin
                       </Badge>
                     </div>
@@ -903,7 +907,7 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
                       onChange={(e) => setMemberPhone(e.target.value)}
                       onKeyDown={handleMemberKeyPress}
                       placeholder="Cari member..."
-                      className="pl-10 border-orange-200 focus:border-orange-500 h-10 text-sm"
+                      className="pl-10 border-orange-200 focus:border-orange-500 h-9 md:h-10 text-xs md:text-sm"
                       disabled={memberLookupLoading}
                     />
                   </div>
@@ -935,7 +939,7 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
                   onFocus={() => setShowSearchPopup(searchQuery.length > 0)}
                   onKeyDown={handleKeyPress}
                   placeholder="Scan barcode atau cari nama produk..."
-                  className="pl-10 border-orange-200 focus:border-orange-500 h-10"
+                  className="pl-10 border-orange-200 focus:border-orange-500 h-9 md:h-10 text-xs md:text-sm"
                 />
               </div>
 
@@ -948,7 +952,7 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
                   setShowSearchPopup(true)
                   barcodeInputRef.current?.focus()
                 }}
-                className="border-orange-300 text-orange-700 hover:bg-orange-50 h-10 px-3"
+                className="border-orange-300 text-orange-700 hover:bg-orange-50 h-9 md:h-10 px-2 md:px-3 hidden md:flex"
               >
                 <Package className="w-4 h-4" />
               </Button>
@@ -962,7 +966,7 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
                     setSearchQuery('')
                     setShowSearchPopup(false)
                   }}
-                  className="border-orange-300 text-orange-700 hover:bg-orange-50 h-10 px-3"
+                  className="border-orange-300 text-orange-700 hover:bg-orange-50 h-9 md:h-10 px-2 md:px-3"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -971,12 +975,12 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
 
             {/* Search Results Popup */}
             {showSearchPopup && (
-              <div className="absolute top-20 left-0 right-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl max-h-96 overflow-y-auto mx-4">
+              <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-y-auto mx-2 md:mx-4 mt-1">
                 {filteredProducts.length > 0 ? (
                   filteredProducts.slice(0, 10).map(product => (
                     <div
                       key={product.id}
-                      className="flex items-center gap-3 p-3 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-0"
+                      className="flex items-center gap-2 md:gap-3 p-2 md:p-3 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-0"
                       onClick={() => {
                         addToCart(product)
                         setBarcodeInput('')
@@ -984,27 +988,27 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
                         setShowSearchPopup(false)
                       }}
                     >
-                      <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center flex-shrink-0">
                         {product.image ? (
                           <img src={product.image} alt={product.name} className="w-full h-full object-cover rounded-lg" />
                         ) : (
-                          <Package className="w-6 h-6 text-orange-400" />
+                          <Package className="w-5 h-5 md:w-6 md:h-6 text-orange-400" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-sm text-gray-800 truncate">{product.name}</h4>
-                        <p className="text-orange-600 font-bold text-sm">Rp{product.price.toLocaleString('id-ID')}</p>
+                        <h4 className="font-semibold text-xs md:text-sm text-gray-800 truncate">{product.name}</h4>
+                        <p className="text-orange-600 font-bold text-xs md:text-sm">Rp{product.price.toLocaleString('id-ID')}</p>
                       </div>
                       <div className="flex-shrink-0">
-                        <Badge className={product.stock > 0 ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}>
-                          Stok: {product.stock}
+                        <Badge className={product.stock > 0 ? 'bg-green-500 text-white text-[10px] md:text-xs' : 'bg-gray-300 text-gray-600 text-[10px] md:text-xs'}>
+                          {product.stock > 0 ? `Stok: ${product.stock}` : 'Habis'}
                         </Badge>
                       </div>
                     </div>
                   ))
                 ) : (
                   <div className="p-4 text-center text-gray-500">
-                    <p>Tidak ada produk ditemukan</p>
+                    <p className="text-sm">Tidak ada produk ditemukan</p>
                   </div>
                 )}
               </div>
@@ -1012,8 +1016,8 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
           </div>
 
           {/* Category Filter */}
-          <div className="bg-white px-4 py-3 border-b border-gray-200">
-            <div className="flex gap-2 overflow-x-auto">
+          <div className="bg-white px-2 md:px-4 py-2 md:py-3 border-b border-gray-200">
+            <div className="flex gap-1 md:gap-2 overflow-x-auto scrollbar-hide">
               <Button
                 size="sm"
                 variant={selectedCategory === 'all' ? 'default' : 'outline'}
@@ -1021,7 +1025,7 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
                   selectedCategory === 'all'
                     ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white border-0'
                     : 'border-orange-300 text-orange-700 hover:bg-orange-50'
-                } whitespace-nowrap`}
+                } whitespace-nowrap text-xs md:text-sm`}
                 onClick={() => setSelectedCategory('all')}
               >
                 Semua
@@ -1035,7 +1039,7 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
                     selectedCategory === category
                       ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white border-0'
                       : 'border-orange-300 text-orange-700 hover:bg-orange-50'
-                  } whitespace-nowrap`}
+                  } whitespace-nowrap text-xs md:text-sm`}
                   onClick={() => setSelectedCategory(category)}
                 >
                   {category}
@@ -1045,8 +1049,8 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
           </div>
 
           {/* Product Grid - Scrollable */}
-          <ScrollArea className="flex-1 p-4" style={{ height: 'calc(100vh - 280px)' }}>
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <ScrollArea className="flex-1 p-2 md:p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3">
               {filteredProducts.map(product => (
                 <Card
                   key={product.id}
@@ -1057,21 +1061,21 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
                     {product.image ? (
                       <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                     ) : (
-                      <Package className="w-12 h-12 text-orange-400" />
+                      <Package className="w-8 h-8 md:w-12 md:h-12 text-orange-400" />
                     )}
                   </div>
-                  <CardContent className="p-3">
-                    <h3 className="font-semibold text-sm text-gray-800 mb-1 line-clamp-1">{product.name}</h3>
-                    <p className="text-orange-600 font-bold text-sm">
+                  <CardContent className="p-2 md:p-3">
+                    <h3 className="font-semibold text-[10px] md:text-sm text-gray-800 mb-1 line-clamp-2 min-h-[1.5rem] md:min-h-[1.25rem]">{product.name}</h3>
+                    <p className="text-orange-600 font-bold text-xs md:text-sm">
                       Rp{product.price.toLocaleString('id-ID')}
                     </p>
                     <Badge
                       variant={product.stock > 0 ? 'default' : 'secondary'}
-                      className={`mt-2 text-xs ${
+                      className={`mt-1 md:mt-2 text-[9px] md:text-xs ${
                         product.stock > 0 ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
                       }`}
                     >
-                      Stok: {product.stock}
+                      {product.stock > 0 ? `Stok: ${product.stock}` : 'Habis'}
                     </Badge>
                   </CardContent>
                 </Card>
@@ -1080,22 +1084,32 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
           </ScrollArea>
         </div>
 
-        {/* Right Side - Cart Panel */}
-        <div className="w-96 flex flex-col bg-white border-l border-gray-200 sticky top-0 h-screen shadow-xl">
+        {/* Right Side - Cart Panel - Desktop Side Panel / Mobile Bottom Sheet */}
+        <div className={`fixed md:sticky top-0 right-0 h-full md:h-screen w-full md:w-96 flex flex-col bg-white border-l-0 md:border-l border-gray-200 shadow-2xl md:shadow-xl z-50 transition-transform duration-300 ${showMobileCart ? 'translate-y-0' : 'translate-y-full md:translate-y-0'}`}>
           {/* Cart Header */}
-          <div className="p-5 bg-gradient-to-br from-orange-600 via-orange-500 to-red-500 text-white flex-shrink-0">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                <ShoppingCart className="w-6 h-6" />
+          <div className="p-4 md:p-5 bg-gradient-to-br from-orange-600 via-orange-500 to-red-500 text-white flex-shrink-0">
+            <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
               </div>
               <div className="flex-1">
-                <h2 className="font-bold text-xl">Keranjang</h2>
-                <p className="text-white/80 text-sm">{getCartCount()} item terpilih</p>
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-lg md:text-xl">Keranjang</h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="md:hidden text-white hover:bg-white/20 h-8 w-8 p-0"
+                    onClick={() => setShowMobileCart(false)}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                <p className="text-white/80 text-xs md:text-sm">{getCartCount()} item terpilih</p>
               </div>
             </div>
-            <div className="flex items-center justify-between bg-white/10 rounded-lg px-4 py-3 backdrop-blur-sm">
-              <span className="text-white/90 text-sm">Total Belanja</span>
-              <span className="text-2xl font-bold">Rp{getCartTotal().toLocaleString('id-ID')}</span>
+            <div className="flex items-center justify-between bg-white/10 rounded-lg px-3 md:px-4 py-2 md:py-3 backdrop-blur-sm">
+              <span className="text-white/90 text-xs md:text-sm">Total Belanja</span>
+              <span className="text-xl md:text-2xl font-bold">Rp{getCartTotal().toLocaleString('id-ID')}</span>
             </div>
           </div>
 
@@ -1156,79 +1170,79 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
           </div>
 
           {/* Cart Items - Scrollable */}
-          <ScrollArea className={`flex-1 ${cart.length > 3 ? 'bg-gray-50/80' : ''}`} style={{ maxHeight: 'calc(100vh - 460px)' }}>
+          <ScrollArea className={`flex-1 ${cart.length > 3 ? 'bg-gray-50/80' : ''}`}>
             {cart.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 px-6">
-                <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                  <ShoppingCart className="w-10 h-10 text-orange-400" />
+              <div className="flex flex-col items-center justify-center py-12 md:py-16 px-4 md:px-6">
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+                  <ShoppingCart className="w-8 h-8 md:w-10 md:h-10 text-orange-400" />
                 </div>
-                <h3 className="font-semibold text-gray-700 mb-2">Keranjang Kosong</h3>
-                <p className="text-gray-500 text-sm text-center">Pilih produk untuk memulai transaksi</p>
+                <h3 className="font-semibold text-gray-700 text-sm md:text-base mb-2">Keranjang Kosong</h3>
+                <p className="text-gray-500 text-xs md:text-sm text-center">Pilih produk untuk memulai transaksi</p>
               </div>
             ) : (
-              <div className="p-4 space-y-3">
+              <div className="p-2 md:p-4 space-y-2 md:space-y-3">
                 {cart.map(item => (
                   <Card key={item.product.id} className="border border-gray-200 hover:shadow-md transition-shadow overflow-hidden">
-                    <CardContent className="p-3">
-                      <div className="flex gap-3">
+                    <CardContent className="p-2 md:p-3">
+                      <div className="flex gap-2 md:gap-3">
                         {/* Product Image */}
-                        <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center flex-shrink-0">
                           {item.product.image ? (
                             <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover rounded-lg" />
                           ) : (
-                            <Package className="w-8 h-8 text-orange-400" />
+                            <Package className="w-6 h-6 md:w-8 md:h-8 text-orange-400" />
                           )}
                         </div>
 
                         {/* Product Info & Controls */}
                         <div className="flex-1 min-w-0 flex flex-col justify-between">
                           <div>
-                            <h4 className="font-semibold text-sm text-gray-800 line-clamp-1 mb-1">
+                            <h4 className="font-semibold text-xs md:text-sm text-gray-800 line-clamp-2 min-h-[1.25rem] md:min-h-[1.25rem] mb-1">
                               {item.product.name}
                             </h4>
-                            <p className="text-orange-600 font-bold text-sm">
+                            <p className="text-orange-600 font-bold text-xs md:text-sm">
                               Rp{item.product.price.toLocaleString('id-ID')}
                             </p>
                           </div>
 
                           {/* Quantity Controls */}
-                          <div className="flex items-center justify-between mt-2">
-                            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                          <div className="flex items-center justify-between mt-1 md:mt-2">
+                            <div className="flex items-center gap-1 md:gap-2 bg-gray-100 rounded-lg p-0.5 md:p-1">
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-7 w-7 p-0 hover:bg-orange-100 text-orange-600"
+                                className="h-6 w-6 md:h-7 md:w-7 p-0 hover:bg-orange-100 text-orange-600"
                                 onClick={() => updateQuantity(item.product.id, -1)}
                                 disabled={item.quantity <= 1}
                               >
-                                <Minus className="h-3 w-3" />
+                                <Minus className="h-3 w-3 md:h-3 md:w-3" />
                               </Button>
-                              <span className="font-semibold text-sm w-6 text-center text-gray-700">
+                              <span className="font-semibold text-xs md:text-sm w-5 md:w-6 text-center text-gray-700">
                                 {item.quantity}
                               </span>
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-7 w-7 p-0 hover:bg-orange-100 text-orange-600"
+                                className="h-6 w-6 md:h-7 md:w-7 p-0 hover:bg-orange-100 text-orange-600"
                                 onClick={() => updateQuantity(item.product.id, 1)}
                                 disabled={item.quantity >= item.product.stock}
                               >
-                                <Plus className="h-3 w-3" />
+                                <Plus className="h-3 w-3 md:h-3 md:w-3" />
                               </Button>
                             </div>
 
                             <div className="text-right">
-                              <p className="font-bold text-sm text-gray-800">
+                              <p className="font-bold text-xs md:text-sm text-gray-800">
                                 Rp{(item.quantity * item.product.price).toLocaleString('id-ID')}
                               </p>
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-6 px-2 text-red-500 hover:text-red-600 hover:bg-red-50 text-xs"
+                                className="h-5 md:h-6 px-1 md:px-2 text-red-500 hover:text-red-600 hover:bg-red-50 text-[10px] md:text-xs"
                                 onClick={() => handleVoidItem(item.product.id)}
                               >
-                                <X className="h-3 w-3 mr-1" />
-                                Hapus
+                                <X className="h-3 w-3 md:h-3 md:w-3 mr-0.5 md:mr-1" />
+                                <span className="hidden sm:inline">Hapus</span>
                               </Button>
                             </div>
                           </div>
@@ -1242,19 +1256,47 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
           </ScrollArea>
 
           {/* Payment Button - Always at Bottom */}
-          <div className="p-5 border-t border-gray-200 bg-gradient-to-b from-white to-gray-50 flex-shrink-0">
+          <div className="p-3 md:p-5 border-t border-gray-200 bg-gradient-to-b from-white to-gray-50 flex-shrink-0">
             <Button
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-5 font-bold text-lg shadow-lg hover:shadow-xl transition-all"
-              onClick={() => setShowPaymentDialog(true)}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-3 md:py-5 font-bold text-sm md:text-lg shadow-lg hover:shadow-xl transition-all"
+              onClick={() => {
+                setShowPaymentDialog(true)
+                setShowMobileCart(false)
+              }}
               disabled={cart.length === 0}
             >
-              <ShoppingCart className="w-5 h-5 mr-2" />
+              <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 mr-2" />
               Bayar Sekarang
-              <span className="ml-2 text-white/80 text-base font-normal">
+              <span className="ml-2 text-white/80 text-xs md:text-base font-normal">
                 - Rp{getCartTotal().toLocaleString('id-ID')}
               </span>
             </Button>
           </div>
+        </div>
+
+        {/* Floating Cart Button - Mobile Only */}
+        <div className="md:hidden fixed bottom-4 left-4 right-4 z-40">
+          <Button
+            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-3 md:py-4 font-bold text-base shadow-lg hover:shadow-xl transition-all"
+            onClick={() => setShowMobileCart(true)}
+          >
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <ShoppingCart className="w-5 h-5" />
+                  {cart.length > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {getCartCount()}
+                    </span>
+                  )}
+                </div>
+                <span>Keranjang</span>
+              </div>
+              <span className="text-white/90 text-sm font-normal">
+                Rp{getCartTotal().toLocaleString('id-ID')}
+              </span>
+            </div>
+          </Button>
         </div>
       </div>
 
@@ -1265,53 +1307,53 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
           setPaymentAmount('')
         }
       }}>
-        <DialogContent>
+        <DialogContent className="max-w-md w-[95%] md:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Pembayaran</DialogTitle>
+            <DialogTitle className="text-lg md:text-xl">Pembayaran</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Total Pembayaran</Label>
-              <div className="text-3xl font-bold text-orange-600 mt-1">
+              <Label className="text-sm md:text-base">Total Pembayaran</Label>
+              <div className="text-2xl md:text-3xl font-bold text-orange-600 mt-1">
                 Rp{getCartTotal().toLocaleString('id-ID')}
               </div>
             </div>
             <Separator />
             <div>
-              <Label>Metode Pembayaran</Label>
+              <Label className="text-sm md:text-base">Metode Pembayaran</Label>
               <div className="grid grid-cols-3 gap-2 mt-2">
                 <Button
                   type="button"
                   variant={paymentMethod === 'CASH' ? 'default' : 'outline'}
-                  className={`flex flex-col items-center gap-1 py-3 ${
+                  className={`flex flex-col items-center gap-1 py-2 md:py-3 ${
                     paymentMethod === 'CASH' ? 'bg-orange-500 text-white' : ''
                   }`}
                   onClick={() => setPaymentMethod('CASH')}
                 >
-                  <DollarSign className="w-5 h-5" />
-                  <span className="text-xs">Tunai</span>
+                  <DollarSign className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="text-[10px] md:text-xs">Tunai</span>
                 </Button>
                 <Button
                   type="button"
                   variant={paymentMethod === 'QRIS' ? 'default' : 'outline'}
-                  className={`flex flex-col items-center gap-1 py-3 ${
+                  className={`flex flex-col items-center gap-1 py-2 md:py-3 ${
                     paymentMethod === 'QRIS' ? 'bg-orange-500 text-white' : ''
                   }`}
                   onClick={() => setPaymentMethod('QRIS')}
                 >
-                  <Smartphone className="w-5 h-5" />
-                  <span className="text-xs">QRIS</span>
+                  <Smartphone className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="text-[10px] md:text-xs">QRIS</span>
                 </Button>
                 <Button
                   type="button"
                   variant={paymentMethod === 'DEBIT' ? 'default' : 'outline'}
-                  className={`flex flex-col items-center gap-1 py-3 ${
+                  className={`flex flex-col items-center gap-1 py-2 md:py-3 ${
                     paymentMethod === 'DEBIT' ? 'bg-orange-500 text-white' : ''
                   }`}
                   onClick={() => setPaymentMethod('DEBIT')}
                 >
-                  <CreditCard className="w-5 h-5" />
-                  <span className="text-xs">Debit</span>
+                  <CreditCard className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="text-[10px] md:text-xs">Debit</span>
                 </Button>
               </div>
             </div>
@@ -1319,20 +1361,20 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
               <>
                 <Separator />
                 <div>
-                  <Label htmlFor="paymentAmount">Jumlah Uang</Label>
+                  <Label htmlFor="paymentAmount" className="text-sm md:text-base">Jumlah Uang</Label>
                   <Input
                     id="paymentAmount"
                     type="number"
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
                     placeholder="Masukkan jumlah"
-                    className="text-lg mt-1"
+                    className="text-base md:text-lg mt-1"
                   />
                 </div>
                 {paymentAmount && parseFloat(paymentAmount) >= getCartTotal() && (
                   <div>
-                    <Label>Kembalian</Label>
-                    <div className="text-2xl font-bold text-green-600 mt-1">
+                    <Label className="text-sm md:text-base">Kembalian</Label>
+                    <div className="text-xl md:text-2xl font-bold text-green-600 mt-1">
                       Rp{(parseFloat(paymentAmount) - getCartTotal()).toLocaleString('id-ID')}
                     </div>
                   </div>
@@ -1344,15 +1386,15 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
               <>
                 <Separator />
                 <div className="flex flex-col items-center">
-                  <Label className="mb-3">Scan QRIS</Label>
-                  <div className="border-4 border-gray-200 rounded-lg p-4 bg-white">
+                  <Label className="mb-3 text-sm md:text-base">Scan QRIS</Label>
+                  <div className="border-4 border-gray-200 rounded-lg p-2 md:p-4 bg-white">
                     <img
                       src={storeSettings.qrisImage}
                       alt="QRIS Code"
-                      className="w-64 h-64 object-contain"
+                      className="w-48 h-48 md:w-64 md:h-64 object-contain"
                     />
                   </div>
-                  <p className="text-sm text-gray-500 mt-2 text-center">
+                  <p className="text-xs md:text-sm text-gray-500 mt-2 text-center">
                     Scan QRIS ini untuk membayar Rp{getCartTotal().toLocaleString('id-ID')}
                   </p>
                 </div>
@@ -1394,42 +1436,43 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
 
       {/* Void Dialog */}
       <Dialog open={showVoidDialog} onOpenChange={setShowVoidDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md w-[95%]">
           <DialogHeader>
-            <DialogTitle className="text-red-600">
+            <DialogTitle className="text-red-600 text-base md:text-lg">
               {voidingItemId ? 'Void Item' : 'Void Transaksi'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {voidingItemId && (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                <p className="text-sm text-orange-800">
+                <p className="text-xs md:text-sm text-orange-800">
                   {cart.find(item => item.product.id === voidingItemId)?.product.name}
                 </p>
               </div>
             )}
             <div>
-              <Label>PIN Supervisor</Label>
+              <Label className="text-sm md:text-base">PIN Supervisor</Label>
               <Input
                 type="password"
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value)}
                 placeholder="Masukkan PIN"
                 maxLength={4}
-                className="text-center text-2xl tracking-widest"
+                className="text-center text-xl md:text-2xl tracking-widest mt-1"
               />
             </div>
             <div>
-              <Label>Alasan Void</Label>
+              <Label className="text-sm md:text-base">Alasan Void</Label>
               <Input
                 value={voidReason}
                 onChange={(e) => setVoidReason(e.target.value)}
                 placeholder="Masukkan alasan"
+                className="mt-1"
               />
             </div>
             <Button
               onClick={handleVoidTransaction}
-              className="w-full bg-red-600 hover:bg-red-700"
+              className="w-full bg-red-600 hover:bg-red-700 py-3 md:py-auto"
             >
               {voidingItemId ? 'Void Item' : 'Void Transaksi'}
             </Button>
@@ -1441,15 +1484,15 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
 
       {/* Receipt Dialog */}
       <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md w-[95%]">
           <DialogHeader>
-            <DialogTitle>Pembayaran Berhasil!</DialogTitle>
+            <DialogTitle className="text-base md:text-lg">Pembayaran Berhasil!</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="bg-gray-50 p-4 rounded-lg text-sm font-mono">
+            <div className="bg-gray-50 p-3 md:p-4 rounded-lg text-xs md:text-sm font-mono">
               <div className="text-center font-bold mb-2">{STORE_INFO.name}</div>
-              <div className="text-center text-xs mb-2">{STORE_INFO.address}</div>
-              <div className="text-center text-xs mb-2">{STORE_INFO.phone}</div>
+              <div className="text-center text-[10px] md:text-xs mb-2">{STORE_INFO.address}</div>
+              <div className="text-center text-[10px] md:text-xs mb-2">{STORE_INFO.phone}</div>
               <Separator className="my-2" />
               <div>No: {selectedTransaction?.id}</div>
               <div>Tanggal: {selectedTransaction?.date.toLocaleString('id-ID')}</div>
@@ -1499,26 +1542,26 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
 
       {/* Close Shift Dialog */}
       <Dialog open={showCloseShift} onOpenChange={setShowCloseShift}>
-        <DialogContent>
+        <DialogContent className="max-w-md w-[95%]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5 text-orange-600" />
+            <DialogTitle className="flex items-center gap-2 text-base md:text-lg">
+              <Lock className="w-4 h-4 md:w-5 md:h-5 text-orange-600" />
               Tutup Shift
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {currentShiftDetails ? (
-              <div className="bg-orange-50 p-4 rounded-lg space-y-3">
+              <div className="bg-orange-50 p-3 md:p-4 rounded-lg space-y-2 md:space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Modal Awal</span>
-                  <span className="font-semibold">Rp{currentShiftDetails.openingBalance.toLocaleString('id-ID')}</span>
+                  <span className="text-gray-600 text-xs md:text-sm">Modal Awal</span>
+                  <span className="font-semibold text-xs md:text-sm">Rp{currentShiftDetails.openingBalance.toLocaleString('id-ID')}</span>
                 </div>
                 <Separator className="bg-orange-200" />
                 <div className="flex justify-between">
-                  <span className="text-gray-600 font-semibold">Total Penjualan</span>
-                  <span className="font-bold text-orange-600">Rp{(currentShiftDetails.totalSales || 0).toLocaleString('id-ID')}</span>
+                  <span className="text-gray-600 font-semibold text-xs md:text-sm">Total Penjualan</span>
+                  <span className="font-bold text-orange-600 text-xs md:text-sm">Rp{(currentShiftDetails.totalSales || 0).toLocaleString('id-ID')}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="grid grid-cols-2 gap-2 text-[10px] md:text-xs">
                   <div className="flex justify-between">
                     <span className="text-gray-500">Tunai</span>
                     <span className="font-medium">Rp{(currentShiftDetails.totalCash || 0).toLocaleString('id-ID')}</span>
@@ -1528,12 +1571,12 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
                     <span className="font-medium">Rp{(currentShiftDetails.totalNonCash || 0).toLocaleString('id-ID')}</span>
                   </div>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-[10px] md:text-sm">
                   <span className="text-gray-500">Jumlah Transaksi</span>
                   <span className="font-medium">{currentShiftDetails.transactions?.length || 0}</span>
                 </div>
                 <Separator className="bg-orange-200" />
-                <div className="flex justify-between font-bold text-lg">
+                <div className="flex justify-between font-bold text-base md:text-lg">
                   <span>Saldo Sistem</span>
                   <span className="text-orange-600">
                     Rp{(currentShiftDetails.systemBalance || currentShiftDetails.openingBalance + (currentShiftDetails.totalSales || 0)).toLocaleString('id-ID')}
@@ -1541,28 +1584,28 @@ Jumlah Transaksi: ${shift.transactions?.length || 0}
                 </div>
               </div>
             ) : (
-              <div className="bg-orange-50 p-4 rounded-lg text-center py-8">
+              <div className="bg-orange-50 p-4 rounded-lg text-center py-6 md:py-8">
                 <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-gray-600 text-sm">Memuat data shift...</p>
+                <p className="text-gray-600 text-xs md:text-sm">Memuat data shift...</p>
               </div>
             )}
 
             <div>
-              <Label>PIN Otorisasi</Label>
+              <Label className="text-sm md:text-base">PIN Otorisasi</Label>
               <Input
                 type="password"
                 value={closeShiftPin}
                 onChange={(e) => setCloseShiftPin(e.target.value)}
                 placeholder="Masukkan PIN supervisor"
                 maxLength={4}
-                className="text-center text-2xl tracking-widest mt-2"
+                className="text-center text-xl md:text-2xl tracking-widest mt-1 md:mt-2"
                 autoFocus
               />
             </div>
 
             <Button
               onClick={handleCloseShift}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-3 md:py-auto"
             >
               Tutup Shift
             </Button>
