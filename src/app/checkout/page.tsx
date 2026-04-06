@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -70,13 +70,18 @@ export default function CheckoutPage() {
       try {
         // Load saved form data from localStorage
         const savedFormData = localStorage.getItem(FORM_DATA_KEY)
+        console.log('Saved form data from localStorage:', savedFormData)
         if (savedFormData) {
           try {
             const parsedData = JSON.parse(savedFormData)
-            setCheckoutForm(prev => ({
-              ...prev,
-              ...parsedData
-            }))
+            console.log('Parsed form data:', parsedData)
+            // Merge with default state, keeping DEFAULT_ADDRESS if not in saved data
+            setCheckoutForm({
+              name: parsedData.name || '',
+              phone: parsedData.phone || '',
+              address: parsedData.address || DEFAULT_ADDRESS,
+              notes: parsedData.notes || ''
+            })
           } catch (error) {
             console.error('Error parsing saved form data:', error)
           }
@@ -142,9 +147,34 @@ export default function CheckoutPage() {
   }, [])
 
   // Save form data to localStorage only when user leaves a field (using onBlur)
-  const saveFormDataToStorage = () => {
+  const saveFormDataToStorage = useCallback(() => {
+    console.log('Saving form data to storage:', checkoutForm)
     localStorage.setItem(FORM_DATA_KEY, JSON.stringify(checkoutForm))
-  }
+  }, [checkoutForm])
+
+  // Handle input changes without causing form submission
+  const handleInputChange = useCallback((field: string, value: string) => {
+    console.log('Input change:', { field, value, current: checkoutForm })
+    setCheckoutForm(prev => {
+      const newForm = { ...prev }
+      switch (field) {
+        case 'name':
+          newForm.name = value
+          break
+        case 'phone':
+          newForm.phone = value
+          break
+        case 'address':
+          newForm.address = value
+          break
+        case 'notes':
+          newForm.notes = value
+          break
+      }
+      console.log('New form state:', newForm)
+      return newForm
+    })
+  }, [])
 
   // Save payment method to localStorage whenever it changes
   useEffect(() => {
@@ -264,14 +294,6 @@ export default function CheckoutPage() {
   const clearCheckoutData = () => {
     localStorage.removeItem(FORM_DATA_KEY)
     localStorage.removeItem(PAYMENT_METHOD_KEY)
-  }
-
-  // Handle input changes without causing form submission
-  const handleInputChange = (field: string, value: string) => {
-    setCheckoutForm(prev => ({
-      ...prev,
-      [field]: value
-    }))
   }
 
   const handleCheckout = async (e: React.FormEvent) => {
