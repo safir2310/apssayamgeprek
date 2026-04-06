@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -48,22 +48,11 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
 
-  // Use refs to avoid re-renders when typing
-  const nameRef = useRef('')
-  const phoneRef = useRef('')
-  const addressRef = useRef(DEFAULT_ADDRESS)
-  const notesRef = useRef('')
-  const paymentMethodRef = useRef('CASH')
-
-  // State for UI display only (updated via ref values)
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    address: DEFAULT_ADDRESS,
-    notes: ''
-  })
-
-  // Payment method state
+  // Simple controlled state for form
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState(DEFAULT_ADDRESS)
+  const [notes, setNotes] = useState('')
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('CASH')
 
   // Redeem code state
@@ -77,22 +66,13 @@ export default function CheckoutPage() {
       try {
         // Load saved form data from localStorage
         const savedFormData = localStorage.getItem(FORM_DATA_KEY)
-        console.log('Saved form data from localStorage:', savedFormData)
         if (savedFormData) {
           try {
             const parsedData = JSON.parse(savedFormData)
-            console.log('Parsed form data:', parsedData)
-            // Update refs and state
-            nameRef.current = parsedData.name || ''
-            phoneRef.current = parsedData.phone || ''
-            addressRef.current = parsedData.address || DEFAULT_ADDRESS
-            notesRef.current = parsedData.notes || ''
-            setFormData({
-              name: nameRef.current,
-              phone: phoneRef.current,
-              address: addressRef.current,
-              notes: notesRef.current
-            })
+            setName(parsedData.name || '')
+            setPhone(parsedData.phone || '')
+            setAddress(parsedData.address || DEFAULT_ADDRESS)
+            setNotes(parsedData.notes || '')
           } catch (error) {
             console.error('Error parsing saved form data:', error)
           }
@@ -101,7 +81,6 @@ export default function CheckoutPage() {
         // Load saved payment method from localStorage
         const savedPaymentMethod = localStorage.getItem(PAYMENT_METHOD_KEY)
         if (savedPaymentMethod) {
-          paymentMethodRef.current = savedPaymentMethod
           setSelectedPaymentMethod(savedPaymentMethod)
         }
 
@@ -158,69 +137,26 @@ export default function CheckoutPage() {
     loadProductsAndCart()
   }, [])
 
-  // Handle input changes without causing re-renders
-  const handleInputChange = useCallback((field: string, value: string) => {
-    console.log('Input change:', { field, value })
-    // Update ref directly (no re-render)
-    switch (field) {
-      case 'name':
-        nameRef.current = value
-        break
-      case 'phone':
-        phoneRef.current = value
-        break
-      case 'address':
-        addressRef.current = value
-        break
-      case 'notes':
-        notesRef.current = value
-        break
+  // Save form data to localStorage on blur
+  const saveFormData = useCallback(() => {
+    try {
+      localStorage.setItem(FORM_DATA_KEY, JSON.stringify({ name, phone, address, notes }))
+    } catch (error) {
+      console.error('Error saving form data:', error)
     }
-  }, [])
+  }, [name, phone, address, notes])
 
-  // Save payment method to localStorage whenever it changes
-  const handlePaymentMethodChange = useCallback((value: string) => {
-    paymentMethodRef.current = value
+  // Handle input changes
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)
+  const handleAddressChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => setAddress(e.target.value)
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)
+
+  // Handle payment method change
+  const handlePaymentMethodChange = (value: string) => {
     setSelectedPaymentMethod(value)
-  }, [])
-
-  // Auto-save form data to localStorage with debounce (doesn't cause re-render)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const dataToSave = {
-        name: nameRef.current,
-        phone: phoneRef.current,
-        address: addressRef.current,
-        notes: notesRef.current
-      }
-      console.log('Auto-saving form data to storage:', dataToSave)
-      localStorage.setItem(FORM_DATA_KEY, JSON.stringify(dataToSave))
-    }, 1000) // 1 second debounce
-
-    return () => clearTimeout(timer)
-  }, []) // Empty dependency array - only runs once
-
-  // Save payment method to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem(PAYMENT_METHOD_KEY, paymentMethodRef.current)
-  }, [selectedPaymentMethod])
-
-  // Save form data before page unload
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      const dataToSave = {
-        name: nameRef.current,
-        phone: phoneRef.current,
-        address: addressRef.current,
-        notes: notesRef.current
-      }
-      console.log('Saving form data before unload:', dataToSave)
-      localStorage.setItem(FORM_DATA_KEY, JSON.stringify(dataToSave))
-    }
-
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [])
+    localStorage.setItem(PAYMENT_METHOD_KEY, value)
+  }
 
   const saveCartToLocalStorage = (newCart: CartItem[]) => {
     const cartData = newCart.map(item => ({
@@ -340,14 +276,6 @@ export default function CheckoutPage() {
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Sync state with refs before validation
-    const currentFormData = {
-      name: nameRef.current,
-      phone: phoneRef.current,
-      address: addressRef.current,
-      notes: notesRef.current
-    }
-
     // Validate cart
     if (cart.length === 0) {
       alert('Keranjang belanja masih kosong!')
@@ -355,17 +283,17 @@ export default function CheckoutPage() {
     }
 
     // Validate form fields
-    if (!currentFormData.name.trim()) {
+    if (!name.trim()) {
       alert('Silakan masukkan nama lengkap!')
       return
     }
 
-    if (!currentFormData.phone.trim()) {
+    if (!phone.trim()) {
       alert('Silakan masukkan nomor WhatsApp!')
       return
     }
 
-    if (!currentFormData.address.trim()) {
+    if (!address.trim()) {
       alert('Silakan masukkan alamat pengiriman!')
       return
     }
@@ -382,10 +310,10 @@ export default function CheckoutPage() {
     const discount = appliedDiscount ? appliedDiscount.discountAmount : 0
 
     const orderData = {
-      customerName: currentFormData.name.trim(),
-      customerPhone: currentFormData.phone.trim(),
-      customerAddress: currentFormData.address.trim(),
-      notes: currentFormData.notes.trim(),
+      customerName: name.trim(),
+      customerPhone: phone.trim(),
+      customerAddress: address.trim(),
+      notes: notes.trim(),
       totalAmount: finalTotal,
       discount: discount,
       redeemCode: appliedDiscount ? appliedDiscount.code : null,
@@ -592,8 +520,9 @@ export default function CheckoutPage() {
                   <Input
                     id="name"
                     required
-                    defaultValue={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    value={name}
+                    onChange={handleNameChange}
+                    onBlur={saveFormData}
                     placeholder="Masukkan nama lengkap"
                     className="border-orange-200 focus:border-orange-500"
                     autoComplete="name"
@@ -606,8 +535,9 @@ export default function CheckoutPage() {
                     id="phone"
                     type="tel"
                     required
-                    defaultValue={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    onBlur={saveFormData}
                     placeholder="08xxxxxxxxxx"
                     className="border-orange-200 focus:border-orange-500"
                     autoComplete="tel"
@@ -619,8 +549,9 @@ export default function CheckoutPage() {
                   <Textarea
                     id="address"
                     required
-                    defaultValue={formData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    value={address}
+                    onChange={handleAddressChange}
+                    onBlur={saveFormData}
                     placeholder="Masukkan alamat lengkap"
                     rows={3}
                     className="border-orange-200 focus:border-orange-500"
@@ -631,8 +562,9 @@ export default function CheckoutPage() {
                   <Label htmlFor="notes">Catatan (Opsional)</Label>
                   <Textarea
                     id="notes"
-                    defaultValue={formData.notes}
-                    onChange={(e) => handleInputChange('notes', e.target.value)}
+                    value={notes}
+                    onChange={handleNotesChange}
+                    onBlur={saveFormData}
                     placeholder="Catatan tambahan untuk pesanan"
                     rows={2}
                     className="border-orange-200 focus:border-orange-500"
