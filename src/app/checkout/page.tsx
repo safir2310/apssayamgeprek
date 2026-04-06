@@ -49,41 +49,50 @@ export default function CheckoutPage() {
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null)
   const [validatingRedeemCode, setValidatingRedeemCode] = useState(false)
 
-  // Fetch products
+  // Fetch products and load cart
   useEffect(() => {
-    fetchProducts()
-  }, [])
-
-  // Load cart from localStorage
-  useEffect(() => {
-    const savedCart = localStorage.getItem('cart')
-    if (savedCart) {
+    const loadProductsAndCart = async () => {
       try {
-        const parsedCart = JSON.parse(savedCart)
-        // Reconstruct cart with product data
-        const reconstructedCart = parsedCart.map((item: any) => ({
-          product: products.find((p: Product) => p.id === item.productId) || item.product,
-          quantity: item.quantity
-        })).filter((item: CartItem) => item.product)
-        setCart(reconstructedCart)
-      } catch (error) {
-        console.error('Error parsing cart:', error)
-      }
-    }
-    setLoading(false)
-  }, [products])
+        const response = await fetch('/api/products')
+        if (response.ok) {
+          const data = await response.json()
+          setProducts(data)
 
-  const fetchProducts = async () => {
-    try {
-      const response = await fetch('/api/products')
-      if (response.ok) {
-        const data = await response.json()
-        setProducts(data)
+          // Now load cart from localStorage
+          const savedCart = localStorage.getItem('cart')
+          console.log('Saved cart from localStorage:', savedCart)
+
+          if (savedCart) {
+            try {
+              const parsedCart = JSON.parse(savedCart)
+              console.log('Parsed cart:', parsedCart)
+
+              // Reconstruct cart with product data
+              const reconstructedCart = parsedCart.map((item: any) => {
+                const product = data.find((p: Product) => p.id === item.productId)
+                console.log(`Finding product for ID ${item.productId}:`, product ? 'Found' : 'Not found')
+                return {
+                  product: product,
+                  quantity: item.quantity
+                }
+              }).filter((item: CartItem) => item.product)
+
+              console.log('Reconstructed cart:', reconstructedCart)
+              setCart(reconstructedCart)
+            } catch (error) {
+              console.error('Error parsing cart:', error)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error)
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Error fetching products:', error)
     }
-  }
+
+    loadProductsAndCart()
+  }, [])
 
   const saveCartToLocalStorage = (newCart: CartItem[]) => {
     const cartData = newCart.map(item => ({
@@ -185,8 +194,33 @@ export default function CheckoutPage() {
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Validate cart
     if (cart.length === 0) {
       alert('Keranjang belanja masih kosong!')
+      return
+    }
+
+    // Validate form fields
+    if (!checkoutForm.name.trim()) {
+      alert('Silakan masukkan nama lengkap!')
+      return
+    }
+
+    if (!checkoutForm.phone.trim()) {
+      alert('Silakan masukkan nomor WhatsApp!')
+      return
+    }
+
+    if (!checkoutForm.address.trim()) {
+      alert('Silakan masukkan alamat pengiriman!')
+      return
+    }
+
+    // Validate cart items have product data
+    const invalidItems = cart.filter(item => !item.product || !item.product.id)
+    if (invalidItems.length > 0) {
+      console.error('Invalid cart items:', invalidItems)
+      alert('Terdapat item keranjang yang tidak valid. Silakan ulangi pesanan.')
       return
     }
 
@@ -194,10 +228,10 @@ export default function CheckoutPage() {
     const discount = appliedDiscount ? appliedDiscount.discountAmount : 0
 
     const orderData = {
-      customerName: checkoutForm.name,
-      customerPhone: checkoutForm.phone,
-      customerAddress: checkoutForm.address,
-      notes: checkoutForm.notes,
+      customerName: checkoutForm.name.trim(),
+      customerPhone: checkoutForm.phone.trim(),
+      customerAddress: checkoutForm.address.trim(),
+      notes: checkoutForm.notes.trim(),
       totalAmount: finalTotal,
       discount: discount,
       redeemCode: appliedDiscount ? appliedDiscount.code : null,
@@ -210,6 +244,8 @@ export default function CheckoutPage() {
       }))
     }
 
+    console.log('Sending order data:', orderData)
+
     setSubmitting(true)
     try {
       const response = await fetch('/api/orders', {
@@ -220,9 +256,10 @@ export default function CheckoutPage() {
         body: JSON.stringify(orderData)
       })
 
-      if (response.ok) {
-        const result = await response.json()
+      const result = await response.json()
+      console.log('Order response:', result)
 
+      if (response.ok) {
         // Mark redeem code as used if applicable
         if (appliedDiscount) {
           try {
@@ -242,12 +279,14 @@ export default function CheckoutPage() {
         // Clear cart from localStorage
         localStorage.removeItem('cart')
 
+        // Show success message before redirect
+        alert(`Pesanan berhasil dibuat! Order #${result.orderNumber}`)
+
         // Redirect to home with history tab
         router.push('/?tab=riwayat')
       } else {
-        const errorData = await response.json()
-        console.error('Order creation error:', errorData)
-        alert(errorData.error || 'Gagal membuat pesanan. Silakan coba lagi.')
+        console.error('Order creation error:', result)
+        alert(result.error || 'Gagal membuat pesanan. Silakan coba lagi.')
       }
     } catch (error) {
       console.error('Error creating order:', error)

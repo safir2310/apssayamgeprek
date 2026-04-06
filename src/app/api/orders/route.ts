@@ -48,11 +48,46 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { customerName, customerPhone, customerAddress, notes, totalAmount, discount, redeemCode, paymentMethod, items } = body
 
+    console.log('Received order request:', { customerName, customerPhone, customerAddress, totalAmount, discount, items })
+
     if (!customerName || !customerPhone || !customerAddress || !items || items.length === 0) {
+      console.log('Validation failed:', { customerName, customerPhone, customerAddress, itemsLength: items?.length })
       return NextResponse.json(
         { error: 'Customer information and items are required' },
         { status: 400 }
       )
+    }
+
+    // Validate that all products exist
+    console.log('Validating products...', items.map(i => i.productId))
+    for (const item of items) {
+      const product = await db.product.findUnique({
+        where: { id: item.productId }
+      })
+
+      if (!product) {
+        console.error(`Product not found: ${item.productId}`)
+        return NextResponse.json(
+          { error: `Produk dengan ID ${item.productId} tidak ditemukan` },
+          { status: 400 }
+        )
+      }
+
+      if (!product.isActive) {
+        console.error(`Product not active: ${item.productId}`)
+        return NextResponse.json(
+          { error: `Produk ${product.name} tidak aktif` },
+          { status: 400 }
+        )
+      }
+
+      if (product.stock < item.quantity) {
+        console.error(`Insufficient stock for product ${item.productId}: needed ${item.quantity}, available ${product.stock}`)
+        return NextResponse.json(
+          { error: `Stok tidak cukup untuk ${product.name}. Tersedia: ${product.stock}, Diminta: ${item.quantity}` },
+          { status: 400 }
+        )
+      }
     }
 
     // Generate order number
@@ -60,6 +95,8 @@ export async function POST(request: NextRequest) {
 
     // Calculate total amount if not provided
     const calculatedTotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0)
+
+    console.log('Creating order with items:', items)
 
     // Create order with items
     const order = await db.order.create({
@@ -93,6 +130,8 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log('Order created successfully:', order.id)
+
     // Update product stock
     for (const item of items) {
       try {
@@ -124,8 +163,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(order, { status: 201 })
   } catch (error) {
     console.error('Error creating order:', error)
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
     return NextResponse.json(
-      { error: 'Failed to create order' },
+      { error: error instanceof Error ? error.message : 'Failed to create order' },
       { status: 500 }
     )
   }
