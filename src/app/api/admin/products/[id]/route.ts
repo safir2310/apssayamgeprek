@@ -4,11 +4,12 @@ import { prisma } from '@/lib/db'
 // GET - Fetch single product
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: productId } = await params
     const product = await prisma.product.findUnique({
-      where: { id: params.id },
+      where: { id: productId },
       include: {
         category: {
           select: {
@@ -42,9 +43,10 @@ export async function GET(
 // PUT - Update product
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: productId } = await params
     const body = await request.json()
     const {
       name,
@@ -60,7 +62,7 @@ export async function PUT(
 
     // Check if product exists
     const existingProduct = await prisma.product.findUnique({
-      where: { id: params.id }
+      where: { id: productId }
     })
 
     if (!existingProduct) {
@@ -88,7 +90,7 @@ export async function PUT(
     const stockDifference = stock !== undefined ? parseInt(stock) - existingProduct.stock : 0
 
     const product = await prisma.product.update({
-      where: { id: params.id },
+      where: { id: productId },
       data: {
         ...(name !== undefined && { name }),
         ...(barcode !== undefined && { barcode: barcode || null }),
@@ -139,12 +141,13 @@ export async function PUT(
 // DELETE - Delete product
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: productId } = await params
     // Check if product exists
     const product = await prisma.product.findUnique({
-      where: { id: params.id },
+      where: { id: productId },
       include: {
         _count: {
           select: {
@@ -171,7 +174,7 @@ export async function DELETE(
     }
 
     await prisma.product.delete({
-      where: { id: params.id }
+      where: { id: productId }
     })
 
     return NextResponse.json({

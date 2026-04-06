@@ -4,14 +4,15 @@ import { prisma } from '@/lib/db'
 // GET - Fetch single cashier
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: cashierId } = await params
     const { searchParams } = new URL(request.url)
     const includeStats = searchParams.get('includeStats') === 'true'
 
     const cashier = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id: cashierId },
       include: {
         role: {
           select: {
@@ -56,14 +57,15 @@ export async function GET(
 // PUT - Update cashier
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: cashierId } = await params
     const body = await request.json()
     const { name, email, password, phone, pin, roleId } = body
 
     const cashier = await prisma.user.findUnique({
-      where: { id: params.id }
+      where: { id: cashierId }
     })
 
     if (!cashier) {
@@ -102,7 +104,7 @@ export async function PUT(
     }
 
     const updatedCashier = await prisma.user.update({
-      where: { id: params.id },
+      where: { id: cashierId },
       data: {
         ...(name !== undefined && { name }),
         ...(email !== undefined && { email }),
@@ -140,11 +142,12 @@ export async function PUT(
 // DELETE - Deactivate cashier
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: cashierId } = await params
     const cashier = await prisma.user.findUnique({
-      where: { id: params.id }
+      where: { id: cashierId }
     })
 
     if (!cashier) {
@@ -157,7 +160,7 @@ export async function DELETE(
     // Check if cashier has open shifts
     const openShift = await prisma.cashierShift.findFirst({
       where: {
-        cashierId: params.id,
+        cashierId: cashierId,
         isOpen: true
       }
     })
@@ -172,7 +175,7 @@ export async function DELETE(
     // Instead of deleting, we could mark as inactive
     // But for now, let's delete
     await prisma.user.delete({
-      where: { id: params.id }
+      where: { id: cashierId }
     })
 
     return NextResponse.json({

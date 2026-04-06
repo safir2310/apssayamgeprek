@@ -4,11 +4,12 @@ import { prisma } from '@/lib/db'
 // GET - Fetch single transaction
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: transactionId } = await params
     const transaction = await prisma.transaction.findUnique({
-      where: { id: params.id },
+      where: { id: transactionId },
       include: {
         items: {
           include: {
@@ -81,7 +82,7 @@ export async function GET(
 // POST - Void transaction
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json()
@@ -94,8 +95,9 @@ export async function POST(
       )
     }
 
+    const { id: transactionId } = await params
     const transaction = await prisma.transaction.findUnique({
-      where: { id: params.id },
+      where: { id: transactionId },
       include: {
         items: true
       }
@@ -117,7 +119,7 @@ export async function POST(
 
     // Void the transaction
     const updatedTransaction = await prisma.transaction.update({
-      where: { id: params.id },
+      where: { id: transactionId },
       data: {
         status: 'VOID'
       }
@@ -126,7 +128,7 @@ export async function POST(
     // Create void log
     await prisma.voidLog.create({
       data: {
-        transactionId: params.id,
+        transactionId: transactionId,
         type: 'TRANSACTION',
         reason,
         approvedBy: approvedBy || null,
@@ -151,7 +153,7 @@ export async function POST(
           productId: item.productId,
           type: 'IN',
           quantity: item.quantity,
-          reference: params.id,
+          reference: transactionId,
           notes: `Stock restored from voided transaction ${transaction.transactionNumber}`
         }
       })

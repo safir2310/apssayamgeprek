@@ -4,11 +4,12 @@ import { prisma } from '@/lib/db'
 // GET - Fetch single category
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: categoryId } = await params
     const category = await prisma.category.findUnique({
-      where: { id: params.id },
+      where: { id: categoryId },
       include: {
         _count: {
           select: {
@@ -41,9 +42,10 @@ export async function GET(
 // PUT - Update category
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: categoryId } = await params
     const body = await request.json()
     const { name } = body
 
@@ -56,7 +58,7 @@ export async function PUT(
 
     // Check if category exists
     const existingCategory = await prisma.category.findUnique({
-      where: { id: params.id }
+      where: { id: categoryId }
     })
 
     if (!existingCategory) {
@@ -81,7 +83,7 @@ export async function PUT(
     }
 
     const category = await prisma.category.update({
-      where: { id: params.id },
+      where: { id: categoryId },
       data: {
         name
       }
@@ -103,12 +105,13 @@ export async function PUT(
 // DELETE - Delete category
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: categoryId } = await params
     // Check if category exists
     const category = await prisma.category.findUnique({
-      where: { id: params.id },
+      where: { id: categoryId },
       include: {
         _count: {
           select: {
@@ -134,7 +137,7 @@ export async function DELETE(
     }
 
     await prisma.category.delete({
-      where: { id: params.id }
+      where: { id: categoryId }
     })
 
     return NextResponse.json({

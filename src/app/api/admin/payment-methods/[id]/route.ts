@@ -4,14 +4,15 @@ import { prisma } from '@/lib/db'
 // PUT - Update payment method
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: paymentMethodId } = await params
     const body = await request.json()
     const { code, name, description, icon, isActive, sortOrder } = body
 
     const paymentMethod = await prisma.paymentMethod.update({
-      where: { id: params.id },
+      where: { id: paymentMethodId },
       data: {
         ...(code !== undefined && { code }),
         ...(name !== undefined && { name }),
@@ -35,16 +36,17 @@ export async function PUT(
 // DELETE - Delete payment method
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: paymentMethodId } = await params
     // Check if payment method is used in any transaction or order
     const [transactionCount, orderCount] = await Promise.all([
       prisma.transaction.count({
-        where: { paymentMethod: { equals: params.id } }
+        where: { paymentMethod: { equals: paymentMethodId } }
       }),
       prisma.order.count({
-        where: { paymentMethod: { equals: params.id } }
+        where: { paymentMethod: { equals: paymentMethodId } }
       })
     ])
 
@@ -56,7 +58,7 @@ export async function DELETE(
     }
 
     await prisma.paymentMethod.delete({
-      where: { id: params.id }
+      where: { id: paymentMethodId }
     })
 
     return NextResponse.json({ success: true })

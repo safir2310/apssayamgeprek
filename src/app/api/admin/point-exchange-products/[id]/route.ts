@@ -6,11 +6,12 @@ const prisma = new PrismaClient()
 // PUT - Update point exchange product
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: productId } = await params
     const body = await request.json()
-    const { name, description, image, points, type, value, productId, stock, isActive } = body
+    const { name, description, image, points, type, value, productId: inputProductId, stock, isActive } = body
 
     // Validate required fields
     if (!name || !points || !type) {
@@ -30,7 +31,7 @@ export async function PUT(
       }
     }
 
-    if (type === 'FREE_PRODUCT' && !productId) {
+    if (type === 'FREE_PRODUCT' && !inputProductId) {
       return NextResponse.json(
         { error: 'Product ID harus diisi untuk tipe free product' },
         { status: 400 }
@@ -38,7 +39,7 @@ export async function PUT(
     }
 
     const product = await prisma.pointExchangeProduct.update({
-      where: { id: params.id },
+      where: { id: productId },
       data: {
         name,
         description: description || null,
@@ -46,7 +47,7 @@ export async function PUT(
         points: parseInt(points),
         type,
         value: value ? parseFloat(value) : null,
-        productId: productId || null,
+        productId: inputProductId || null,
         stock: stock ? parseInt(stock) : 0,
         isActive: isActive ?? true
       }
@@ -62,12 +63,13 @@ export async function PUT(
 // DELETE - Delete point exchange product
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: productId } = await params
     // Check if product has unused redeem codes
     const product = await prisma.pointExchangeProduct.findUnique({
-      where: { id: params.id },
+      where: { id: productId },
       include: { redeemCodes: true }
     })
 
@@ -85,7 +87,7 @@ export async function DELETE(
     }
 
     await prisma.pointExchangeProduct.delete({
-      where: { id: params.id }
+      where: { id: productId }
     })
 
     return NextResponse.json({ message: 'Produk berhasil dihapus' })

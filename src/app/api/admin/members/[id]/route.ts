@@ -4,14 +4,15 @@ import { prisma } from '@/lib/db'
 // GET - Fetch single member with history
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: memberId } = await params
     const { searchParams } = new URL(request.url)
     const includeHistory = searchParams.get('includeHistory') === 'true'
 
     const member = await prisma.member.findUnique({
-      where: { id: params.id },
+      where: { id: memberId },
       ...(includeHistory && {
         include: {
           pointHistory: {
@@ -47,14 +48,15 @@ export async function GET(
 // PUT - Update member
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: memberId } = await params
     const body = await request.json()
     const { name, phone, email, address, points, isActive } = body
 
     const member = await prisma.member.findUnique({
-      where: { id: params.id }
+      where: { id: memberId }
     })
 
     if (!member) {
@@ -79,7 +81,7 @@ export async function PUT(
     }
 
     const updatedMember = await prisma.member.update({
-      where: { id: params.id },
+      where: { id: memberId },
       data: {
         ...(name !== undefined && { name }),
         ...(phone !== undefined && { phone }),
@@ -106,11 +108,12 @@ export async function PUT(
 // DELETE - Deactivate member
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: memberId } = await params
     const member = await prisma.member.findUnique({
-      where: { id: params.id }
+      where: { id: memberId }
     })
 
     if (!member) {
@@ -122,7 +125,7 @@ export async function DELETE(
 
     // Deactivate instead of delete
     await prisma.member.update({
-      where: { id: params.id },
+      where: { id: memberId },
       data: {
         isActive: false
       }
