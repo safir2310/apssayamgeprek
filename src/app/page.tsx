@@ -117,6 +117,7 @@ export default function Home() {
   const [showPrivacySettings, setShowPrivacySettings] = useState(false)
   const [showPolicy, setShowPolicy] = useState(false)
   const [showAddressModal, setShowAddressModal] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   // Profile forms state
   const [editProfileForm, setEditProfileForm] = useState({
@@ -483,12 +484,19 @@ export default function Home() {
   ]
 
 
-  // Handle member logout
+  // Handle member logout - Show confirmation dialog
   const handleMemberLogout = useCallback(() => {
+    setShowLogoutConfirm(true)
+  }, [])
+
+  // Confirm logout - Execute logout and redirect
+  const confirmLogout = useCallback(() => {
     setCurrentMember(null)
     setMemberPoints(0)
     localStorage.removeItem('member')
-  }, [])
+    setShowLogoutConfirm(false)
+    router.push('/login')
+  }, [router])
 
   // Handle edit profile
   const handleEditProfile = useCallback(async () => {
@@ -2624,6 +2632,49 @@ export default function Home() {
       {/* Dialogs */}
       <CartDialog />
       <CheckoutDialog />
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <DialogContent className="max-w-md" key="logout-confirm-modal">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <LogOut className="w-5 h-5" />
+              Konfirmasi Keluar
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center justify-center py-4">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <LogOut className="w-8 h-8 text-red-600" />
+              </div>
+            </div>
+            <div className="text-center space-y-2">
+              <p className="text-gray-700">
+                Apakah Anda yakin ingin keluar dari akun?
+              </p>
+              <p className="text-sm text-gray-500">
+                Anda akan diarahkan ke halaman login untuk masuk kembali.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1 border-gray-300 hover:bg-gray-50"
+                onClick={() => setShowLogoutConfirm(false)}
+              >
+                Batal
+              </Button>
+              <Button
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                onClick={confirmLogout}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Ya, Keluar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
