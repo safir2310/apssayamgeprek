@@ -11,6 +11,23 @@ export async function PUT(
     const body = await request.json()
     const { code, name, description, icon, isActive, sortOrder } = body
 
+    // If code is being updated, check if it already exists (excluding current method)
+    if (code !== undefined && code !== null) {
+      const existingMethod = await prisma.paymentMethod.findFirst({
+        where: {
+          code,
+          NOT: { id: paymentMethodId }
+        }
+      })
+
+      if (existingMethod) {
+        return NextResponse.json(
+          { error: 'Payment method code already exists' },
+          { status: 400 }
+        )
+      }
+    }
+
     const paymentMethod = await prisma.paymentMethod.update({
       where: { id: paymentMethodId },
       data: {
